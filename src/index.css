@@ -1,0 +1,103 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Outfit', 'Plus Jakarta Sans', system-ui, sans-serif;
+    letter-spacing: -0.02em;
+  }
+}
+
+@layer utilities {
+  .text-glow-orange {
+    text-shadow: 0 0 25px rgba(255, 85, 0, 0.45);
+  }
+
+  .text-glow-cyan {
+    text-shadow: 0 0 25px rgba(0, 163, 255, 0.45);
+  }
+
+  .glass-card {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(226, 232, 240, 0.9);
+  }
+
+  .glass-card-light {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.03);
+  }
+
+  .glass-card-dark {
+    background: rgba(11, 25, 44, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .bg-sport-mesh-light {
+    background-color: #f8fafc;
+    background-image: 
+      radial-gradient(at 10% 10%, rgba(255, 85, 0, 0.07) 0px, transparent 50%),
+      radial-gradient(at 90% 20%, rgba(2, 132, 199, 0.07) 0px, transparent 50%),
+      radial-gradient(at 50% 90%, rgba(255, 85, 0, 0.05) 0px, transparent 50%);
+  }
+
+  .bg-sport-mesh {
+    background-color: #f8fafc;
+    background-image: 
+      radial-gradient(at 10% 10%, rgba(255, 85, 0, 0.08) 0px, transparent 50%),
+      radial-gradient(at 90% 20%, rgba(2, 132, 199, 0.07) 0px, transparent 50%),
+      radial-gradient(at 50% 90%, rgba(255, 85, 0, 0.05) 0px, transparent 50%);
+  }
+
+  .bg-dot-pattern {
+    background-image: radial-gradient(rgba(15, 23, 42, 0.08) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  .bg-dot-pattern-dark {
+    background-image: radial-gradient(rgba(0, 0, 0, 0.08) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0b192c;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #ff5500;
+}
+
+/* Print styling */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  header, footer, nav, button, .no-print {
+    display: none !important;
+  }
+}

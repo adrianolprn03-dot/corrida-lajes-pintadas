@@ -1,0 +1,362 @@
+[
+  {
+    "scenario": "Cenário 1: 50 Usuários Virtuais Simultâneos (Envio de Inscrições)",
+    "concurrency": 50,
+    "totalRequests": 250,
+    "durationSec": 0.18,
+    "rps": 1351.4,
+    "avgLatencyMs": 34.4,
+    "p50LatencyMs": 26,
+    "p95LatencyMs": 79,
+    "p99LatencyMs": 81,
+    "successCount": 250,
+    "rejectedExpected": 0,
+    "errorCount": 0,
+    "errorRatePercent": 0,
+    "overbooked": false,
+    "inventoryDetails": [
+      {
+        "size": "PP",
+        "total": 80,
+        "reserved": 42,
+        "confirmed": 0,
+        "active": 42,
+        "available": 38,
+        "overbooked": false
+      },
+      {
+        "size": "P",
+        "total": 250,
+        "reserved": 42,
+        "confirmed": 0,
+        "active": 42,
+        "available": 208,
+        "overbooked": false
+      },
+      {
+        "size": "M",
+        "total": 450,
+        "reserved": 42,
+        "confirmed": 0,
+        "active": 42,
+        "available": 408,
+        "overbooked": false
+      },
+      {
+        "size": "G",
+        "total": 350,
+        "reserved": 42,
+        "confirmed": 0,
+        "active": 42,
+        "available": 308,
+        "overbooked": false
+      },
+      {
+        "size": "GG",
+        "total": 120,
+        "reserved": 41,
+        "confirmed": 0,
+        "active": 41,
+        "available": 79,
+        "overbooked": false
+      },
+      {
+        "size": "XG",
+        "total": 50,
+        "reserved": 41,
+        "confirmed": 0,
+        "active": 41,
+        "available": 9,
+        "overbooked": false
+      }
+    ]
+  },
+  {
+    "scenario": "Cenário 2: 100 Usuários Virtuais Simultâneos (Envio de Inscrições)",
+    "concurrency": 100,
+    "totalRequests": 500,
+    "durationSec": 0.21,
+    "rps": 2381,
+    "avgLatencyMs": 39.7,
+    "p50LatencyMs": 38,
+    "p95LatencyMs": 69,
+    "p99LatencyMs": 73,
+    "successCount": 463,
+    "rejectedExpected": 37,
+    "errorCount": 0,
+    "errorRatePercent": 0,
+    "overbooked": false,
+    "inventoryDetails": [
+      {
+        "size": "PP",
+        "total": 80,
+        "reserved": 80,
+        "confirmed": 0,
+        "active": 80,
+        "available": 0,
+        "overbooked": false
+      },
+      {
+        "size": "P",
+        "total": 250,
+        "reserved": 84,
+        "confirmed": 0,
+        "active": 84,
+        "available": 166,
+        "overbooked": false
+      },
+      {
+        "size": "M",
+        "total": 450,
+        "reserved": 83,
+        "confirmed": 0,
+        "active": 83,
+        "available": 367,
+        "overbooked": false
+      },
+      {
+        "size": "G",
+        "total": 350,
+        "reserved": 83,
+        "confirmed": 0,
+        "active": 83,
+        "available": 267,
+        "overbooked": false
+      },
+      {
+        "size": "GG",
+        "total": 120,
+        "reserved": 83,
+        "confirmed": 0,
+        "active": 83,
+        "available": 37,
+        "overbooked": false
+      },
+      {
+        "size": "XG",
+        "total": 50,
+        "reserved": 50,
+        "confirmed": 0,
+        "active": 50,
+        "available": 0,
+        "overbooked": false
+      }
+    ]
+  },
+  {
+    "scenario": "Cenário 3: 300 Usuários Virtuais Concorrentes (Estresse & Esgotamento de Estoque)",
+    "concurrency": 300,
+    "totalRequests": 1000,
+    "durationSec": 0.51,
+    "rps": 1972.4,
+    "avgLatencyMs": 142.6,
+    "p50LatencyMs": 119,
+    "p95LatencyMs": 363,
+    "p99LatencyMs": 420,
+    "successCount": 651,
+    "rejectedExpected": 349,
+    "errorCount": 0,
+    "errorRatePercent": 0,
+    "overbooked": false,
+    "inventoryDetails": [
+      {
+        "size": "PP",
+        "total": 80,
+        "reserved": 80,
+        "confirmed": 0,
+        "active": 80,
+        "available": 0,
+        "overbooked": false
+      },
+      {
+        "size": "P",
+        "total": 250,
+        "reserved": 133,
+        "confirmed": 0,
+        "active": 133,
+        "available": 117,
+        "overbooked": false
+      },
+      {
+        "size": "M",
+        "total": 450,
+        "reserved": 134,
+        "confirmed": 0,
+        "active": 134,
+        "available": 316,
+        "overbooked": false
+      },
+      {
+        "size": "G",
+        "total": 350,
+        "reserved": 134,
+        "confirmed": 0,
+        "active": 134,
+        "available": 216,
+        "overbooked": false
+      },
+      {
+        "size": "GG",
+        "total": 120,
+        "reserved": 120,
+        "confirmed": 0,
+        "active": 120,
+        "available": 0,
+        "overbooked": false
+      },
+      {
+        "size": "XG",
+        "total": 50,
+        "reserved": 50,
+        "confirmed": 0,
+        "active": 50,
+        "available": 0,
+        "overbooked": false
+      }
+    ]
+  },
+  {
+    "scenario": "Cenário 4: 1.000 Visitantes Simultâneos (Página Pública e Consultas de Status)",
+    "concurrency": 200,
+    "totalRequests": 2000,
+    "durationSec": 0.48,
+    "rps": 4192.9,
+    "avgLatencyMs": 46.9,
+    "p50LatencyMs": 48,
+    "p95LatencyMs": 59,
+    "p99LatencyMs": 73,
+    "successCount": 2000,
+    "rejectedExpected": 0,
+    "errorCount": 0,
+    "errorRatePercent": 0,
+    "overbooked": false,
+    "inventoryDetails": [
+      {
+        "size": "PP",
+        "total": 80,
+        "reserved": 80,
+        "confirmed": 0,
+        "active": 80,
+        "available": 0,
+        "overbooked": false
+      },
+      {
+        "size": "P",
+        "total": 250,
+        "reserved": 133,
+        "confirmed": 0,
+        "active": 133,
+        "available": 117,
+        "overbooked": false
+      },
+      {
+        "size": "M",
+        "total": 450,
+        "reserved": 134,
+        "confirmed": 0,
+        "active": 134,
+        "available": 316,
+        "overbooked": false
+      },
+      {
+        "size": "G",
+        "total": 350,
+        "reserved": 134,
+        "confirmed": 0,
+        "active": 134,
+        "available": 216,
+        "overbooked": false
+      },
+      {
+        "size": "GG",
+        "total": 120,
+        "reserved": 120,
+        "confirmed": 0,
+        "active": 120,
+        "available": 0,
+        "overbooked": false
+      },
+      {
+        "size": "XG",
+        "total": 50,
+        "reserved": 50,
+        "confirmed": 0,
+        "active": 50,
+        "available": 0,
+        "overbooked": false
+      }
+    ]
+  },
+  {
+    "scenario": "Cenário 5: Webhooks Concorrentes (300 Confirmações + Tentativas Duplicadas)",
+    "concurrency": 50,
+    "totalRequests": 400,
+    "durationSec": 0.08,
+    "rps": 5263.2,
+    "avgLatencyMs": 9.3,
+    "p50LatencyMs": 9,
+    "p95LatencyMs": 12,
+    "p99LatencyMs": 12,
+    "successCount": 400,
+    "rejectedExpected": 0,
+    "errorCount": 0,
+    "errorRatePercent": 0,
+    "overbooked": false,
+    "inventoryDetails": [
+      {
+        "size": "PP",
+        "total": 80,
+        "reserved": 19,
+        "confirmed": 61,
+        "active": 80,
+        "available": 0,
+        "overbooked": false
+      },
+      {
+        "size": "P",
+        "total": 250,
+        "reserved": 74,
+        "confirmed": 59,
+        "active": 133,
+        "available": 117,
+        "overbooked": false
+      },
+      {
+        "size": "M",
+        "total": 450,
+        "reserved": 74,
+        "confirmed": 60,
+        "active": 134,
+        "available": 316,
+        "overbooked": false
+      },
+      {
+        "size": "G",
+        "total": 350,
+        "reserved": 74,
+        "confirmed": 60,
+        "active": 134,
+        "available": 216,
+        "overbooked": false
+      },
+      {
+        "size": "GG",
+        "total": 120,
+        "reserved": 60,
+        "confirmed": 60,
+        "active": 120,
+        "available": 0,
+        "overbooked": false
+      },
+      {
+        "size": "XG",
+        "total": 50,
+        "reserved": 0,
+        "confirmed": 50,
+        "active": 50,
+        "available": 0,
+        "overbooked": false
+      }
+    ]
+  }
+]
