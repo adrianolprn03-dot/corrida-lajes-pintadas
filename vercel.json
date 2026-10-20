@@ -78,6 +78,10 @@
       "destination": "/api/admin-inventory.ts"
     },
     {
+      "source": "/api/admin/settings",
+      "destination": "/api/admin-settings.ts"
+    },
+    {
       "source": "/api/admin/registrations",
       "destination": "/api/admin-registrations.ts"
     },

@@ -15,6 +15,7 @@ import {
   Category,
   ShirtSize,
   RegistrationStatus,
+  EventStatus,
 } from '../types';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { isValidCPF } from '../lib/cpf';
@@ -117,11 +118,56 @@ class StorageService {
   }
 
   // Obter Configurações
+  // Obter Configurações do Evento
   async getSettings(): Promise<EventSettings> {
+    // 1. Tentar via API oficial Vercel Serverless (com Service Role para bypass de RLS)
+    try {
+      const apiRes = await fetch('/api/admin/settings');
+      if (apiRes.ok) {
+        const json = await apiRes.json();
+        if (json.settings) {
+          const d = json.settings;
+          const status = (d.status === 'PREPARATION' ? 'OPEN' : d.status) as EventStatus;
+          return {
+            id: d.id,
+            eventName: d.event_name,
+            edition: d.edition,
+            eventDate: d.event_date,
+            distanceKm: Number(d.distance_km),
+            basePriceCents: d.base_price_cents,
+            status,
+            maxCapacity: d.max_capacity,
+            minAge: d.min_age,
+            minorRules: d.minor_rules,
+            startTime: d.start_time,
+            startLocation: d.start_location,
+            registrationStartDate: d.registration_start_date,
+            registrationEndDate: d.registration_end_date,
+            kitPickupInfo: d.kit_pickup_info,
+            cancellationPolicy: d.cancellation_policy,
+            organizerName: d.organizer_name,
+            organizerContact: d.organizer_contact,
+            revenueResponsible: d.revenue_responsible,
+            asaasEnvironment: d.asaas_environment,
+            asaasPixFixedFeeCents: d.asaas_pix_fixed_fee_cents,
+            asaasCreditFixedFeeCents: d.asaas_credit_fixed_fee_cents,
+            asaasCreditPercentFee: Number(d.asaas_credit_percent_fee),
+            termsVersion: d.terms_version,
+            privacyVersion: d.privacy_version,
+            termsContent: d.terms_content,
+            privacyContent: d.privacy_content,
+            updatedAt: d.updated_at,
+          };
+        }
+      }
+    } catch {}
+
+    // 2. Tentar via Supabase Client caso configurado
     if (isSupabaseConfigured && supabase) {
       try {
         const { data, error } = await supabase.from('event_settings').select('*').limit(1).single();
         if (!error && data) {
+          const status = (data.status === 'PREPARATION' ? 'OPEN' : data.status) as EventStatus;
           return {
             id: data.id,
             eventName: data.event_name,
@@ -129,7 +175,7 @@ class StorageService {
             eventDate: data.event_date,
             distanceKm: Number(data.distance_km),
             basePriceCents: data.base_price_cents,
-            status: data.status,
+            status,
             maxCapacity: data.max_capacity,
             minAge: data.min_age,
             minorRules: data.minor_rules,
@@ -157,7 +203,13 @@ class StorageService {
         console.warn('Supabase fetch failed, falling back to local:', err);
       }
     }
-    return this.getLocal<EventSettings>(STORAGE_KEYS.SETTINGS, INITIAL_SETTINGS);
+
+    const localSettings = this.getLocal<EventSettings>(STORAGE_KEYS.SETTINGS, INITIAL_SETTINGS);
+    if (localSettings.status === 'PREPARATION') {
+      localSettings.status = 'OPEN';
+      this.setLocal(STORAGE_KEYS.SETTINGS, localSettings);
+    }
+    return localSettings;
   }
 
   // Atualizar Configurações (Admin)
@@ -166,6 +218,16 @@ class StorageService {
     const merged: EventSettings = { ...current, ...updates, updatedAt: new Date().toISOString() };
     this.setLocal(STORAGE_KEYS.SETTINGS, merged);
 
+    // 1. Salvar via API oficial Vercel Serverless (com Service Role)
+    try {
+      await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
+    } catch {}
+
+    // 2. Tentar via Supabase Client caso configurado
     if (isSupabaseConfigured && supabase) {
       try {
         await supabase.from('event_settings').update({
