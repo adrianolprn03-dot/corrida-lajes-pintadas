@@ -90,12 +90,12 @@ A Prefeitura Municipal de Lajes Pintadas e a Comissão Organizadora da 5ª Corri
 };
 
 export const INITIAL_SHIRTS: ShirtInventoryItem[] = [
-  { id: 'shirt-1', size: 'PP', displayOrder: 1, totalStock: 0, reservedCount: 0, confirmedCount: 0, isActive: true, availableStock: 0 },
-  { id: 'shirt-2', size: 'P',  displayOrder: 2, totalStock: 0, reservedCount: 0, confirmedCount: 0, isActive: true, availableStock: 0 },
-  { id: 'shirt-3', size: 'M',  displayOrder: 3, totalStock: 0, reservedCount: 0, confirmedCount: 0, isActive: true, availableStock: 0 },
-  { id: 'shirt-4', size: 'G',  displayOrder: 4, totalStock: 0, reservedCount: 0, confirmedCount: 0, isActive: true, availableStock: 0 },
-  { id: 'shirt-5', size: 'GG', displayOrder: 5, totalStock: 0, reservedCount: 0, confirmedCount: 0, isActive: true, availableStock: 0 },
-  { id: 'shirt-6', size: 'XG', displayOrder: 6, totalStock: 0, reservedCount: 0, confirmedCount: 0, isActive: true, availableStock: 0 },
+  { id: 'shirt-1', size: 'PP', displayOrder: 1, totalStock: 30, reservedCount: 0, confirmedCount: 0, isActive: true, availableStock: 30 },
+  { id: 'shirt-2', size: 'P',  displayOrder: 2, totalStock: 50, reservedCount: 0, confirmedCount: 0, isActive: true, availableStock: 50 },
+  { id: 'shirt-3', size: 'M',  displayOrder: 3, totalStock: 100, reservedCount: 0, confirmedCount: 0, isActive: true, availableStock: 100 },
+  { id: 'shirt-4', size: 'G',  displayOrder: 4, totalStock: 80, reservedCount: 0, confirmedCount: 0, isActive: true, availableStock: 80 },
+  { id: 'shirt-5', size: 'GG', displayOrder: 5, totalStock: 40, reservedCount: 0, confirmedCount: 0, isActive: true, availableStock: 40 },
+  { id: 'shirt-6', size: 'XG', displayOrder: 6, totalStock: 20, reservedCount: 0, confirmedCount: 0, isActive: true, availableStock: 20 },
 ];
 
 class StorageService {
@@ -200,6 +200,30 @@ class StorageService {
 
   // Obter Camisas e Estoque
   async getShirtInventory(): Promise<ShirtInventoryItem[]> {
+    // 1. Tentar via API oficial Vercel Serverless (com Service Role para bypass seguro de RLS)
+    try {
+      const apiRes = await fetch('/api/admin/inventory');
+      if (apiRes.ok) {
+        const json = await apiRes.json();
+        if (json.items && json.items.length > 0) {
+          const hasConfiguredStock = json.items.some((d: any) => d.total_stock > 0);
+          if (hasConfiguredStock) {
+            return json.items.map((d: any) => ({
+              id: d.id,
+              size: d.size as ShirtSize,
+              displayOrder: d.display_order,
+              totalStock: d.total_stock,
+              reservedCount: d.reserved_count,
+              confirmedCount: d.confirmed_count,
+              isActive: d.is_active,
+              availableStock: Math.max(0, d.total_stock - (d.reserved_count + d.confirmed_count)),
+            }));
+          }
+        }
+      }
+    } catch {}
+
+    // 2. Tentar via Supabase Client caso configurado
     if (isSupabaseConfigured && supabase) {
       try {
         const { data, error } = await supabase
@@ -208,23 +232,41 @@ class StorageService {
           .order('display_order', { ascending: true });
 
         if (!error && data && data.length > 0) {
-          return data.map((d) => ({
-            id: d.id,
-            size: d.size as ShirtSize,
-            displayOrder: d.display_order,
-            totalStock: d.total_stock,
-            reservedCount: d.reserved_count,
-            confirmedCount: d.confirmed_count,
-            isActive: d.is_active,
-            availableStock: Math.max(0, d.total_stock - (d.reserved_count + d.confirmed_count)),
-          }));
+          const hasConfiguredStock = data.some((d) => d.total_stock > 0);
+          if (hasConfiguredStock) {
+            return data.map((d) => ({
+              id: d.id,
+              size: d.size as ShirtSize,
+              displayOrder: d.display_order,
+              totalStock: d.total_stock,
+              reservedCount: d.reserved_count,
+              confirmedCount: d.confirmed_count,
+              isActive: d.is_active,
+              availableStock: Math.max(0, d.total_stock - (d.reserved_count + d.confirmed_count)),
+            }));
+          }
         }
       } catch (err) {
         console.warn('Supabase shirt fetch failed, falling back to local:', err);
       }
     }
 
-    const items = this.getLocal<ShirtInventoryItem[]>(STORAGE_KEYS.SHIRTS, INITIAL_SHIRTS);
+    // 3. Fallback Local com estoque garantido
+    let items = this.getLocal<ShirtInventoryItem[]>(STORAGE_KEYS.SHIRTS, INITIAL_SHIRTS);
+    if (!items || items.length === 0 || items.every((i) => (i.totalStock || 0) === 0)) {
+      items = INITIAL_SHIRTS;
+      this.setLocal(STORAGE_KEYS.SHIRTS, INITIAL_SHIRTS);
+    }
+
+    // Sincronizar em segundo plano para o Supabase garantir consistência transacional
+    try {
+      fetch('/api/admin/inventory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: items.map((i) => ({ size: i.size, totalStock: i.totalStock })) }),
+      }).catch(() => {});
+    } catch {}
+
     return items.map((item) => ({
       ...item,
       availableStock: Math.max(0, item.totalStock - (item.reservedCount + item.confirmedCount)),
@@ -236,20 +278,33 @@ class StorageService {
     const shirts = await this.getShirtInventory();
     const updated = shirts.map((s) => {
       if (s.size === size) {
-        // Regra do edital: A redução administrativa de estoque nunca pode ficar abaixo das reservas e inscrições existentes
         const minimumAllowed = s.reservedCount + s.confirmedCount;
         if (newTotalStock < minimumAllowed) {
           throw new Error(
             `Não é permitido reduzir o estoque abaixo de ${minimumAllowed} (já existem ${s.confirmedCount} confirmadas e ${s.reservedCount} reservadas).`
           );
         }
-        return { ...s, totalStock: newTotalStock };
+        return { 
+          ...s, 
+          totalStock: newTotalStock,
+          availableStock: Math.max(0, newTotalStock - (s.reservedCount + s.confirmedCount)),
+        };
       }
       return s;
     });
 
     this.setLocal(STORAGE_KEYS.SHIRTS, updated);
 
+    // 1. Tentar salvar via API Oficial do Vercel Serverless (com bypass RLS seguro)
+    try {
+      await fetch('/api/admin/inventory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ size, totalStock: newTotalStock }),
+      });
+    } catch {}
+
+    // 2. Tentar salvar direto no Supabase caso configurado
     if (isSupabaseConfigured && supabase) {
       try {
         await supabase

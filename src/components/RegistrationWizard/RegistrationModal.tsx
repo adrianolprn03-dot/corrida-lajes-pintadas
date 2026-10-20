@@ -9,6 +9,7 @@ import {
   Registration,
   ShirtSize,
 } from '../../types';
+import { storageService } from '../../services/storage';
 
 interface RegistrationModalProps {
   isOpen: boolean;
@@ -35,6 +36,18 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
   initialShirtSize,
 }) => {
   const [currentStep, setCurrentStep] = React.useState<1 | 2 | 3>(1);
+  const [liveInventory, setLiveInventory] = React.useState<ShirtInventoryItem[]>(inventory);
+
+  React.useEffect(() => {
+    if (inventory && inventory.some((i) => i.availableStock > 0)) {
+      setLiveInventory(inventory);
+    } else {
+      // Buscar imediatamente o inventário mais recente com estoque garantido
+      storageService.getShirtInventory().then((fresh) => {
+        if (fresh && fresh.length > 0) setLiveInventory(fresh);
+      });
+    }
+  }, [inventory, isOpen]);
 
   const [step1Data, setStep1Data] = React.useState<Step1Data>({
     fullName: '',
@@ -54,6 +67,12 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
     shirtSize: initialShirtSize || 'M',
     paymentMethod: 'PIX',
   });
+
+  React.useEffect(() => {
+    if (initialShirtSize) {
+      setStep2Data((prev) => ({ ...prev, shirtSize: initialShirtSize }));
+    }
+  }, [initialShirtSize]);
 
   if (!isOpen) return null;
 
@@ -183,7 +202,7 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
               data={step2Data}
               city={step1Data.city}
               state={step1Data.state}
-              inventory={inventory}
+              inventory={liveInventory}
               settings={settings}
               onChange={handleStep2Change}
               onBack={() => setCurrentStep(1)}

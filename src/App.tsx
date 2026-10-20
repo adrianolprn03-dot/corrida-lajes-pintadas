@@ -52,14 +52,15 @@ export default function App() {
   const loadData = async () => {
     try {
       setIsLoading(true);
-      const [loadedSettings, loadedShirts, loadedMetrics] = await Promise.all([
+      const [sRes, shRes, mRes] = await Promise.allSettled([
         storageService.getSettings(),
         storageService.getShirtInventory(),
         storageService.getAdminMetrics(),
       ]);
-      setSettings(loadedSettings);
-      setShirts(loadedShirts);
-      setMetrics(loadedMetrics);
+
+      if (sRes.status === 'fulfilled') setSettings(sRes.value);
+      if (shRes.status === 'fulfilled') setShirts(shRes.value);
+      if (mRes.status === 'fulfilled') setMetrics(mRes.value);
     } catch (err) {
       console.error('Error loading initial data:', err);
     } finally {
@@ -71,7 +72,12 @@ export default function App() {
     loadData();
   }, []);
 
-  const handleOpenRegister = () => {
+  const handleOpenRegister = async () => {
+    try {
+      const freshShirts = await storageService.getShirtInventory();
+      setShirts(freshShirts);
+    } catch {}
+
     if (settings.status === 'PREPARATION') {
       showToast(
         'Inscrições em preparação! A organização está finalizando a grade oficial antes da abertura.',

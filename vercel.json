@@ -74,6 +74,10 @@
       "destination": "/api/metrics.ts"
     },
     {
+      "source": "/api/admin/inventory",
+      "destination": "/api/admin-inventory.ts"
+    },
+    {
       "source": "/api/admin/registrations",
       "destination": "/api/admin-registrations.ts"
     },
