@@ -1,17 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { 
-  HelpCircle, 
-  ChevronDown, 
-  ChevronUp, 
-  Search, 
-  Tag, 
-  CreditCard, 
-  Shirt, 
-  Trophy, 
-  FileText,
-  Mail,
-  Sparkles
-} from 'lucide-react';
+import { ChevronDown, ChevronUp, Search, Mail, HelpCircle } from 'lucide-react';
 
 interface FaqItem {
   id: string;
@@ -36,26 +24,26 @@ const FAQ_ITEMS: FaqItem[] = [
   {
     id: 'faq-3',
     category: 'pagamento',
-    question: 'Por que há uma taxa de gateway além dos R$ 60,00 da inscrição?',
-    answer: 'O regulamento da prova fixa a taxa de inscrição no valor líquido de R$ 60,00 com direito à camisa oficial de alta performance e medalha finisher. O pequeno acréscimo operacional no checkout (R$ 0,99 no Pix) corresponde à tarifa bancária do gateway Asaas, garantindo a reserva atômica de vaga e a conciliação instantânea sem intermediários manuais.',
+    question: 'Por que há uma taxa de processamento além dos R$ 60,00 da inscrição?',
+    answer: 'O regulamento da prova fixa a inscrição no valor líquido de R$ 60,00 com direito à camisa oficial e medalha finisher. O acréscimo operacional no checkout (R$ 0,99 no Pix) corresponde à tarifa bancária do gateway Asaas, garantindo a reserva atômica de vaga por 30 minutos e a conciliação instantânea sem intermediários manuais.',
   },
   {
     id: 'faq-4',
     category: 'pagamento',
     question: 'Quanto tempo tenho para pagar o Pix antes de perder minha vaga?',
-    answer: 'Ao concluir o formulário de inscrição, o sistema efetua uma reserva em tempo real da sua vaga e do tamanho de camisa escolhido por exatamente 30 minutos. Se o Pix não for compensado dentro desta janela, a reserva expira automaticamente e o tamanho volta a ficar disponível no estoque público para outros corredores.',
+    answer: 'Ao concluir o formulário, o sistema efetua uma reserva em tempo real da sua vaga e do tamanho de camisa escolhido por exatamente 30 minutos. Se o Pix não for compensado dentro desta janela, a reserva expira automaticamente e o tamanho volta a ficar disponível no estoque público para outros corredores.',
   },
   {
     id: 'faq-5',
     category: 'kit',
     question: 'O que compõe o kit oficial e posso trocar o tamanho da camisa depois?',
-    answer: 'O kit oficial inclui a Camisa Oficial Laranja de tecido dry-fit esportivo tecnológico, chip eletrônico descartável, número de peito personalizado com 4 alfinetes e brindes institucionais. Não será permitida a troca de tamanho no ato da retirada do kit, valendo estritamente a grade selecionada no momento da inscrição.',
+    answer: 'O kit oficial inclui a Camisa Oficial Laranja de tecido dry-fit tecnológico, chip eletrônico descartável, número de peito personalizado com 4 alfinetes e brindes institucionais. Não será permitida a troca de tamanho no ato da retirada do kit, valendo estritamente a grade selecionada no momento da inscrição.',
   },
   {
     id: 'faq-6',
     category: 'kit',
     question: 'Onde e quando será realizada a entrega dos kits?',
-    answer: 'A entrega dos kits será realizada no Centro de Convivência dos Idosos (Rua São Francisco, Centro, Lajes Pintadas/RN). No dia 25/12 (14h às 18h) para atletas locais e antecipados, e no dia 26/12 (05h às 05h40) para atletas visitantes de outros municípios. É indispensável apresentar documento com foto e comprovante de inscrição.',
+    answer: 'A entrega dos kits será realizada no Centro de Convivência dos Idosos (Rua São Francisco, s/n, Centro, Lajes Pintadas/RN). No dia 25/12 (14h às 18h) para atletas locais e antecipados, e no dia 26/12 (05h às 05h40) para atletas visitantes de outros municípios. É indispensável apresentar documento com foto e comprovante de inscrição.',
   },
   {
     id: 'faq-7',
@@ -80,7 +68,7 @@ export const FaqSection: React.FC = () => {
     { id: 'todas', label: 'Todas as Dúvidas' },
     { id: 'inscricao', label: 'Inscrição' },
     { id: 'categoria', label: 'Categorias & Pódios' },
-    { id: 'kit', label: 'Kit & Camisa' },
+    { id: 'kit', label: 'Kit & Tamanhos' },
     { id: 'pagamento', label: 'Pagamento & Pix' },
   ];
 
@@ -99,51 +87,45 @@ export const FaqSection: React.FC = () => {
   };
 
   return (
-    <section id="faq" className="py-24 bg-[#080D1A] text-slate-100 border-b border-white/10 relative overflow-hidden">
-      {/* Background Ambience */}
-      <div className="absolute top-1/3 right-10 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute inset-0 bg-carbon-grid opacity-20 pointer-events-none" />
-
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+    <section id="faq" className="bg-[#FCFBF7] text-[#101D2C] py-16 sm:py-24 border-b border-[rgba(22,35,53,0.14)]">
+      <div className="max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-12">
         
         {/* Section Header */}
-        <div className="text-center max-w-2xl mx-auto mb-12">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-orange-500/10 border border-orange-500/30 text-orange-400 text-xs font-mono font-bold uppercase tracking-widest mb-4 backdrop-blur-md">
-            <HelpCircle className="w-3.5 h-3.5" />
-            <span>Central de Dúvidas Oficiais</span>
-          </div>
-          <h2 className="font-display font-black text-3xl sm:text-5xl text-white uppercase tracking-tight">
-            Perguntas <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-amber-300 to-yellow-400">Frequentes</span>
+        <div className="mb-12">
+          <span className="font-sans text-xs font-semibold uppercase tracking-widest text-[#E5640E] block mb-2">
+            Central de Informações
+          </span>
+          <h2 className="font-condensed font-extrabold text-4xl sm:text-6xl uppercase tracking-tight text-[#101D2C] leading-none">
+            Dúvidas Frequentes
           </h2>
-          <p className="mt-3 text-slate-400 text-sm sm:text-base leading-relaxed">
-            Tire suas dúvidas sobre o regulamento, categorias, pagamento automático Asaas e retirada de kits da 5ª Corrida de Emancipação.
+          <p className="font-sans text-sm sm:text-base text-[#5D6672] mt-3 max-w-2xl leading-relaxed">
+            Consulte as principais orientações sobre o regulamento, categorias de premiação, reserva temporária no Pix e entrega dos kits oficiais.
           </p>
         </div>
 
-        {/* Search & Filter Bar */}
+        {/* Filter Bar & Search */}
         <div className="mb-8 space-y-4">
-          {/* Search Input */}
           <div className="relative">
-            <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-[#5D6672] absolute left-4 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar dúvida por palavra-chave (ex: kit, pix, comprovante, casa)..."
-              className="w-full pl-11 pr-4 py-3.5 rounded-2xl bg-white/[0.04] border border-white/10 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 backdrop-blur-md transition"
+              placeholder="Buscar por palavra-chave (ex: kit, comprovante, casa, pix)..."
+              className="w-full pl-11 pr-4 py-3 bg-white border border-[rgba(22,35,53,0.14)] rounded-[2px] text-sm text-[#101D2C] placeholder-[#5D6672] focus:outline-none focus:ring-1 focus:ring-[#007CA0]"
             />
           </div>
 
-          {/* Category Filter Pills */}
           <div className="flex flex-wrap items-center gap-2">
             {categories.map((cat) => (
               <button
                 key={cat.id}
+                type="button"
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold transition-all ${
+                className={`px-3.5 py-1.5 font-sans text-xs font-medium rounded-[2px] transition ${
                   selectedCategory === cat.id
-                    ? 'bg-orange-600 text-white shadow-lg shadow-orange-600/30 border border-orange-500'
-                    : 'bg-white/[0.04] text-slate-400 hover:text-white border border-white/10 hover:border-white/20'
+                    ? 'bg-[#101D2C] text-white'
+                    : 'bg-white border border-[rgba(22,35,53,0.14)] text-[#5D6672] hover:text-[#101D2C]'
                 }`}
               >
                 {cat.label}
@@ -152,40 +134,34 @@ export const FaqSection: React.FC = () => {
           </div>
         </div>
 
-        {/* FAQ Accordion List */}
-        <div className="space-y-3">
+        {/* Discrete Accordion List */}
+        <div className="border border-[rgba(22,35,53,0.14)] bg-white rounded-[2px] divide-y divide-[rgba(22,35,53,0.14)]">
           {filteredFaqs.length === 0 ? (
-            <div className="p-8 text-center rounded-2xl bg-white/[0.03] border border-white/10 text-slate-400 text-sm">
-              Nenhuma pergunta encontrada com o termo "{searchQuery}". Tente outra busca ou entre em contato com a organização.
+            <div className="p-8 text-center text-sm text-[#5D6672]">
+              Nenhuma pergunta encontrada com o termo pesquisado.
             </div>
           ) : (
             filteredFaqs.map((item) => {
               const isOpen = openId === item.id;
 
               return (
-                <div
-                  key={item.id}
-                  className="rounded-2xl bg-gradient-to-b from-white/[0.05] to-white/[0.02] border border-white/10 overflow-hidden backdrop-blur-xl transition hover:border-white/20"
-                >
+                <div key={item.id} className="transition-colors hover:bg-[#FCFBF7]">
                   <button
                     type="button"
                     onClick={() => toggleFaq(item.id)}
-                    className="w-full px-5 py-4 sm:py-5 text-left flex items-center justify-between gap-4 focus:outline-none"
+                    aria-expanded={isOpen}
+                    className="w-full p-5 text-left flex items-center justify-between gap-4 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#007CA0]"
                   >
-                    <span className="font-bold text-white text-sm sm:text-base">
+                    <span className="font-sans font-semibold text-sm sm:text-base text-[#101D2C]">
                       {item.question}
                     </span>
-                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border transition ${
-                      isOpen 
-                        ? 'bg-orange-600 border-orange-500 text-white shadow-md shadow-orange-600/30' 
-                        : 'bg-white/5 border-white/10 text-slate-400'
-                    }`}>
+                    <div className="p-1 text-[#5D6672] shrink-0">
                       {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                     </div>
                   </button>
 
                   {isOpen && (
-                    <div className="px-5 pb-5 pt-1 text-slate-300 text-xs sm:text-sm leading-relaxed border-t border-white/5 animate-in fade-in duration-200">
+                    <div className="px-5 pb-5 pt-1 font-sans text-xs sm:text-sm text-[#5D6672] leading-relaxed border-t border-[rgba(22,35,53,0.06)] animate-in fade-in duration-150">
                       <p>{item.answer}</p>
                     </div>
                   )}
@@ -195,23 +171,15 @@ export const FaqSection: React.FC = () => {
           )}
         </div>
 
-        {/* Still Have Questions Box */}
-        <div className="mt-12 p-6 rounded-3xl bg-white/[0.03] border border-white/10 backdrop-blur-md flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-orange-500/20 text-orange-400 flex items-center justify-center shrink-0 border border-orange-500/30">
-              <Mail className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="font-bold text-white text-sm">Ainda com dúvidas sobre o regulamento?</div>
-              <div className="text-xs text-slate-400">Nossa equipe esportiva está disponível para orientar os atletas.</div>
-            </div>
-          </div>
-
+        {/* Support Link */}
+        <div className="mt-8 p-4 bg-white border border-[rgba(22,35,53,0.14)] rounded-[2px] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-sans text-[#5D6672]">
+          <span>Precisa de esclarecimentos adicionais sobre o edital da prova?</span>
           <a
             href="mailto:esportes@lajespintadas.rn.gov.br"
-            className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/20 text-xs font-mono font-bold text-white transition hover:border-orange-500/50 shrink-0"
+            className="font-semibold text-[#E5640E] hover:underline flex items-center gap-1.5"
           >
-            Falar com a Organização
+            <Mail className="w-3.5 h-3.5" />
+            <span>esportes@lajespintadas.rn.gov.br</span>
           </a>
         </div>
 

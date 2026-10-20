@@ -1,20 +1,14 @@
 import React, { useState } from 'react';
 import { 
   Shirt, 
-  Sparkles, 
-  CheckCircle, 
-  ShieldAlert, 
-  Maximize2, 
-  X, 
+  ShieldCheck, 
   Sun, 
   Wind, 
-  ShieldCheck, 
-  Layers, 
+  Maximize2, 
+  X, 
+  CheckCircle2, 
   ArrowRight,
-  Eye,
-  Award,
-  Flame,
-  CheckCircle2
+  AlertCircle
 } from 'lucide-react';
 import { ShirtInventoryItem, ShirtSize } from '../types';
 
@@ -58,244 +52,231 @@ export const ShirtShowcase: React.FC<ShirtShowcaseProps> = ({
   const currentMeasurements = sizeMeasurements[selectedSize];
 
   return (
-    <section id="camisa" className="py-20 bg-[#060A11] text-white border-b border-white/10 relative overflow-hidden">
-      
-      {/* Background Glows */}
-      <div className="absolute top-0 right-1/4 w-[500px] h-[500px] bg-orange-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 left-10 w-[500px] h-[500px] bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+    <section id="camisa" className="bg-[#101D2C] text-white py-16 sm:py-24 border-b border-white/10">
+      <div className="max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-12">
         
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-orange-500/10 text-orange-400 border border-orange-500/30 text-xs font-black uppercase tracking-wider mb-3">
-            <Sparkles className="w-4 h-4 text-orange-400" />
-            <span>Kit Oficial do Atleta • Modelo Oficial Laranja</span>
-          </div>
-          <h2 className="font-display font-black text-3xl sm:text-5xl uppercase tracking-tight text-white">
-            Camisa Técnica <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-amber-400">Oficial dos 68 Anos</span>
+        <div className="mb-12">
+          <span className="font-sans text-xs font-semibold uppercase tracking-widest text-[#FF872E] block mb-2">
+            Equipamento do Atleta
+          </span>
+          <h2 className="font-condensed font-extrabold text-4xl sm:text-6xl uppercase tracking-tight text-white leading-none">
+            Camisa Oficial da Prova
           </h2>
-          <p className="mt-3 text-slate-400 text-sm sm:text-base leading-relaxed">
-            Confeccionada com tecido esportivo dry-fit de alta respirabilidade, com proteção solar UV50+ e pigmentação especial que garante visibilidade, leveza e conforto térmico durante toda a prova.
+          <p className="font-sans text-sm sm:text-base text-[#BBC3CE] mt-3 max-w-2xl leading-relaxed">
+            Tecido tecnológico dry-fit de alto rendimento, respirabilidade máxima sob calor intenso e proteção solar UV 50+. Aprovada para corredores de alta performance e amadores.
           </p>
         </div>
 
-        {/* Main Content Grid: Image Viewer + Live Size Selector + Tech Specs */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+        {/* 2-Column Layout: Product Display (Left) + Specifications & Sizing (Right) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
           
-          {/* Col 1: Interactive Shirt Showcase (7 cols) */}
-          <div className="lg:col-span-7 space-y-4">
+          {/* Left Column (6 cols): Product Visual Area */}
+          <div className="lg:col-span-6 bg-white rounded-[2px] p-6 sm:p-10 flex flex-col items-center justify-center relative group">
             
-            {/* View Switcher Tabs */}
-            <div className="flex items-center justify-center sm:justify-start gap-2 bg-[#0B1220] p-1.5 rounded-2xl border border-white/10 w-fit mx-auto sm:mx-0 shadow-sm">
-              <button
-                type="button"
-                onClick={() => setSelectedView('both')}
-                className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 ${
-                  selectedView === 'both'
-                    ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/30'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                <Eye size={14} />
-                <span>Ambos os Lados</span>
-              </button>
-              
-              <button
-                type="button"
-                onClick={() => setSelectedView('front')}
-                className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 ${
-                  selectedView === 'front'
-                    ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/30'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                <span>Frente Detalhe</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setSelectedView('back')}
-                className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 ${
-                  selectedView === 'back'
-                    ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/30'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                <span>Costas com Logo</span>
-              </button>
+            {/* View Selector Controls */}
+            <div className="w-full flex items-center justify-between mb-4 border-b border-[rgba(22,35,53,0.1)] pb-3">
+              <span className="font-sans text-xs font-semibold uppercase tracking-wider text-[#101D2C]">
+                Visualização do Modelo
+              </span>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setSelectedView('both')}
+                  aria-pressed={selectedView === 'both'}
+                  className={`px-3 py-1 font-sans text-xs font-semibold rounded-[2px] transition ${
+                    selectedView === 'both'
+                      ? 'bg-[#101D2C] text-white'
+                      : 'bg-black/5 text-[#5D6672] hover:text-[#101D2C]'
+                  }`}
+                >
+                  Geral
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedView('front')}
+                  aria-pressed={selectedView === 'front'}
+                  className={`px-3 py-1 font-sans text-xs font-semibold rounded-[2px] transition ${
+                    selectedView === 'front'
+                      ? 'bg-[#101D2C] text-white'
+                      : 'bg-black/5 text-[#5D6672] hover:text-[#101D2C]'
+                  }`}
+                >
+                  Frente
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedView('back')}
+                  aria-pressed={selectedView === 'back'}
+                  className={`px-3 py-1 font-sans text-xs font-semibold rounded-[2px] transition ${
+                    selectedView === 'back'
+                      ? 'bg-[#101D2C] text-white'
+                      : 'bg-black/5 text-[#5D6672] hover:text-[#101D2C]'
+                  }`}
+                >
+                  Costas
+                </button>
+              </div>
             </div>
 
-            {/* Interactive Image Frame */}
-            <div className="relative athletic-card rounded-3xl p-6 sm:p-10 border border-white/10 flex items-center justify-center min-h-[380px] sm:min-h-[460px] group overflow-hidden">
-              <div className="absolute inset-0 bg-radial-mesh opacity-30" />
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-orange-500/15 rounded-full blur-3xl pointer-events-none" />
-
+            {/* Product Image */}
+            <div className="relative w-full max-w-[420px] aspect-square flex items-center justify-center my-4">
               <img
                 src={getCurrentImage()}
-                alt="Camisa Oficial Lajes Pintadas"
-                className="relative z-10 max-h-[340px] sm:max-h-[400px] w-auto object-contain transition-transform duration-500 group-hover:scale-105 drop-shadow-[0_20px_35px_rgba(255,85,0,0.35)]"
+                alt="Camisa Oficial Laranja de Corrida"
+                className="max-h-full max-w-full object-contain filter drop-shadow-md transition-all duration-300"
+                loading="lazy"
               />
 
-              {/* Zoom Trigger Button */}
               <button
                 type="button"
                 onClick={() => setIsZoomOpen(true)}
-                className="absolute top-4 right-4 z-20 p-2.5 rounded-xl bg-[#060A11]/80 hover:bg-orange-500 text-slate-300 hover:text-white border border-white/10 transition-colors shadow-lg"
-                title="Ampliar visualização da camisa"
+                className="absolute bottom-2 right-2 p-2 bg-[#101D2C] text-white hover:bg-[#F97316] hover:text-[#101D2C] transition rounded-[2px] shadow-sm"
+                title="Ampliar visualização"
+                aria-label="Ampliar visualização da camisa"
               >
-                <Maximize2 size={16} />
+                <Maximize2 className="w-4 h-4" />
               </button>
-
-              {/* Floating Technology Badge */}
-              <div className="absolute bottom-4 left-4 z-20 flex items-center gap-2 bg-[#060A11]/90 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-orange-500/30 text-xs font-black text-orange-400 shadow-xl">
-                <Sun size={14} className="text-amber-400" />
-                <span>Fator de Proteção Solar UV50+</span>
-              </div>
             </div>
 
-            {/* 4 Technical Feature Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2">
-              <div className="athletic-card p-3 rounded-2xl border border-white/5">
-                <Wind className="w-5 h-5 text-cyan-400 mb-1" />
-                <div className="text-xs font-black uppercase text-white">Dry-Fit Pro</div>
-                <div className="text-[10px] text-slate-400">Rápida evaporação</div>
-              </div>
-              <div className="athletic-card p-3 rounded-2xl border border-white/5">
-                <Sun className="w-5 h-5 text-amber-400 mb-1" />
-                <div className="text-xs font-black uppercase text-white">UV 50+</div>
-                <div className="text-[10px] text-slate-400">Proteção solar</div>
-              </div>
-              <div className="athletic-card p-3 rounded-2xl border border-white/5">
-                <Layers className="w-5 h-5 text-orange-400 mb-1" />
-                <div className="text-xs font-black uppercase text-white">Anti-Atrito</div>
-                <div className="text-[10px] text-slate-400">Costuras planas</div>
-              </div>
-              <div className="athletic-card p-3 rounded-2xl border border-white/5">
-                <ShieldCheck className="w-5 h-5 text-emerald-400 mb-1" />
-                <div className="text-xs font-black uppercase text-white">Oficial 68 Anos</div>
-                <div className="text-[10px] text-slate-400">Item de colecionador</div>
-              </div>
+            {/* Approved Design Details Note */}
+            <div className="w-full pt-4 border-t border-[rgba(22,35,53,0.1)] flex items-center justify-between text-xs text-[#5D6672] font-sans">
+              <span>Laranja Oficial • Logo 68 Anos</span>
+              <span className="font-semibold text-[#101D2C]">Costas Lisas (Regulamento)</span>
             </div>
-
           </div>
 
-          {/* Col 2: Live Size Selector & Stock Meter (5 cols) */}
-          <div className="lg:col-span-5 space-y-6">
+          {/* Right Column (6 cols): Specifications & Live Size Selector */}
+          <div className="lg:col-span-6 space-y-6">
             
-            <div className="athletic-card rounded-3xl p-6 sm:p-7 border border-white/10 space-y-5">
-              
-              <div className="flex items-center justify-between pb-3 border-b border-white/10">
-                <div>
-                  <span className="text-xs font-black uppercase tracking-wider text-orange-400 block">
-                    Grade Oficial de Camisas
-                  </span>
-                  <h3 className="font-display font-black text-xl text-white uppercase mt-0.5">
-                    Escolha Seu Tamanho
-                  </h3>
-                </div>
-                <span className="text-[10px] font-bold text-slate-400 bg-white/5 px-2.5 py-1 rounded border border-white/5 uppercase">
-                  Estoque em Tempo Real
+            {/* Highlights Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="p-4 border border-white/10 bg-white/[0.03] rounded-[2px]">
+                <Sun className="w-5 h-5 text-[#FF872E] mb-2" />
+                <span className="font-condensed font-bold text-lg uppercase text-white block">
+                  Proteção UV 50+
                 </span>
+                <p className="font-sans text-xs text-[#BBC3CE] mt-0.5">
+                  Bloqueio eficaz contra radiação solar no percurso.
+                </p>
               </div>
 
-              {/* Interactive Size Pills Grid */}
-              <div>
-                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block mb-2.5">
-                  Tamanho Selecionado: <span className="text-orange-400 font-black text-sm">{selectedSize}</span>
-                </label>
-
-                <div className="grid grid-cols-3 gap-2.5">
-                  {(['PP', 'P', 'M', 'G', 'GG', 'XG'] as ShirtSize[]).map((size) => {
-                    const item = inventory.find((s) => s.size === size);
-                    const stock = item ? item.availableStock : 10;
-                    const isSoldOut = stock <= 0;
-                    const isCurrent = selectedSize === size;
-
-                    return (
-                      <button
-                        key={size}
-                        type="button"
-                        onClick={() => setSelectedSize(size)}
-                        className={`p-3 rounded-2xl text-center transition-all border flex flex-col items-center justify-center ${
-                          isCurrent
-                            ? 'bg-orange-500 text-white border-orange-400 shadow-lg shadow-orange-500/40 scale-[1.03]'
-                            : isSoldOut
-                            ? 'bg-white/[0.02] border-white/5 text-slate-600 opacity-60'
-                            : 'bg-[#0B1220] border-white/10 text-slate-200 hover:border-orange-500/50 hover:bg-white/5'
-                        }`}
-                      >
-                        <span className="font-display font-black text-lg block">{size}</span>
-                        <span className={`text-[10px] font-bold uppercase mt-0.5 ${
-                          isCurrent 
-                            ? 'text-white' 
-                            : isSoldOut 
-                            ? 'text-red-400' 
-                            : stock <= 3 
-                            ? 'text-amber-400' 
-                            : 'text-emerald-400'
-                        }`}>
-                          {isSoldOut ? 'Esgotado' : `${stock} vagas`}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Size Dimensions Guide Box */}
-              <div className="bg-[#070C15] p-4 rounded-2xl border border-white/5 space-y-2">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-                  Medidas Oficiais do Tamanho {selectedSize}:
+              <div className="p-4 border border-white/10 bg-white/[0.03] rounded-[2px]">
+                <Wind className="w-5 h-5 text-[#FF872E] mb-2" />
+                <span className="font-condensed font-bold text-lg uppercase text-white block">
+                  Dry-Fit Tech
                 </span>
-                <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                  <div className="bg-white/[0.03] p-2 rounded-xl border border-white/5">
-                    <span className="text-[10px] text-slate-400 block uppercase">Tórax</span>
-                    <span className="font-bold text-white">{currentMeasurements.chest}</span>
-                  </div>
-                  <div className="bg-white/[0.03] p-2 rounded-xl border border-white/5">
-                    <span className="text-[10px] text-slate-400 block uppercase">Comprimento</span>
-                    <span className="font-bold text-white">{currentMeasurements.length}</span>
-                  </div>
-                  <div className="bg-white/[0.03] p-2 rounded-xl border border-white/5">
-                    <span className="text-[10px] text-slate-400 block uppercase">Estatura</span>
-                    <span className="font-bold text-cyan-400">{currentMeasurements.height}</span>
-                  </div>
-                </div>
+                <p className="font-sans text-xs text-[#BBC3CE] mt-0.5">
+                  Microperfurações para transporte rápido do suor.
+                </p>
               </div>
 
-              {/* Action Button for Selected Size */}
-              <button
-                type="button"
-                disabled={!isAvailable}
-                onClick={() => onOpenRegisterWithSize && onOpenRegisterWithSize(selectedSize)}
-                className={`w-full py-4 rounded-2xl font-display font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-xl ${
-                  isAvailable
-                    ? 'bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 text-white shadow-orange-950/60 hover:scale-[1.02] active:scale-[0.98]'
-                    : 'bg-slate-800 text-slate-500 cursor-not-allowed'
-                }`}
-              >
-                <Flame size={16} />
-                <span>Garantir Tamanho {selectedSize} • R$ 60,00</span>
-                <ArrowRight size={16} />
-              </button>
-
-              <span className="text-[11px] text-slate-400 text-center block">
-                🔒 Vaga e tamanho de camisa travados imediatamente após a geração do Pix.
-              </span>
-
+              <div className="p-4 border border-white/10 bg-white/[0.03] rounded-[2px]">
+                <ShieldCheck className="w-5 h-5 text-[#FF872E] mb-2" />
+                <span className="font-condensed font-bold text-lg uppercase text-white block">
+                  Sem Troca no Kit
+                </span>
+                <p className="font-sans text-xs text-[#BBC3CE] mt-0.5">
+                  Confira suas medidas antes da finalização.
+                </p>
+              </div>
             </div>
 
-            {/* Medalha & Kit Completo Box */}
-            <div className="athletic-card rounded-3xl p-5 border border-white/10 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center justify-center shrink-0">
-                <Award size={24} />
+            {/* Live Size Selector */}
+            <div className="p-6 border border-white/10 bg-white/[0.02] rounded-[2px] space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="font-sans text-xs font-bold uppercase tracking-wider text-[#FF872E]">
+                  Selecione seu Tamanho
+                </span>
+                <span className="font-sans text-xs text-[#BBC3CE]">
+                  Tórax: <strong className="text-white">{currentMeasurements.chest}</strong> • Comprimento: <strong className="text-white">{currentMeasurements.length}</strong>
+                </span>
               </div>
-              <div className="text-xs">
-                <div className="font-bold text-white uppercase">Medalha Finisher de Metal Inclusa</div>
-                <div className="text-slate-400 mt-0.5">
-                  Todos os atletas que cruzarem a linha de chegada recebem a medalha oficial em metal fundido com fita personalizada.
-                </div>
+
+              {/* Size Buttons Grid */}
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                {(['PP', 'P', 'M', 'G', 'GG', 'XG'] as ShirtSize[]).map((size) => {
+                  const item = inventory.find((s) => s.size === size);
+                  const stock = item ? item.availableStock : 10;
+                  const isSoldOut = stock <= 0;
+                  const isSelected = selectedSize === size;
+
+                  return (
+                    <button
+                      key={size}
+                      type="button"
+                      disabled={isSoldOut}
+                      onClick={() => setSelectedSize(size)}
+                      className={`p-3 border rounded-[2px] transition text-center flex flex-col items-center justify-center ${
+                        isSelected
+                          ? 'border-[#F97316] bg-[#F97316] text-[#101D2C]'
+                          : isSoldOut
+                          ? 'border-white/5 bg-white/[0.01] text-white/30 cursor-not-allowed'
+                          : 'border-white/10 bg-white/[0.03] text-white hover:border-white/30'
+                      }`}
+                    >
+                      <span className="font-condensed font-extrabold text-xl leading-none">
+                        {size}
+                      </span>
+                      <span className={`font-sans text-[10px] mt-1 uppercase font-medium ${
+                        isSelected ? 'text-[#101D2C]' : isSoldOut ? 'text-red-400' : 'text-[#BBC3CE]'
+                      }`}>
+                        {isSoldOut ? 'Esgotado' : `${stock} vagas`}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Direct Registration CTA with selected size */}
+              <div className="pt-2">
+                {isAvailable ? (
+                  <button
+                    type="button"
+                    onClick={() => onOpenRegisterWithSize && onOpenRegisterWithSize(selectedSize)}
+                    className="w-full py-3.5 px-6 font-sans font-semibold text-sm sm:text-base text-[#101D2C] bg-[#F97316] hover:bg-[#FF8D3E] rounded-[2px] transition flex items-center justify-center gap-2 uppercase tracking-wide"
+                  >
+                    <span>Inscrever-se com Tamanho {selectedSize}</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                ) : (
+                  <div className="p-3 bg-red-950/40 border border-red-500/30 rounded-[2px] text-xs text-red-200 flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+                    <span>O tamanho {selectedSize} está esgotado no momento. Escolha outro tamanho para continuar.</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Measurement Guide Table */}
+            <div className="border border-white/10 bg-white/[0.02] rounded-[2px] overflow-hidden">
+              <div className="p-3 bg-white/5 border-b border-white/10 text-xs font-sans font-semibold uppercase tracking-wider text-white">
+                Tabela Oficial de Medidas Unissex (cm)
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left font-sans text-xs">
+                  <thead>
+                    <tr className="border-b border-white/10 text-[#BBC3CE]">
+                      <th className="py-2.5 px-3 font-semibold">Tamanho</th>
+                      <th className="py-2.5 px-3 font-semibold">Tórax (Largura)</th>
+                      <th className="py-2.5 px-3 font-semibold">Comprimento</th>
+                      <th className="py-2.5 px-3 font-semibold">Estatura Sugerida</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5 text-white">
+                    {(['PP', 'P', 'M', 'G', 'GG', 'XG'] as ShirtSize[]).map((size) => (
+                      <tr 
+                        key={size}
+                        className={selectedSize === size ? 'bg-[#F97316]/10 text-[#FF872E]' : 'hover:bg-white/[0.02]'}
+                      >
+                        <td className="py-2 px-3 font-bold">{size}</td>
+                        <td className="py-2 px-3">{sizeMeasurements[size].chest}</td>
+                        <td className="py-2 px-3">{sizeMeasurements[size].length}</td>
+                        <td className="py-2 px-3 text-[#BBC3CE]">{sizeMeasurements[size].height}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
 
@@ -305,33 +286,29 @@ export const ShirtShowcase: React.FC<ShirtShowcaseProps> = ({
 
       </div>
 
-      {/* High-Resolution Zoom Modal */}
+      {/* Fullscreen Zoom Modal */}
       {isZoomOpen && (
-        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="relative max-w-4xl w-full bg-[#0A101C] rounded-3xl p-6 border border-white/20 shadow-2xl">
-            <button
-              onClick={() => setIsZoomOpen(false)}
-              className="absolute top-4 right-4 p-2 rounded-xl bg-white/10 text-white hover:bg-orange-500 transition-colors"
-            >
-              <X size={20} />
-            </button>
-            <div className="text-center mb-4">
-              <h4 className="font-display font-black text-xl text-white uppercase">
-                Camisa Técnica Oficial • Lajes Pintadas/RN
-              </h4>
-              <span className="text-xs text-orange-400 font-bold uppercase">Edição 68 Anos • Visualização em Alta Resolução</span>
-            </div>
-            <div className="flex items-center justify-center max-h-[70vh] overflow-hidden">
-              <img
-                src={getCurrentImage()}
-                alt="Detalhes da Camisa Oficial"
-                className="max-h-[65vh] w-auto object-contain"
-              />
-            </div>
+        <div className="fixed inset-0 z-50 bg-[#101D2C]/95 backdrop-blur-md flex items-center justify-center p-4">
+          <button
+            type="button"
+            onClick={() => setIsZoomOpen(false)}
+            className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 text-white rounded-[2px] transition"
+            aria-label="Fechar ampliação"
+          >
+            <X className="w-6 h-6" />
+          </button>
+          <div className="max-w-2xl w-full bg-white p-6 sm:p-10 rounded-[2px]">
+            <img
+              src={getCurrentImage()}
+              alt="Camisa Oficial Ampliada"
+              className="w-full max-h-[75vh] object-contain mx-auto"
+            />
+            <p className="text-center font-sans text-xs text-[#5D6672] mt-4">
+              Camisa Oficial 5ª Corrida de Emancipação • Lajes Pintadas/RN
+            </p>
           </div>
         </div>
       )}
-
     </section>
   );
 };

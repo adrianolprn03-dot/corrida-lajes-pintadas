@@ -122,21 +122,21 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#060A11] text-slate-100 selection:bg-orange-500 selection:text-white relative font-sans">
+    <div className="min-h-screen flex flex-col bg-[#FCFBF7] text-[#101D2C] selection:bg-[#F97316] selection:text-[#101D2C] relative font-sans">
       {/* Toast Alert */}
       {toast && (
-        <div className="fixed bottom-6 right-6 z-50 animate-in fade-in slide-in-from-bottom-5 duration-300">
-          <div className={`p-4 rounded-2xl shadow-xl flex items-center gap-3 text-xs sm:text-sm font-semibold border ${
+        <div className="fixed bottom-6 right-6 z-50 animate-in fade-in slide-in-from-bottom-5 duration-200">
+          <div className={`p-4 rounded-[2px] shadow-lg flex items-center gap-3 text-xs sm:text-sm font-semibold border ${
             toast.type === 'success' 
-              ? 'bg-emerald-950/90 text-emerald-200 border-emerald-500/30 backdrop-blur-md' 
+              ? 'bg-[#101D2C] text-white border-emerald-500' 
               : toast.type === 'warning' 
-              ? 'bg-amber-950/90 text-amber-200 border-amber-500/30 backdrop-blur-md' 
-              : 'bg-slate-900/90 text-white border-white/10 backdrop-blur-md shadow-2xl'
+              ? 'bg-[#101D2C] text-white border-[#F97316]' 
+              : 'bg-[#101D2C] text-white border-white/20'
           }`}>
             {toast.type === 'success' ? (
               <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0" />
             ) : (
-              <AlertCircle className="w-5 h-5 text-amber-400 shrink-0" />
+              <AlertCircle className="w-5 h-5 text-[#F97316] shrink-0" />
             )}
             <span>{toast.message}</span>
           </div>
@@ -194,11 +194,12 @@ export default function App() {
         onOpenLookup={() => setIsAthleteAreaOpen(true)}
       />
 
-      {/* Institutional Footer */}
+      {/* Institutional Footer & Pre-Footer CTA */}
       <Footer
         onOpenRegulation={handleOpenRegulation}
         onOpenAthleteArea={() => setIsAthleteAreaOpen(true)}
         onOpenAdmin={() => setIsAdminOpen(true)}
+        onOpenRegister={handleOpenRegister}
       />
 
       {/* Lazy Modals with Suspense for high performance */}
