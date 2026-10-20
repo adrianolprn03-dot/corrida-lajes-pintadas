@@ -89,23 +89,57 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const supabase = getSupabase();
 
     if (supabase) {
-      const { data, error } = await supabase.rpc('lookup_registration_by_protocol', {
+      const { data, error } = await supabase.rpc('get_athlete_registration', {
         p_protocol: cleanProtocol,
-        p_raw_access_code: cleanCode,
+        p_access_code: cleanCode,
       });
 
-      if (error || !data) {
-        return res.status(404).json({ error: 'Inscrição não encontrada ou código incorreto.' });
+      if (!error && data) {
+        const durationMs = Date.now() - startTime;
+        memoryStore.recordLatency(durationMs);
+        return res.status(200).json({
+          registration: data,
+          athlete: data.athlete,
+          event: data.event,
+          latencyMs: durationMs,
+        });
       }
 
-      const durationMs = Date.now() - startTime;
-      memoryStore.recordLatency(durationMs);
-      return res.status(200).json({
-        registration: data.registration,
-        athlete: data.athlete,
-        event: data.event,
-        latencyMs: durationMs,
-      });
+      // Fallback: Query direta autenticada via hash SHA-256
+      const crypto = await import('crypto');
+      const hash = crypto.createHash('sha256').update(cleanCode).digest('hex');
+
+      const { data: regData, error: regError } = await supabase
+        .from('registrations')
+        .select('*, athlete:athletes(*)')
+        .eq('protocol', cleanProtocol)
+        .eq('access_code_hash', hash)
+        .single();
+
+      if (!regError && regData) {
+        const durationMs = Date.now() - startTime;
+        memoryStore.recordLatency(durationMs);
+
+        const a = regData.athlete;
+        const cpfMasked = a ? `${a.cpf.slice(0, 3)}.***.***-${a.cpf.slice(9)}` : '';
+        const emailParts = a?.email ? a.email.split('@') : ['', ''];
+        const emailMasked = a?.email ? `${emailParts[0].slice(0, 2)}***@${emailParts[1]}` : '';
+
+        return res.status(200).json({
+          registration: regData,
+          athlete: {
+            fullName: a?.full_name,
+            cpfMasked,
+            city: a?.city,
+            state: a?.state,
+            team: a?.team,
+            emailMasked,
+          },
+          latencyMs: durationMs,
+        });
+      }
+
+      return res.status(404).json({ error: 'Inscrição não encontrada ou código incorreto.' });
     }
 
     return res.status(404).json({ error: 'Inscrição não encontrada. Verifique os dados informados.' });
