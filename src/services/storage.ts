@@ -37,7 +37,7 @@ export const INITIAL_SETTINGS: EventSettings = {
   eventDate: '2026-12-26',
   distanceKm: 5.0,
   basePriceCents: 6000, // R$ 60,00
-  status: 'PREPARATION', // Em preparação conforme edital até conclusão dos requisitos
+  status: 'OPEN', // Inscrições abertas para testes e produção
   maxCapacity: null, // A definir no painel
   minAge: null, // A definir no painel
   minorRules: 'Participantes menores de 18 anos devem apresentar autorização formal por escrito assinada pelos responsáveis legais no ato da entrega do kit.',
