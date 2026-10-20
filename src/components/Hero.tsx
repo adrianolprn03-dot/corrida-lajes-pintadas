@@ -50,24 +50,24 @@ export const Hero: React.FC<HeroProps> = ({
   }, []);
 
   return (
-    <section className="relative min-h-[720px] lg:min-h-[820px] flex items-center overflow-hidden border-b border-slate-800 text-white bg-slate-950">
-      {/* BACKGROUND IMAGE: AUTHENTIC 2025 RACE PHOTO IN LAJES PINTADAS BEHIND TEXT */}
+    <section className="relative min-h-[720px] lg:min-h-[820px] flex items-center overflow-hidden border-b border-slate-200 text-slate-900 bg-white">
+      {/* BACKGROUND IMAGE: FOTO AUTÊNTICA DA CORRIDA 2025 COM DEGRADÊ SUAVE PARA BRANCO */}
       <div className="absolute inset-0 z-0">
         <img
           src="/assets/corrida_2025.webp"
           alt="Largada e Chegada da Corrida de Emancipação de Lajes Pintadas"
-          className="w-full h-full object-cover object-[center_32%] filter brightness-[0.72] contrast-[1.12]"
+          className="w-full h-full object-cover object-[center_32%] filter brightness-[1.0] contrast-[1.05]"
           loading="eager"
           decoding="async"
         />
-        {/* Layer 1: Left-to-right gradient ensuring text legibility while displaying the finish arch & runners */}
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-950/82 to-slate-950/45 sm:to-slate-950/25" />
+        {/* Layer 1: Degradê suave da esquerda para a direita (branco sólido na esquerda para leitura perfeita, revelando corredores e pórtico à direita) */}
+        <div className="absolute inset-0 bg-gradient-to-r from-white via-white/95 to-white/40 lg:to-transparent" />
         
-        {/* Layer 2: Top and bottom vignette */}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-slate-950/70" />
+        {/* Layer 2: Degradê superior e inferior para transição harmônica com o menu e seções */}
+        <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-white/70" />
         
-        {/* Layer 3: Warm subtle athletic glow */}
-        <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-orange-600/15 rounded-full blur-[130px] pointer-events-none" />
+        {/* Layer 3: Brilho esportivo quente sutil */}
+        <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-orange-500/10 rounded-full blur-[140px] pointer-events-none" />
       </div>
 
       {/* CONTENT LAYER */}
@@ -79,53 +79,53 @@ export const Hero: React.FC<HeroProps> = ({
             
             {/* Monumental Headline */}
             <div>
-              <h1 className="font-condensed font-extrabold text-[clamp(2.7rem,5.6vw,5.5rem)] uppercase tracking-[-0.02em] leading-[0.9] text-white">
+              <h1 className="font-condensed font-extrabold text-[clamp(2.7rem,5.6vw,5.5rem)] uppercase tracking-[-0.02em] leading-[0.9] text-slate-950">
                 5ª CORRIDA DE<br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF7A00] via-[#FFAE34] to-[#FF5500]">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-600 via-orange-500 to-amber-600">
                   EMANCIPAÇÃO POLÍTICA
                 </span>
               </h1>
               
-              <p className="mt-4 font-sans text-base sm:text-lg text-white/85 max-w-xl leading-relaxed">
+              <p className="mt-4 font-sans text-base sm:text-lg text-slate-700 max-w-xl leading-relaxed">
                 A tradicional prova de 5 km em comemoração aos 63 anos de emancipação política de Lajes Pintadas/RN. Vias asfaltadas e sinalizadas, cronometragem eletrônica por chip e premiação em troféus para atletas locais e visitantes.
               </p>
             </div>
 
             {/* Live Countdown Clock */}
             <div className="pt-2">
-              <span className="font-sans text-[11px] font-bold uppercase tracking-widest text-[#FF9D42] block mb-2">
+              <span className="font-sans text-[11px] font-bold uppercase tracking-widest text-orange-700 block mb-2">
                 Contagem Regressiva para a Largada (26/12 às 06:00h)
               </span>
               <div className="grid grid-cols-4 gap-2 sm:gap-3 max-w-md">
-                <div className="p-3 bg-black/40 backdrop-blur-md border border-white/15 rounded-[4px] text-center">
-                  <span className="font-condensed font-extrabold text-2xl sm:text-3xl text-white block leading-none">
+                <div className="p-3 bg-white/90 backdrop-blur-md border border-slate-200/90 shadow-sm rounded-xl text-center">
+                  <span className="font-condensed font-extrabold text-2xl sm:text-3xl text-slate-950 block leading-none">
                     {timeLeft.days}
                   </span>
-                  <span className="font-sans text-[10px] sm:text-[11px] uppercase tracking-wider text-white/60 mt-1 block">
+                  <span className="font-sans text-[10px] sm:text-[11px] uppercase tracking-wider text-slate-500 mt-1 block font-semibold">
                     Dias
                   </span>
                 </div>
-                <div className="p-3 bg-black/40 backdrop-blur-md border border-white/15 rounded-[4px] text-center">
-                  <span className="font-condensed font-extrabold text-2xl sm:text-3xl text-white block leading-none">
+                <div className="p-3 bg-white/90 backdrop-blur-md border border-slate-200/90 shadow-sm rounded-xl text-center">
+                  <span className="font-condensed font-extrabold text-2xl sm:text-3xl text-slate-950 block leading-none">
                     {String(timeLeft.hours).padStart(2, '0')}
                   </span>
-                  <span className="font-sans text-[10px] sm:text-[11px] uppercase tracking-wider text-white/60 mt-1 block">
+                  <span className="font-sans text-[10px] sm:text-[11px] uppercase tracking-wider text-slate-500 mt-1 block font-semibold">
                     Horas
                   </span>
                 </div>
-                <div className="p-3 bg-black/40 backdrop-blur-md border border-white/15 rounded-[4px] text-center">
-                  <span className="font-condensed font-extrabold text-2xl sm:text-3xl text-white block leading-none">
+                <div className="p-3 bg-white/90 backdrop-blur-md border border-slate-200/90 shadow-sm rounded-xl text-center">
+                  <span className="font-condensed font-extrabold text-2xl sm:text-3xl text-slate-950 block leading-none">
                     {String(timeLeft.minutes).padStart(2, '0')}
                   </span>
-                  <span className="font-sans text-[10px] sm:text-[11px] uppercase tracking-wider text-white/60 mt-1 block">
+                  <span className="font-sans text-[10px] sm:text-[11px] uppercase tracking-wider text-slate-500 mt-1 block font-semibold">
                     Min
                   </span>
                 </div>
-                <div className="p-3 bg-black/40 backdrop-blur-md border border-white/15 rounded-[4px] text-center">
-                  <span className="font-condensed font-extrabold text-2xl sm:text-3xl text-[#FF7A00] block leading-none">
+                <div className="p-3 bg-white/90 backdrop-blur-md border border-slate-200/90 shadow-sm rounded-xl text-center">
+                  <span className="font-condensed font-extrabold text-2xl sm:text-3xl text-orange-600 block leading-none">
                     {String(timeLeft.seconds).padStart(2, '0')}
                   </span>
-                  <span className="font-sans text-[10px] sm:text-[11px] uppercase tracking-wider text-white/60 mt-1 block">
+                  <span className="font-sans text-[10px] sm:text-[11px] uppercase tracking-wider text-slate-500 mt-1 block font-semibold">
                     Seg
                   </span>
                 </div>
@@ -136,51 +136,51 @@ export const Hero: React.FC<HeroProps> = ({
 
           {/* Right Column (5 cols): Fast Registration Checkout Card */}
           <div className="lg:col-span-5">
-            <div className="p-6 sm:p-8 bg-[#0D1626]/90 backdrop-blur-xl border border-white/20 rounded-[4px] shadow-2xl relative overflow-hidden">
+            <div className="p-6 sm:p-8 bg-white/95 backdrop-blur-xl border border-slate-200/90 rounded-2xl shadow-xl shadow-slate-200/60 relative overflow-hidden">
               {/* Top Accent Orange Border */}
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#FF7A00] via-[#FFAE34] to-[#FF5500]" />
+              <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600" />
 
               <div className="flex items-center justify-between mb-4">
-                <span className="font-sans text-xs font-bold uppercase tracking-wider text-[#FF9D42] bg-orange-500/15 px-2.5 py-1 rounded-[2px] border border-orange-500/30">
+                <span className="font-sans text-xs font-bold uppercase tracking-wider text-orange-700 bg-orange-50 px-2.5 py-1 rounded-full border border-orange-200">
                   1º Lote Oficial
                 </span>
-                <span className="font-sans text-xs text-white/70 flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5 text-[#FF9D42]" />
+                <span className="font-sans text-xs text-slate-500 flex items-center gap-1 font-semibold">
+                  <Clock className="w-3.5 h-3.5 text-orange-600" />
                   <span>Largada 06:00h</span>
                 </span>
               </div>
 
               {/* Price */}
               <div className="mb-4">
-                <span className="font-sans text-[11px] text-white/60 uppercase font-semibold block">
+                <span className="font-sans text-[11px] text-slate-500 uppercase font-bold block">
                   Valor da Inscrição
                 </span>
                 <div className="flex items-baseline gap-2 mt-0.5">
-                  <span className="font-condensed font-extrabold text-4xl sm:text-5xl text-white leading-none">
+                  <span className="font-condensed font-extrabold text-4xl sm:text-5xl text-slate-950 leading-none">
                     {formattedBasePrice}
                   </span>
-                  <span className="font-sans text-xs text-white/60">
+                  <span className="font-sans text-xs text-slate-500 font-semibold">
                     (+ 10% taxa de serviço)
                   </span>
                 </div>
               </div>
 
               {/* Kit Details */}
-              <div className="space-y-2 py-4 border-y border-white/10 text-xs font-sans text-white/85">
+              <div className="space-y-2.5 py-4 border-y border-slate-100 text-xs font-sans text-slate-700">
                 <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
                   <span>Camisa Dry-Fit Oficial Laranja (Tecido Esportivo)</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
                   <span>Chip de Cronometragem Eletrônica Descartável</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
                   <span>Número de Peito Personalizado com 4 Alfinetes</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Award className="w-4 h-4 text-[#FFAE34] shrink-0" />
+                  <Award className="w-4 h-4 text-amber-500 shrink-0" />
                   <span>Medalha Finisher em Metal para 100% dos Concluintes</span>
                 </div>
               </div>
@@ -191,7 +191,7 @@ export const Hero: React.FC<HeroProps> = ({
                   <button
                     type="button"
                     onClick={onOpenRegister}
-                    className="w-full py-4 px-6 font-sans font-bold text-sm sm:text-base text-[#070D18] bg-gradient-to-r from-[#FF7A00] to-[#FF5500] hover:from-[#FF8D24] hover:to-[#FF681A] rounded-[2px] transition transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 uppercase tracking-wide shadow-lg shadow-orange-600/30"
+                    className="w-full py-4 px-6 font-sans font-bold text-sm sm:text-base text-white bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-600 rounded-xl transition transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 uppercase tracking-wide shadow-lg shadow-orange-600/25"
                   >
                     <Zap className="w-4 h-4 fill-current" />
                     <span>Garantir Minha Vaga</span>
@@ -200,24 +200,28 @@ export const Hero: React.FC<HeroProps> = ({
                 ) : (
                   <button
                     disabled
-                    className="w-full py-4 px-6 font-sans font-medium text-sm text-white/40 bg-white/10 rounded-[2px] cursor-not-allowed uppercase"
+                    className="w-full py-4 px-6 font-sans font-bold text-sm text-slate-400 bg-slate-100 rounded-xl cursor-not-allowed flex items-center justify-center gap-2 uppercase"
                   >
-                    Inscrições Indisponíveis
+                    <span>Inscrições em Breve</span>
                   </button>
                 )}
 
                 <button
                   type="button"
                   onClick={onOpenLookup}
-                  className="w-full py-2.5 px-4 font-sans font-medium text-xs text-white/80 hover:text-white hover:bg-white/5 border border-white/15 rounded-[2px] transition flex items-center justify-center gap-2"
+                  className="w-full py-2.5 px-4 font-sans font-bold text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-slate-200 rounded-xl transition flex items-center justify-center gap-2"
                 >
-                  <Ticket className="w-3.5 h-3.5 text-[#FF9D42]" />
-                  <span>Já se inscreveu? Consultar comprovante</span>
+                  <Ticket className="w-3.5 h-3.5 text-orange-600" />
+                  <span>Já me inscrevi • Consultar inscrição</span>
                 </button>
               </div>
 
-              <div className="mt-4 pt-3 border-t border-white/10 text-center text-[11px] font-sans text-white/50">
-                Pagamento seguro via Pix com reserva atômica de 30 minutos
+              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] font-sans text-slate-500">
+                <span className="flex items-center gap-1">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Ambiente Seguro</span>
+                </span>
+                <span>Pix ou Cartão 1x</span>
               </div>
             </div>
           </div>
@@ -225,39 +229,39 @@ export const Hero: React.FC<HeroProps> = ({
         </div>
 
         {/* BOTTOM TELEMETRY HIGHLIGHTS BAR */}
-        <div className="mt-14 pt-8 border-t border-white/15 grid grid-cols-2 sm:grid-cols-4 gap-4 text-white">
-          <div className="p-3 bg-white/5 border border-white/10 rounded-[2px]">
-            <span className="font-sans text-[10px] text-[#FF9D42] uppercase font-bold tracking-wider block">
+        <div className="mt-14 pt-8 border-t border-slate-200/80 grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="p-3 bg-white/80 backdrop-blur-sm border border-slate-200 shadow-sm rounded-xl">
+            <span className="font-sans text-[10px] text-orange-700 uppercase font-bold tracking-wider block">
               Distância Oficial
             </span>
-            <span className="font-condensed font-extrabold text-2xl sm:text-3xl text-white">
+            <span className="font-condensed font-extrabold text-2xl sm:text-3xl text-slate-900">
               5 KM Aferidos
             </span>
           </div>
           
-          <div className="p-3 bg-white/5 border border-white/10 rounded-[2px]">
-            <span className="font-sans text-[10px] text-[#FF9D42] uppercase font-bold tracking-wider block">
+          <div className="p-3 bg-white/80 backdrop-blur-sm border border-slate-200 shadow-sm rounded-xl">
+            <span className="font-sans text-[10px] text-orange-700 uppercase font-bold tracking-wider block">
               Largada Pontual
             </span>
-            <span className="font-condensed font-extrabold text-2xl sm:text-3xl text-white">
+            <span className="font-condensed font-extrabold text-2xl sm:text-3xl text-slate-900">
               06:00h Manhã
             </span>
           </div>
 
-          <div className="p-3 bg-white/5 border border-white/10 rounded-[2px]">
-            <span className="font-sans text-[10px] text-[#FF9D42] uppercase font-bold tracking-wider block">
+          <div className="p-3 bg-white/80 backdrop-blur-sm border border-slate-200 shadow-sm rounded-xl">
+            <span className="font-sans text-[10px] text-orange-700 uppercase font-bold tracking-wider block">
               Concentração
             </span>
-            <span className="font-condensed font-extrabold text-xl sm:text-2xl text-white truncate block">
+            <span className="font-condensed font-extrabold text-xl sm:text-2xl text-slate-900 truncate block">
               Praça Monsenhor Freitas
             </span>
           </div>
 
-          <div className="p-3 bg-white/5 border border-white/10 rounded-[2px]">
-            <span className="font-sans text-[10px] text-[#FF9D42] uppercase font-bold tracking-wider block">
+          <div className="p-3 bg-white/80 backdrop-blur-sm border border-slate-200 shadow-sm rounded-xl">
+            <span className="font-sans text-[10px] text-orange-700 uppercase font-bold tracking-wider block">
               Premiação
             </span>
-            <span className="font-condensed font-extrabold text-xl sm:text-2xl text-white">
+            <span className="font-condensed font-extrabold text-xl sm:text-2xl text-slate-900">
               Troféus & Medalhas
             </span>
           </div>

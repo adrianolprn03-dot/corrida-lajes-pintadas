@@ -516,7 +516,7 @@ class StorageService {
           paymentMethod: submission.paymentMethod,
           baseAmountCents: pricing.baseAmountCents,
           processingFeeCents: pricing.feeCents,
-          totalAmountCents: data.total_amount_cents || pricing.totalAmountCents,
+          totalAmountCents: pricing.totalAmountCents, // Sempre R$ 66,00 (R$ 60,00 base + 10% de taxa)
           asaasPaymentId: data.asaas_payment_id,
           asaasInvoiceUrl: data.invoice_url,
           asaasPixQrCode: data.pix_qr_code,

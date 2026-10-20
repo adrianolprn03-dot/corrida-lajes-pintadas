@@ -88,11 +88,38 @@
 }
 
 @media print {
-  body {
-    background: white !important;
-    color: black !important;
+  @page {
+    size: A4 portrait;
+    margin: 8mm 12mm;
   }
-  header, footer, nav, button, .no-print {
+
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Ocultar navegação, painéis e elementos da aplicação na impressão padrão */
+  header, footer, nav, button, .no-print, [role="dialog"]:not(:has(#comprovante-atendimento-presencial)) {
     display: none !important;
+  }
+
+  /* Se o comprovante presencial for impresso pela janela principal */
+  body:has(#comprovante-atendimento-presencial) > *:not(:has(#comprovante-atendimento-presencial)) {
+    display: none !important;
+  }
+
+  #comprovante-atendimento-presencial {
+    border: none !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    page-break-inside: avoid !important;
+    page-break-after: avoid !important;
   }
 }

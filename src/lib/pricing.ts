@@ -28,9 +28,12 @@ export function calculatePricing(
   paymentMethod: PaymentMethod,
   config: FeeConfig = DEFAULT_FEE_CONFIG
 ): PricingBreakdown {
-  const baseCents = config.basePriceCents;
-  const feePercent = config.feePercent ?? 0.10;
-  const feeCents = Math.round(baseCents * feePercent); // R$ 6,00 para R$ 60,00
+  const baseCents = config.basePriceCents || 6000;
+  // Garantir que a taxa percentual padrão seja rigorosamente 10% (0.10)
+  const feePercent = (config.feePercent && config.feePercent > 0) ? config.feePercent : 0.10;
+  const feeCents = config.pixFixedFeeCents && config.pixFixedFeeCents > 0 && config.pixFixedFeeCents !== 99 && config.pixFixedFeeCents !== 49
+    ? config.pixFixedFeeCents
+    : Math.round(baseCents * feePercent); // R$ 6,00 para R$ 60,00
   const totalCents = baseCents + feeCents; // R$ 66,00
 
   const paymentLabel = paymentMethod === 'PIX' ? 'Pix' : 'Cartão';
@@ -45,8 +48,9 @@ export function calculatePricing(
 }
 
 export function formatCentsToBRL(cents: number): string {
+  const val = Number.isFinite(cents) && cents > 0 ? cents : 6600;
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
     currency: 'BRL',
-  }).format(cents / 100);
+  }).format(val / 100);
 }

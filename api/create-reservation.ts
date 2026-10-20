@@ -214,8 +214,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       };
     }
 
+    // Garantir que os valores oficiais (R$ 60,00 base + 10% taxa = R$ 66,00 total) prevaleçam
+    reservationResult.base_amount_cents = pricing.baseAmountCents;
+    reservationResult.fee_cents = pricing.feeCents;
+    reservationResult.total_amount_cents = pricing.totalAmountCents;
+
     // 5. Integração com Gateway Asaas (com conciliação prévia por CPF e por Protocolo)
-    const totalFloat = reservationResult.total_amount_cents / 100;
+    const totalFloat = pricing.totalAmountCents / 100; // Rigorosamente R$ 66,00
     
     // 5.1 Conciliar / obter cliente Asaas sem duplicar
     const customer = await asaasClient.getOrCreateCustomer({
@@ -269,6 +274,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             asaas_invoice_url: payment.invoiceUrl,
             asaas_pix_qr_code: pixQr,
             asaas_pix_copy_paste: pixCopy,
+            base_amount_cents: pricing.baseAmountCents,
+            processing_fee_cents: pricing.feeCents,
+            total_amount_cents: pricing.totalAmountCents,
             channel: registrationChannel,
             document_verification_status: documentVerificationStatus || (originType === 'CASA' ? 'APROVADO' : 'PENDENTE'),
             document_type_presented: documentTypePresented || null,

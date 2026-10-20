@@ -98,19 +98,22 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
   const [isCheckingPayment, setIsCheckingPayment] = useState(false);
   const [paymentCheckMessage, setPaymentCheckMessage] = useState<string | null>(null);
 
-  // Pricing calculations
+  // Pricing calculations: base R$ 60,00 + 10% de taxa de serviço (R$ 6,00) = R$ 66,00
+  const baseCents = settings?.basePriceCents || 6000;
+  const feeCents = Math.round(baseCents * 0.10); // R$ 6,00
+  const totalCents = baseCents + feeCents; // R$ 66,00
+
   const pixPricing = calculatePricing('PIX', {
-    basePriceCents: settings.basePriceCents,
-    pixFixedFeeCents: settings.asaasPixFixedFeeCents,
-    creditFixedFeeCents: settings.asaasCreditFixedFeeCents,
-    creditPercentFee: settings.asaasCreditPercentFee,
+    basePriceCents: baseCents,
+    feePercent: 0.10,
+    pixFixedFeeCents: feeCents,
   });
 
   const cardPricing = calculatePricing('CREDIT_CARD', {
-    basePriceCents: settings.basePriceCents,
-    pixFixedFeeCents: settings.asaasPixFixedFeeCents,
-    creditFixedFeeCents: settings.asaasCreditFixedFeeCents,
-    creditPercentFee: settings.asaasCreditPercentFee,
+    basePriceCents: baseCents,
+    feePercent: 0.10,
+    creditFixedFeeCents: feeCents,
+    creditPercentFee: 0.10,
   });
 
   // Selected pricing for stage 4
@@ -357,7 +360,293 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
   };
 
   const handlePrintReceipt = () => {
-    window.print();
+    // Criar um iframe oculto temporário exclusivo para impressão isolada e sem páginas extras
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow?.document;
+    if (!doc) {
+      window.print();
+      return;
+    }
+
+    const reg = createdRegistration;
+    const athleteName = reg?.athlete?.fullName || formData.fullName;
+    const athleteCpf = maskCPF(reg?.athlete?.cpf || formData.cpf);
+    const athleteBirth = formatDateBR(reg?.athlete?.birthDate || formData.birthDate);
+    const athleteGender = (reg?.gender || formData.gender) === 'FEMININO' ? 'Feminino' : 'Masculino';
+    const athleteShirt = reg?.shirtSize || formData.shirtSize;
+    const protocolNumber = reg?.protocol || 'LP5-PRESENCIAL';
+    const createdAtStr = formatDateTimeBR(reg?.createdAt || new Date().toISOString());
+    const docPresented = reg?.documentTypePresented || documentTypePresented;
+    const isPaid = reg?.status === 'CONFIRMED';
+    const criterionTitle =
+      casaProofType === 'NATURAL_E_RESIDENTE'
+        ? 'Natural e Residente'
+        : casaProofType === 'RESIDENTE'
+        ? 'Morador Atual'
+        : 'Natural de Lajes Pintadas';
+
+    doc.open();
+    doc.write(`
+      <!DOCTYPE html>
+      <html lang="pt-BR">
+      <head>
+        <meta charset="utf-8" />
+        <title>Comprovante de Atendimento Presencial - ${protocolNumber}</title>
+        <style>
+          @page {
+            size: A4 portrait;
+            margin: 10mm 14mm 10mm 14mm;
+          }
+          * {
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            color: #0f172a;
+            background: #ffffff;
+            margin: 0;
+            padding: 0;
+            font-size: 11px;
+            line-height: 1.4;
+          }
+          .comprovante-wrapper {
+            width: 100%;
+            max-width: 100%;
+            page-break-inside: avoid;
+            page-break-after: avoid;
+          }
+          .header-table {
+            width: 100%;
+            border-bottom: 2px solid #0f172a;
+            padding-bottom: 8px;
+            margin-bottom: 10px;
+          }
+          .brasao {
+            width: 50px;
+            height: 50px;
+            object-fit: contain;
+          }
+          .title-box {
+            background-color: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 6px 10px;
+            text-align: center;
+            margin-bottom: 10px;
+          }
+          .section-box {
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 8px 10px;
+            margin-bottom: 8px;
+            background: #ffffff;
+          }
+          .section-bg {
+            background-color: #f8fafc;
+          }
+          .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+          }
+          .label {
+            font-size: 9px;
+            text-transform: uppercase;
+            color: #64748b;
+            font-weight: bold;
+            display: block;
+            margin-bottom: 1px;
+          }
+          .value {
+            font-size: 11px;
+            color: #0f172a;
+            font-weight: bold;
+          }
+          .status-box {
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-top: 6px;
+            font-weight: bold;
+            font-size: 11px;
+          }
+          .status-pending {
+            background-color: #fef3c7;
+            border: 1px solid #f59e0b;
+            color: #92400e;
+          }
+          .status-confirmed {
+            background-color: #d1fae5;
+            border: 1px solid #10b981;
+            color: #065f46;
+          }
+          .signatures {
+            margin-top: 24px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            text-align: center;
+          }
+          .sign-line {
+            border-top: 1px solid #475569;
+            padding-top: 4px;
+            font-size: 11px;
+            font-weight: bold;
+          }
+          .sign-sub {
+            font-size: 9px;
+            color: #64748b;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="comprovante-wrapper">
+          <table class="header-table">
+            <tr>
+              <td style="width: 55px; vertical-align: middle;">
+                <img src="/assets/brasao_lajes.png" class="brasao" alt="Brasão" />
+              </td>
+              <td style="vertical-align: middle; padding-left: 10px;">
+                <div style="font-size: 9px; font-weight: bold; color: #64748b; letter-spacing: 0.5px;">ESTADO DO RIO GRANDE DO NORTE</div>
+                <div style="font-size: 13px; font-weight: 900; color: #0f172a;">PREFEITURA MUNICIPAL DE LAJES PINTADAS</div>
+                <div style="font-size: 11px; font-weight: bold; color: #ea580c;">5ª Corrida de Emancipação Política — 26/12/2026</div>
+              </td>
+              <td style="vertical-align: middle; text-align: right;">
+                <div class="label">Protocolo Oficial</div>
+                <div style="font-family: monospace; font-size: 15px; font-weight: 900; color: #0f172a;">${protocolNumber}</div>
+                <div style="font-size: 9px; color: #64748b;">${createdAtStr}</div>
+              </td>
+            </tr>
+          </table>
+
+          <div class="title-box">
+            <strong style="font-size: 11px; text-transform: uppercase; color: #0f172a; letter-spacing: 0.5px;">
+              COMPROVANTE OFICIAL DE ATENDIMENTO PRESENCIAL — CATEGORIA CASA
+            </strong>
+            <div style="font-size: 9px; color: #64748b; margin-top: 1px;">
+              Emitido na sede da Prefeitura Municipal de Lajes Pintadas/RN • Atendimento Presencial
+            </div>
+          </div>
+
+          <div class="section-box">
+            <div class="grid-3">
+              <div>
+                <span class="label">Nome do Atleta</span>
+                <span class="value">${athleteName}</span>
+              </div>
+              <div>
+                <span class="label">CPF (Protegido LGPD)</span>
+                <span class="value" style="font-family: monospace;">${athleteCpf}</span>
+              </div>
+              <div>
+                <span class="label">Data de Nascimento</span>
+                <span class="value">${athleteBirth}</span>
+              </div>
+            </div>
+            <div class="grid-3" style="margin-top: 8px; padding-top: 6px; border-top: 1px solid #f1f5f9;">
+              <div>
+                <span class="label">Categoria Oficial</span>
+                <span class="value">Casa — Lajespintadense (${athleteGender})</span>
+              </div>
+              <div>
+                <span class="label">Camisa Oficial</span>
+                <span class="value">Tamanho ${athleteShirt} (Laranja Dry-Fit)</span>
+              </div>
+              <div>
+                <span class="label">Canal de Inscrição</span>
+                <span class="value" style="color: #c2410c;">Presencial — Prefeitura</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-box section-bg">
+            <div style="font-size: 10px; font-weight: bold; text-transform: uppercase; color: #334155; margin-bottom: 4px;">
+              Enquadramento e Conferência Presencial do Vínculo
+            </div>
+            <div class="grid-3">
+              <div>
+                <span class="label">Critério Regimental:</span>
+                <span class="value" style="font-size: 10px;">${criterionTitle}</span>
+              </div>
+              <div>
+                <span class="label">Documento Apresentado:</span>
+                <span class="value" style="font-size: 10px;">${docPresented}</span>
+              </div>
+              <div>
+                <span class="label">Servidor Responsável:</span>
+                <span class="value" style="font-size: 10px;">${currentUser}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-box" style="border: 2px solid #cbd5e1;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="font-size: 10px; font-weight: bold; text-transform: uppercase; color: #475569; padding: 2px 0;">Valor Base da Inscrição:</td>
+                <td style="text-align: right; font-weight: bold; font-size: 11px;">R$ 60,00</td>
+              </tr>
+              <tr>
+                <td style="font-size: 10px; font-weight: bold; text-transform: uppercase; color: #475569; padding: 2px 0;">Taxa de Processamento de Serviço (10%):</td>
+                <td style="text-align: right; font-weight: bold; font-size: 11px;">R$ 6,00</td>
+              </tr>
+              <tr style="border-top: 1px solid #cbd5e1;">
+                <td style="font-size: 12px; font-weight: 900; text-transform: uppercase; color: #0f172a; padding: 4px 0 0 0;">Total da Inscrição:</td>
+                <td style="text-align: right; font-size: 13px; font-weight: 900; color: #ea580c; padding: 4px 0 0 0;">R$ 66,00</td>
+              </tr>
+            </table>
+
+            <div style="margin-top: 6px; padding-top: 4px; border-top: 1px solid #e2e8f0;">
+              ${
+                isPaid
+                  ? `<div class="status-box status-confirmed">✓ Inscrição confirmada e quitada com sucesso pelo Asaas.</div>`
+                  : `<div class="status-box status-pending">
+                      ⏱ Cadastro realizado. Inscrição aguardando confirmação do pagamento.
+                      <div style="font-size: 9px; font-weight: normal; margin-top: 2px; color: #78350f;">
+                        A vaga e o kit estão condicionados à liquidação bancária da cobrança emitida via Asaas.
+                      </div>
+                    </div>`
+              }
+            </div>
+          </div>
+
+          <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px; text-align: center; font-size: 9px; color: #64748b; margin-top: 6px;">
+            Acompanhamento online da inscrição pelo atleta: <strong>https://corrida-lajes-pintadas-rn.vercel.app</strong> informando o CPF e o protocolo acima.
+          </div>
+
+          <div class="signatures">
+            <div>
+              <div class="sign-line">${currentUser}</div>
+              <div class="sign-sub">Servidor Autorizado • Prefeitura de Lajes Pintadas</div>
+            </div>
+            <div>
+              <div class="sign-line">${athleteName}</div>
+              <div class="sign-sub">Assinatura do Atleta Participante</div>
+            </div>
+          </div>
+        </div>
+      </body>
+      </html>
+    `);
+    doc.close();
+
+    iframe.contentWindow?.focus();
+    setTimeout(() => {
+      iframe.contentWindow?.print();
+      setTimeout(() => {
+        if (document.body.contains(iframe)) {
+          document.body.removeChild(iframe);
+        }
+      }, 1000);
+    }, 400);
   };
 
   return (
@@ -1481,10 +1770,18 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
             </div>
 
             {/* Quadro Financeiro e Status Real */}
-            <div className="p-4 rounded-xl border-2 border-slate-300 space-y-3">
+            <div className="p-4 rounded-xl border-2 border-slate-300 space-y-2.5 text-xs">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-600 font-bold uppercase">Valor da Inscrição:</span>
-                <span className="font-mono font-black text-slate-900 text-sm">
+                <span className="text-slate-600 font-bold uppercase">Inscrição Oficial 5ª Edição:</span>
+                <span className="font-bold text-slate-800 text-xs">R$ 60,00</span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-slate-600 font-bold uppercase">Taxa de Processamento de Serviço (10%):</span>
+                <span className="font-bold text-slate-800 text-xs">R$ 6,00</span>
+              </div>
+              <div className="flex items-center justify-between pt-1.5 border-t border-slate-200">
+                <span className="text-slate-900 font-black uppercase text-xs">Total da Inscrição:</span>
+                <span className="font-mono font-black text-orange-600 text-sm">
                   {formatCentsToBRL(createdRegistration?.totalAmountCents || activePricing.totalAmountCents)}
                 </span>
               </div>
