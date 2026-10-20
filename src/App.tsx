@@ -2,7 +2,6 @@ import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
 import { ShirtShowcase } from './components/ShirtShowcase';
-import { CourseElevationSection } from './components/CourseElevationSection';
 import { ScheduleSection } from './components/ScheduleSection';
 import { CategoriesSection } from './components/CategoriesSection';
 import { EventOverview } from './components/EventOverview';
@@ -122,7 +121,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#FCFBF7] text-[#101D2C] selection:bg-[#F97316] selection:text-[#101D2C] relative font-sans">
+    <div className="min-h-screen flex flex-col bg-[#070D18] text-white selection:bg-[#FF7A00] selection:text-[#070D18] relative font-sans">
       {/* Toast Alert */}
       {toast && (
         <div className="fixed bottom-6 right-6 z-50 animate-in fade-in slide-in-from-bottom-5 duration-200">
@@ -161,9 +160,6 @@ export default function App() {
           onOpenAdmin={() => setIsAdminOpen(true)}
           availableCapacity={metrics?.availableCapacity}
         />
-
-        {/* Interactive Course Map, SVG Elevation Profile & Pace Calculator */}
-        <CourseElevationSection onOpenRegister={handleOpenRegister} />
 
         {/* Orange Shirt Presentation & Live Stock */}
         <ShirtShowcase 

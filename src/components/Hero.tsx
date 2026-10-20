@@ -1,5 +1,5 @@
-import React from 'react';
-import { ArrowRight, MapPin, Clock, ShieldCheck, Ticket } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowRight, MapPin, Clock, ShieldCheck, Ticket, Zap, Award, Flame, Calendar } from 'lucide-react';
 import { EventSettings } from '../types';
 import { formatCentsToBRL } from '../lib/pricing';
 
@@ -15,157 +15,264 @@ export const Hero: React.FC<HeroProps> = ({
   settings,
   onOpenRegister,
   onOpenLookup,
+  availableCapacity,
 }) => {
   const formattedBasePrice = formatCentsToBRL(settings.basePriceCents);
 
+  // Live countdown to 2026-12-26 06:00:00 (Local time Lajes Pintadas / America/Fortaleza -03:00)
+  const [timeLeft, setTimeLeft] = useState<{
+    days: number;
+    hours: number;
+    minutes: number;
+    seconds: number;
+  }>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+
+  useEffect(() => {
+    const targetDate = new Date('2026-12-26T06:00:00-03:00').getTime();
+
+    const updateTimer = () => {
+      const now = new Date().getTime();
+      const difference = targetDate - now;
+
+      if (difference > 0) {
+        setTimeLeft({
+          days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+          hours: Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+          minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
+          seconds: Math.floor((difference % (1000 * 60)) / 1000),
+        });
+      }
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
-    <section className="bg-[#FCFBF7] text-[#101D2C] border-b border-[rgba(22,35,53,0.14)]">
-      <div className="max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-12 pt-8 sm:pt-14 pb-12 sm:pb-16">
+    <section className="relative min-h-[720px] lg:min-h-[820px] flex items-center overflow-hidden border-b border-white/10 text-white bg-[#070D18]">
+      {/* BACKGROUND IMAGE WITH CINEMATIC SPORTS OVERLAYS */}
+      <div className="absolute inset-0 z-0">
+        <img
+          src="/assets/corredores_banner.webp"
+          alt="Pelotão de corredores na 5ª Corrida de Emancipação"
+          className="w-full h-full object-cover object-center filter brightness-[0.78] contrast-[1.12]"
+          loading="eager"
+          decoding="async"
+        />
+        {/* Layer 1: Left-to-right gradient for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#070D18]/98 via-[#070D18]/90 to-[#070D18]/40 sm:to-transparent" />
         
-        {/* ABERTURA: Dominant Title (Left) + Typographic Date (Right) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-end mb-10 sm:mb-14">
+        {/* Layer 2: Top and bottom vignette */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#070D18] via-transparent to-[#070D18]/80" />
+        
+        {/* Layer 3: Warm subtle orange athletic glow on top-left */}
+        <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-orange-600/15 rounded-full blur-[120px] pointer-events-none" />
+      </div>
+
+      {/* CONTENT LAYER */}
+      <div className="relative z-10 w-full max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-12 py-16 sm:py-24">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
           
-          {/* Left Column (8 cols): Event Label + Monumental Headline */}
-          <div className="lg:col-span-8">
-            <div className="inline-flex items-center gap-2 font-sans text-xs font-semibold uppercase tracking-widest text-[#E5640E] mb-3">
-              <span>5ª Corrida de Emancipação Política</span>
-              <span>•</span>
-              <span>Lajes Pintadas / RN</span>
-            </div>
-
-            <h1 className="font-condensed font-extrabold text-[clamp(3.8rem,7.5vw,7.4rem)] uppercase tracking-[-0.02em] leading-[0.88] text-[#101D2C]">
-              A CIDADE<br />
-              <span className="text-[#E5640E]">É SUA PISTA.</span>
-            </h1>
-
-            <p className="mt-4 font-sans text-base sm:text-lg text-[#5D6672] max-w-2xl leading-relaxed">
-              Percurso oficial de 5 km pelas ruas de Lajes Pintadas/RN. Vias totalmente pavimentadas e sinalizadas, cronometragem eletrônica por chip e premiação em troféus para atletas da casa e visitantes de todo o estado.
-            </p>
-          </div>
-
-          {/* Right Column (4 cols): Typographic Date Composition */}
-          <div className="lg:col-span-4 flex lg:justify-end">
-            <div className="w-full lg:w-auto p-5 sm:p-6 border border-[rgba(22,35,53,0.14)] bg-white/60 rounded-[2px] flex items-center gap-5">
-              <span className="font-condensed font-extrabold text-7xl sm:text-8xl text-[#101D2C] leading-none">
-                26
-              </span>
-              <div className="flex flex-col">
-                <span className="font-condensed font-extrabold text-2xl uppercase text-[#101D2C] leading-none">
-                  DEZEMBRO
-                </span>
-                <span className="font-sans font-medium text-xs text-[#5D6672] uppercase tracking-wider mt-1">
-                  2026 • Sábado
-                </span>
-                <span className="font-sans font-bold text-xs text-[#E5640E] uppercase tracking-wider mt-1">
-                  Largada 06:00h
-                </span>
-                <span className="font-sans text-[11px] text-[#5D6672] mt-0.5">
-                  Praça Monsenhor Freitas
-                </span>
-              </div>
-            </div>
-          </div>
-
-        </div>
-
-        {/* FOTOGRAFIA PANORÂMICA: Wide Running Image */}
-        <div className="relative w-full h-[275px] sm:h-[365px] rounded-[2px] overflow-hidden border border-[rgba(22,35,53,0.14)] mb-0 group">
-          <img
-            src="/assets/corredores_banner.webp"
-            alt="Corredores em percurso de rua"
-            className="w-full h-full object-cover object-center brightness-[0.92] contrast-[1.05]"
-            loading="eager"
-            decoding="async"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#101D2C]/80 via-transparent to-black/20 pointer-events-none" />
-
-          {/* Overlaid 5 KM Monumental Typography */}
-          <div className="absolute bottom-5 left-5 sm:bottom-8 sm:left-8 z-10 text-white">
-            <span className="font-sans text-[11px] sm:text-xs uppercase font-bold tracking-widest text-[#FF872E] block mb-1">
-              Distância Oficial
-            </span>
-            <div className="font-condensed font-extrabold text-5xl sm:text-7xl uppercase leading-none tracking-tight">
-              5 KM <span className="text-2xl sm:text-3xl font-bold font-sans tracking-normal opacity-90">Aferidos</span>
-            </div>
-          </div>
-
-          <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-10 hidden sm:flex items-center gap-2 px-3 py-1.5 bg-[#101D2C]/85 backdrop-blur-sm border border-white/20 text-white text-xs font-sans font-medium rounded-[2px]">
-            <ShieldCheck className="w-4 h-4 text-[#FF872E]" />
-            <span>Circuito 100% Fechado</span>
-          </div>
-        </div>
-
-        {/* FAIXA DE INSCRIÇÃO: Horizontal on Desktop, Grid on Mobile */}
-        <div className="border-x border-b border-[rgba(22,35,53,0.14)] bg-white p-5 sm:p-7 rounded-b-[2px]">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+          {/* Left Column (7 cols): Main Typography & Event Information */}
+          <div className="lg:col-span-7 space-y-6">
             
-            {/* Price Column (3 cols) */}
-            <div className="md:col-span-3 border-b md:border-b-0 md:border-r border-[rgba(22,35,53,0.14)] pb-4 md:pb-0 md:pr-6">
-              <span className="font-sans text-[11px] font-bold uppercase tracking-wider text-[#5D6672] block">
-                Valor da Inscrição
+            {/* Top Institutional Badge */}
+            <div className="flex flex-wrap items-center gap-2.5">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-sans font-bold uppercase tracking-wider bg-orange-500/20 text-[#FF9D42] border border-orange-500/40 backdrop-blur-md">
+                <Flame className="w-3.5 h-3.5 text-[#FF7A00]" />
+                <span>5ª Edição Oficial • 2026</span>
               </span>
-              <div className="flex items-baseline gap-2 mt-0.5">
-                <span className="font-condensed font-extrabold text-3xl sm:text-4xl text-[#101D2C] leading-none">
-                  {formattedBasePrice}
-                </span>
-                <span className="font-sans text-xs text-[#5D6672]">
-                  (+ taxa Asaas)
-                </span>
-              </div>
-              <span className="font-sans text-[11px] font-semibold text-[#E5640E] mt-1 block">
-                1º Lote Oficial Disponível
+
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-sans font-medium text-white/80 bg-white/10 border border-white/15 backdrop-blur-md">
+                <MapPin className="w-3 h-3 text-[#FF9D42]" />
+                <span>Lajes Pintadas • RN</span>
               </span>
             </div>
 
-            {/* Essential Conditions Column (4 cols) */}
-            <div className="md:col-span-4 border-b md:border-b-0 md:border-r border-[rgba(22,35,53,0.14)] pb-4 md:pb-0 md:pr-6">
-              <span className="font-sans text-[11px] font-bold uppercase tracking-wider text-[#5D6672] block mb-1">
-                Kit Oficial Incluso
-              </span>
-              <p className="font-sans text-xs sm:text-sm text-[#101D2C] leading-snug">
-                Camisa Dry-Fit Oficial Laranja, Chip de Cronometragem Eletrônica, Número de Peito e Medalha Finisher de Metal para todos os concluintes.
+            {/* Monumental Headline */}
+            <div>
+              <h1 className="font-condensed font-extrabold text-[clamp(3.8rem,7.5vw,7.6rem)] uppercase tracking-[-0.02em] leading-[0.88] text-white">
+                A CIDADE<br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF7A00] via-[#FFAE34] to-[#FF5500]">
+                  É SUA PISTA.
+                </span>
+              </h1>
+              
+              <p className="mt-4 font-sans text-base sm:text-lg text-white/85 max-w-xl leading-relaxed">
+                A tradicional prova de 5 km em comemoração aos 63 anos de emancipação política de Lajes Pintadas/RN. Vias asfaltadas e sinalizadas, cronometragem eletrônica por chip e premiação em troféus para atletas locais e visitantes.
               </p>
             </div>
 
-            {/* Location & Time (2 cols) */}
-            <div className="md:col-span-2 hidden lg:block">
-              <div className="flex items-center gap-1.5 text-xs text-[#101D2C] font-semibold mb-1">
-                <Clock className="w-3.5 h-3.5 text-[#E5640E]" />
-                <span>06:00h da Manhã</span>
-              </div>
-              <div className="flex items-start gap-1.5 text-xs text-[#5D6672]">
-                <MapPin className="w-3.5 h-3.5 text-[#5D6672] shrink-0 mt-0.5" />
-                <span>Praça Monsenhor Freitas, Centro</span>
+            {/* Live Countdown Clock */}
+            <div className="pt-2">
+              <span className="font-sans text-[11px] font-bold uppercase tracking-widest text-[#FF9D42] block mb-2">
+                Contagem Regressiva para a Largada (26/12 às 06:00h)
+              </span>
+              <div className="grid grid-cols-4 gap-2 sm:gap-3 max-w-md">
+                <div className="p-3 bg-black/40 backdrop-blur-md border border-white/15 rounded-[4px] text-center">
+                  <span className="font-condensed font-extrabold text-2xl sm:text-3xl text-white block leading-none">
+                    {timeLeft.days}
+                  </span>
+                  <span className="font-sans text-[10px] sm:text-[11px] uppercase tracking-wider text-white/60 mt-1 block">
+                    Dias
+                  </span>
+                </div>
+                <div className="p-3 bg-black/40 backdrop-blur-md border border-white/15 rounded-[4px] text-center">
+                  <span className="font-condensed font-extrabold text-2xl sm:text-3xl text-white block leading-none">
+                    {String(timeLeft.hours).padStart(2, '0')}
+                  </span>
+                  <span className="font-sans text-[10px] sm:text-[11px] uppercase tracking-wider text-white/60 mt-1 block">
+                    Horas
+                  </span>
+                </div>
+                <div className="p-3 bg-black/40 backdrop-blur-md border border-white/15 rounded-[4px] text-center">
+                  <span className="font-condensed font-extrabold text-2xl sm:text-3xl text-white block leading-none">
+                    {String(timeLeft.minutes).padStart(2, '0')}
+                  </span>
+                  <span className="font-sans text-[10px] sm:text-[11px] uppercase tracking-wider text-white/60 mt-1 block">
+                    Min
+                  </span>
+                </div>
+                <div className="p-3 bg-black/40 backdrop-blur-md border border-white/15 rounded-[4px] text-center">
+                  <span className="font-condensed font-extrabold text-2xl sm:text-3xl text-[#FF7A00] block leading-none">
+                    {String(timeLeft.seconds).padStart(2, '0')}
+                  </span>
+                  <span className="font-sans text-[10px] sm:text-[11px] uppercase tracking-wider text-white/60 mt-1 block">
+                    Seg
+                  </span>
+                </div>
               </div>
             </div>
 
-            {/* Main Action Button (3 cols) */}
-            <div className="md:col-span-5 lg:col-span-3 flex flex-col sm:flex-row md:flex-col gap-2">
-              {settings.status === 'OPEN' ? (
-                <button
-                  onClick={onOpenRegister}
-                  className="w-full py-3.5 px-6 font-sans font-semibold text-sm sm:text-base text-[#101D2C] bg-[#F97316] hover:bg-[#FF8D3E] rounded-[2px] transition flex items-center justify-center gap-2 uppercase tracking-wide"
-                >
-                  <span>Garantir Vaga</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              ) : (
-                <button
-                  disabled
-                  className="w-full py-3.5 px-6 font-sans font-medium text-sm text-[#5D6672] bg-black/5 rounded-[2px] cursor-not-allowed uppercase"
-                >
-                  Inscrições em Breve
-                </button>
-              )}
+          </div>
 
-              <button
-                onClick={onOpenLookup}
-                className="w-full py-2 px-3 font-sans font-medium text-xs text-[#5D6672] hover:text-[#101D2C] text-center"
-              >
-                Já se inscreveu? Consultar comprovante
-              </button>
+          {/* Right Column (5 cols): Fast Registration Checkout Card */}
+          <div className="lg:col-span-5">
+            <div className="p-6 sm:p-8 bg-[#0D1626]/90 backdrop-blur-xl border border-white/20 rounded-[4px] shadow-2xl relative overflow-hidden">
+              {/* Top Accent Orange Border */}
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#FF7A00] via-[#FFAE34] to-[#FF5500]" />
+
+              <div className="flex items-center justify-between mb-4">
+                <span className="font-sans text-xs font-bold uppercase tracking-wider text-[#FF9D42] bg-orange-500/15 px-2.5 py-1 rounded-[2px] border border-orange-500/30">
+                  1º Lote Oficial
+                </span>
+                <span className="font-sans text-xs text-white/70 flex items-center gap-1">
+                  <Clock className="w-3.5 h-3.5 text-[#FF9D42]" />
+                  <span>Largada 06:00h</span>
+                </span>
+              </div>
+
+              {/* Price */}
+              <div className="mb-4">
+                <span className="font-sans text-[11px] text-white/60 uppercase font-semibold block">
+                  Valor da Inscrição
+                </span>
+                <div className="flex items-baseline gap-2 mt-0.5">
+                  <span className="font-condensed font-extrabold text-4xl sm:text-5xl text-white leading-none">
+                    {formattedBasePrice}
+                  </span>
+                  <span className="font-sans text-xs text-white/60">
+                    (+ taxa Asaas)
+                  </span>
+                </div>
+              </div>
+
+              {/* Kit Details */}
+              <div className="space-y-2 py-4 border-y border-white/10 text-xs font-sans text-white/85">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>Camisa Dry-Fit Oficial Laranja (Tecido Esportivo)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>Chip de Cronometragem Eletrônica Descartável</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>Número de Peito Personalizado com 4 Alfinetes</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Award className="w-4 h-4 text-[#FFAE34] shrink-0" />
+                  <span>Medalha Finisher em Metal para 100% dos Concluintes</span>
+                </div>
+              </div>
+
+              {/* Buttons */}
+              <div className="pt-5 space-y-3">
+                {settings.status === 'OPEN' ? (
+                  <button
+                    type="button"
+                    onClick={onOpenRegister}
+                    className="w-full py-4 px-6 font-sans font-bold text-sm sm:text-base text-[#070D18] bg-gradient-to-r from-[#FF7A00] to-[#FF5500] hover:from-[#FF8D24] hover:to-[#FF681A] rounded-[2px] transition transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 uppercase tracking-wide shadow-lg shadow-orange-600/30"
+                  >
+                    <Zap className="w-4 h-4 fill-current" />
+                    <span>Garantir Minha Vaga</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                ) : (
+                  <button
+                    disabled
+                    className="w-full py-4 px-6 font-sans font-medium text-sm text-white/40 bg-white/10 rounded-[2px] cursor-not-allowed uppercase"
+                  >
+                    Inscrições Indisponíveis
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={onOpenLookup}
+                  className="w-full py-2.5 px-4 font-sans font-medium text-xs text-white/80 hover:text-white hover:bg-white/5 border border-white/15 rounded-[2px] transition flex items-center justify-center gap-2"
+                >
+                  <Ticket className="w-3.5 h-3.5 text-[#FF9D42]" />
+                  <span>Já se inscreveu? Consultar comprovante</span>
+                </button>
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-white/10 text-center text-[11px] font-sans text-white/50">
+                Pagamento seguro via Pix com reserva atômica de 30 minutos
+              </div>
             </div>
+          </div>
 
+        </div>
+
+        {/* BOTTOM TELEMETRY HIGHLIGHTS BAR */}
+        <div className="mt-14 pt-8 border-t border-white/15 grid grid-cols-2 sm:grid-cols-4 gap-4 text-white">
+          <div className="p-3 bg-white/5 border border-white/10 rounded-[2px]">
+            <span className="font-sans text-[10px] text-[#FF9D42] uppercase font-bold tracking-wider block">
+              Distância Oficial
+            </span>
+            <span className="font-condensed font-extrabold text-2xl sm:text-3xl text-white">
+              5 KM Aferidos
+            </span>
+          </div>
+          
+          <div className="p-3 bg-white/5 border border-white/10 rounded-[2px]">
+            <span className="font-sans text-[10px] text-[#FF9D42] uppercase font-bold tracking-wider block">
+              Largada Pontual
+            </span>
+            <span className="font-condensed font-extrabold text-2xl sm:text-3xl text-white">
+              06:00h Manhã
+            </span>
+          </div>
+
+          <div className="p-3 bg-white/5 border border-white/10 rounded-[2px]">
+            <span className="font-sans text-[10px] text-[#FF9D42] uppercase font-bold tracking-wider block">
+              Concentração
+            </span>
+            <span className="font-condensed font-extrabold text-xl sm:text-2xl text-white truncate block">
+              Praça Monsenhor Freitas
+            </span>
+          </div>
+
+          <div className="p-3 bg-white/5 border border-white/10 rounded-[2px]">
+            <span className="font-sans text-[10px] text-[#FF9D42] uppercase font-bold tracking-wider block">
+              Premiação
+            </span>
+            <span className="font-condensed font-extrabold text-xl sm:text-2xl text-white">
+              Troféus & Medalhas
+            </span>
           </div>
         </div>
 

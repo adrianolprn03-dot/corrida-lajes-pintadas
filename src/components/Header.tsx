@@ -18,55 +18,55 @@ export const Header: React.FC<HeaderProps> = ({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-40 bg-[#FCFBF7] border-b border-[rgba(22,35,53,0.14)] transition-all">
-      <div className="max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-12 h-20 sm:h-[94px] flex items-center justify-between gap-4">
+    <header className="sticky top-0 z-40 bg-[#070D18]/95 backdrop-blur-md border-b border-white/10 text-white transition-all">
+      <div className="max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-12 h-20 sm:h-[90px] flex items-center justify-between gap-4">
         
         {/* Left: Brand Identity */}
-        <a href="#" className="flex items-center gap-3.5 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007CA0]">
+        <a href="#" className="flex items-center gap-3.5 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF7A00]">
           <img
             src="/assets/brasao_lajes.webp"
             alt="Brasão Oficial de Lajes Pintadas/RN"
-            className="w-10 h-10 sm:w-12 sm:h-12 object-contain"
+            className="w-10 h-10 sm:w-12 sm:h-12 object-contain filter drop-shadow-md brightness-105"
           />
           <div className="flex flex-col">
-            <span className="font-condensed font-extrabold text-lg sm:text-2xl uppercase tracking-tight text-[#101D2C] leading-none">
+            <span className="font-condensed font-extrabold text-lg sm:text-2xl uppercase tracking-tight text-white leading-none">
               5ª Corrida de Emancipação
             </span>
-            <span className="font-sans font-medium text-[11px] sm:text-xs uppercase tracking-wider text-[#5D6672] mt-0.5">
+            <span className="font-sans font-medium text-[11px] sm:text-xs uppercase tracking-wider text-[#FF9D42] mt-0.5">
               Lajes Pintadas • RN • 5 KM
             </span>
           </div>
         </a>
 
-        {/* Center: Editorial Navigation (Desktop) */}
-        <nav className="hidden lg:flex items-center gap-7 font-sans font-medium text-sm text-[#101D2C]">
-          <a
-            href="#percurso"
-            className="hover:text-[#E5640E] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#007CA0] py-1"
-          >
-            Percurso
-          </a>
+        {/* Center: Navigation (Desktop) */}
+        <nav className="hidden lg:flex items-center gap-7 font-sans font-medium text-sm text-white/80">
           <a
             href="#camisa"
-            className="hover:text-[#E5640E] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#007CA0] py-1"
+            className="hover:text-[#FF7A00] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#FF7A00] py-1"
           >
             Camisa Oficial
           </a>
           <a
             href="#categorias"
-            className="hover:text-[#E5640E] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#007CA0] py-1"
+            className="hover:text-[#FF7A00] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#FF7A00] py-1"
           >
-            Categorias
+            Categorias & Pódios
           </a>
           <a
             href="#cronograma"
-            className="hover:text-[#E5640E] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#007CA0] py-1"
+            className="hover:text-[#FF7A00] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#FF7A00] py-1"
           >
             Cronograma
           </a>
           <a
+            href="#evento"
+            className="hover:text-[#FF7A00] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#FF7A00] py-1"
+          >
+            Entrega de Kits
+          </a>
+          <a
             href="#faq"
-            className="hover:text-[#E5640E] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#007CA0] py-1"
+            className="hover:text-[#FF7A00] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#FF7A00] py-1"
           >
             Dúvidas
           </a>
@@ -76,23 +76,23 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center gap-3">
           <button
             onClick={onOpenLookup}
-            className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 font-sans font-medium text-xs sm:text-sm text-[#101D2C] hover:text-[#E5640E] border border-[rgba(22,35,53,0.14)] hover:border-[#101D2C] rounded-[2px] transition bg-transparent"
+            className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 font-sans font-medium text-xs sm:text-sm text-white hover:text-[#FF7A00] border border-white/20 hover:border-white/50 rounded-[2px] transition bg-white/5"
           >
-            <Ticket className="w-4 h-4 text-[#E5640E]" />
+            <Ticket className="w-4 h-4 text-[#FF7A00]" />
             <span>Minha Inscrição</span>
           </button>
 
           {settings.status === 'OPEN' ? (
             <button
               onClick={onOpenRegister}
-              className="px-5 sm:px-6 py-2.5 sm:py-3 font-sans font-semibold text-xs sm:text-sm text-[#101D2C] bg-[#F97316] hover:bg-[#FF8D3E] rounded-[2px] transition shadow-none tracking-wide uppercase"
+              className="px-5 sm:px-6 py-2.5 sm:py-3 font-sans font-bold text-xs sm:text-sm text-[#070D18] bg-gradient-to-r from-[#FF7A00] to-[#FF5500] hover:from-[#FF8D24] hover:to-[#FF681A] rounded-[2px] transition shadow-md shadow-orange-600/30 tracking-wide uppercase"
             >
               Inscrever-se
             </button>
           ) : (
             <button
               disabled
-              className="px-5 py-2.5 font-sans font-medium text-xs sm:text-sm text-[#5D6672] bg-black/5 rounded-[2px] cursor-not-allowed"
+              className="px-5 py-2.5 font-sans font-medium text-xs sm:text-sm text-white/40 bg-white/10 rounded-[2px] cursor-not-allowed"
             >
               Inscrições em Breve
             </button>
@@ -101,7 +101,7 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden p-2 text-[#101D2C] hover:text-[#E5640E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007CA0]"
+            className="lg:hidden p-2 text-white hover:text-[#FF7A00] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF7A00]"
             aria-label={mobileMenuOpen ? 'Fechar menu' : 'Abrir menu'}
             aria-expanded={mobileMenuOpen}
           >
@@ -112,40 +112,40 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-[#FCFBF7] border-b border-[rgba(22,35,53,0.14)] px-5 py-6 space-y-4 font-sans animate-in slide-in-from-top-2 duration-200">
-          <nav className="flex flex-col space-y-3 font-medium text-base text-[#101D2C]">
-            <a
-              href="#percurso"
-              onClick={() => setMobileMenuOpen(false)}
-              className="py-2 border-b border-[rgba(22,35,53,0.08)] hover:text-[#E5640E]"
-            >
-              Percurso Oficial
-            </a>
+        <div className="lg:hidden bg-[#070D18] border-b border-white/10 px-5 py-6 space-y-4 font-sans animate-in slide-in-from-top-2 duration-200 text-white">
+          <nav className="flex flex-col space-y-3 font-medium text-base text-white/90">
             <a
               href="#camisa"
               onClick={() => setMobileMenuOpen(false)}
-              className="py-2 border-b border-[rgba(22,35,53,0.08)] hover:text-[#E5640E]"
+              className="py-2 border-b border-white/10 hover:text-[#FF7A00]"
             >
               Camisa Oficial & Medidas
             </a>
             <a
               href="#categorias"
               onClick={() => setMobileMenuOpen(false)}
-              className="py-2 border-b border-[rgba(22,35,53,0.08)] hover:text-[#E5640E]"
+              className="py-2 border-b border-white/10 hover:text-[#FF7A00]"
             >
               Categorias & Pódios
             </a>
             <a
               href="#cronograma"
               onClick={() => setMobileMenuOpen(false)}
-              className="py-2 border-b border-[rgba(22,35,53,0.08)] hover:text-[#E5640E]"
+              className="py-2 border-b border-white/10 hover:text-[#FF7A00]"
             >
               Cronograma do Dia
             </a>
             <a
+              href="#evento"
+              onClick={() => setMobileMenuOpen(false)}
+              className="py-2 border-b border-white/10 hover:text-[#FF7A00]"
+            >
+              Retirada dos Kits
+            </a>
+            <a
               href="#faq"
               onClick={() => setMobileMenuOpen(false)}
-              className="py-2 hover:text-[#E5640E]"
+              className="py-2 hover:text-[#FF7A00]"
             >
               Dúvidas Frequentes
             </a>
@@ -157,9 +157,9 @@ export const Header: React.FC<HeaderProps> = ({
                 setMobileMenuOpen(false);
                 onOpenLookup();
               }}
-              className="w-full py-2.5 px-4 font-sans font-medium text-sm text-[#101D2C] border border-[rgba(22,35,53,0.14)] rounded-[2px] flex items-center justify-center gap-2"
+              className="w-full py-2.5 px-4 font-sans font-medium text-sm text-white border border-white/20 rounded-[2px] flex items-center justify-center gap-2 bg-white/5"
             >
-              <Ticket className="w-4 h-4 text-[#E5640E]" />
+              <Ticket className="w-4 h-4 text-[#FF7A00]" />
               <span>Consultar Minha Inscrição</span>
             </button>
             {settings.status === 'OPEN' && (
@@ -168,7 +168,7 @@ export const Header: React.FC<HeaderProps> = ({
                   setMobileMenuOpen(false);
                   onOpenRegister();
                 }}
-                className="w-full py-3 px-4 font-sans font-semibold text-sm text-[#101D2C] bg-[#F97316] hover:bg-[#FF8D3E] rounded-[2px] uppercase"
+                className="w-full py-3 px-4 font-sans font-bold text-sm text-[#070D18] bg-gradient-to-r from-[#FF7A00] to-[#FF5500] rounded-[2px] uppercase tracking-wide"
               >
                 Garantir Inscrição
               </button>

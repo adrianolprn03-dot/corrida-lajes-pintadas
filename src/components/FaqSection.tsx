@@ -18,8 +18,8 @@ const FAQ_ITEMS: FaqItem[] = [
   {
     id: 'faq-2',
     category: 'inscricao',
-    question: 'Qual é o percurso, a data e o horário da prova?',
-    answer: 'A 5ª Corrida de Emancipação Política ocorrerá no dia 26 de dezembro de 2026 (sábado), com percurso oficial de 5 km em vias pavimentadas de Lajes Pintadas/RN. A largada será pontual às 06:00 horas da manhã, com concentração na Praça Monsenhor Freitas.',
+    question: 'Qual é a data, o horário e a distância da prova?',
+    answer: 'A 5ª Corrida de Emancipação Política ocorrerá no dia 26 de dezembro de 2026 (sábado), com percurso oficial aferido de 5 km em vias pavimentadas de Lajes Pintadas/RN. A largada será pontual às 06:00 horas da manhã, com concentração na Praça Monsenhor Freitas.',
   },
   {
     id: 'faq-3',
@@ -87,18 +87,18 @@ export const FaqSection: React.FC = () => {
   };
 
   return (
-    <section id="faq" className="bg-[#FCFBF7] text-[#101D2C] py-16 sm:py-24 border-b border-[rgba(22,35,53,0.14)]">
+    <section id="faq" className="bg-[#070D18] text-white py-16 sm:py-24 border-b border-white/10">
       <div className="max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-12">
         
         {/* Section Header */}
         <div className="mb-12">
-          <span className="font-sans text-xs font-semibold uppercase tracking-widest text-[#E5640E] block mb-2">
+          <span className="font-sans text-xs font-semibold uppercase tracking-widest text-[#FF7A00] block mb-2">
             Central de Informações
           </span>
-          <h2 className="font-condensed font-extrabold text-4xl sm:text-6xl uppercase tracking-tight text-[#101D2C] leading-none">
+          <h2 className="font-condensed font-extrabold text-4xl sm:text-6xl uppercase tracking-tight text-white leading-none">
             Dúvidas Frequentes
           </h2>
-          <p className="font-sans text-sm sm:text-base text-[#5D6672] mt-3 max-w-2xl leading-relaxed">
+          <p className="font-sans text-sm sm:text-base text-white/70 mt-3 max-w-2xl leading-relaxed">
             Consulte as principais orientações sobre o regulamento, categorias de premiação, reserva temporária no Pix e entrega dos kits oficiais.
           </p>
         </div>
@@ -106,13 +106,13 @@ export const FaqSection: React.FC = () => {
         {/* Filter Bar & Search */}
         <div className="mb-8 space-y-4">
           <div className="relative">
-            <Search className="w-4 h-4 text-[#5D6672] absolute left-4 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-white/50 absolute left-4 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Buscar por palavra-chave (ex: kit, comprovante, casa, pix)..."
-              className="w-full pl-11 pr-4 py-3 bg-white border border-[rgba(22,35,53,0.14)] rounded-[2px] text-sm text-[#101D2C] placeholder-[#5D6672] focus:outline-none focus:ring-1 focus:ring-[#007CA0]"
+              className="w-full pl-11 pr-4 py-3.5 bg-[#0D1626] border border-white/15 rounded-[2px] text-sm text-white placeholder-white/40 focus:outline-none focus:ring-1 focus:ring-[#FF7A00]"
             />
           </div>
 
@@ -124,8 +124,8 @@ export const FaqSection: React.FC = () => {
                 onClick={() => setSelectedCategory(cat.id)}
                 className={`px-3.5 py-1.5 font-sans text-xs font-medium rounded-[2px] transition ${
                   selectedCategory === cat.id
-                    ? 'bg-[#101D2C] text-white'
-                    : 'bg-white border border-[rgba(22,35,53,0.14)] text-[#5D6672] hover:text-[#101D2C]'
+                    ? 'bg-gradient-to-r from-[#FF7A00] to-[#FF5500] text-[#070D18] font-bold shadow-sm'
+                    : 'bg-[#0D1626] border border-white/15 text-white/70 hover:text-white'
                 }`}
               >
                 {cat.label}
@@ -135,9 +135,9 @@ export const FaqSection: React.FC = () => {
         </div>
 
         {/* Discrete Accordion List */}
-        <div className="border border-[rgba(22,35,53,0.14)] bg-white rounded-[2px] divide-y divide-[rgba(22,35,53,0.14)]">
+        <div className="border border-white/10 bg-[#0D1626] rounded-[4px] divide-y divide-white/10 overflow-hidden shadow-xl">
           {filteredFaqs.length === 0 ? (
-            <div className="p-8 text-center text-sm text-[#5D6672]">
+            <div className="p-8 text-center text-sm text-white/50">
               Nenhuma pergunta encontrada com o termo pesquisado.
             </div>
           ) : (
@@ -145,23 +145,23 @@ export const FaqSection: React.FC = () => {
               const isOpen = openId === item.id;
 
               return (
-                <div key={item.id} className="transition-colors hover:bg-[#FCFBF7]">
+                <div key={item.id} className="transition-colors hover:bg-white/[0.02]">
                   <button
                     type="button"
                     onClick={() => toggleFaq(item.id)}
                     aria-expanded={isOpen}
-                    className="w-full p-5 text-left flex items-center justify-between gap-4 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#007CA0]"
+                    className="w-full p-5 text-left flex items-center justify-between gap-4 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#FF7A00]"
                   >
-                    <span className="font-sans font-semibold text-sm sm:text-base text-[#101D2C]">
+                    <span className="font-sans font-semibold text-sm sm:text-base text-white">
                       {item.question}
                     </span>
-                    <div className="p-1 text-[#5D6672] shrink-0">
-                      {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    <div className="p-1 text-white/60 shrink-0">
+                      {isOpen ? <ChevronUp className="w-4 h-4 text-[#FF7A00]" /> : <ChevronDown className="w-4 h-4" />}
                     </div>
                   </button>
 
                   {isOpen && (
-                    <div className="px-5 pb-5 pt-1 font-sans text-xs sm:text-sm text-[#5D6672] leading-relaxed border-t border-[rgba(22,35,53,0.06)] animate-in fade-in duration-150">
+                    <div className="px-5 pb-5 pt-1 font-sans text-xs sm:text-sm text-white/75 leading-relaxed border-t border-white/5 animate-in fade-in duration-150">
                       <p>{item.answer}</p>
                     </div>
                   )}
@@ -172,11 +172,11 @@ export const FaqSection: React.FC = () => {
         </div>
 
         {/* Support Link */}
-        <div className="mt-8 p-4 bg-white border border-[rgba(22,35,53,0.14)] rounded-[2px] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-sans text-[#5D6672]">
+        <div className="mt-8 p-4 bg-[#0D1626] border border-white/10 rounded-[2px] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-sans text-white/70">
           <span>Precisa de esclarecimentos adicionais sobre o edital da prova?</span>
           <a
             href="mailto:esportes@lajespintadas.rn.gov.br"
-            className="font-semibold text-[#E5640E] hover:underline flex items-center gap-1.5"
+            className="font-semibold text-[#FF9D42] hover:underline flex items-center gap-1.5"
           >
             <Mail className="w-3.5 h-3.5" />
             <span>esportes@lajespintadas.rn.gov.br</span>
