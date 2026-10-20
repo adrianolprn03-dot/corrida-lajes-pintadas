@@ -342,12 +342,93 @@ class StorageService {
       creditPercentFee: settings.asaasCreditPercentFee,
     });
 
-    // 8. Gerar Protocolo e Código de Acesso
+    // 8. Tentar processar via API oficial (Vercel Serverless + Asaas + Supabase)
+    try {
+      const apiResponse = await fetch('/api/create-reservation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fullName: submission.fullName,
+          cpf: cleanCpf,
+          birthDate: submission.birthDate,
+          email: submission.email,
+          phone: submission.phone,
+          city: submission.city,
+          state: submission.state,
+          team: submission.team,
+          originType: submission.originType,
+          gender: submission.gender,
+          casaProofType: submission.casaProofType,
+          shirtSize: submission.shirtSize,
+          paymentMethod: submission.paymentMethod,
+        }),
+      });
+
+      if (apiResponse.ok) {
+        const data = await apiResponse.json();
+        const apiReg: Registration = {
+          id: data.registration_id || crypto.randomUUID(),
+          athleteId: crypto.randomUUID(),
+          protocol: data.protocol,
+          category: data.category || category,
+          originType: submission.originType,
+          gender: submission.gender,
+          casaProofType: submission.casaProofType || null,
+          shirtSize: submission.shirtSize,
+          status: 'RESERVED',
+          financialStatus: 'PENDING',
+          paymentMethod: submission.paymentMethod,
+          baseAmountCents: pricing.baseAmountCents,
+          processingFeeCents: pricing.feeCents,
+          totalAmountCents: data.total_amount_cents || pricing.totalAmountCents,
+          asaasPaymentId: data.asaas_payment_id,
+          asaasInvoiceUrl: data.invoice_url,
+          asaasPixQrCode: data.pix_qr_code,
+          asaasPixCopyPaste: data.pix_copy_paste,
+          reservationExpiresAt: data.reservation_expires_at || new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+          kitDelivered: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          athlete: {
+            fullName: submission.fullName.trim(),
+            cpf: cleanCpf,
+            birthDate: submission.birthDate,
+            email: submission.email.trim().toLowerCase(),
+            phone: submission.phone.trim(),
+            city: submission.city.trim(),
+            state: submission.state.trim().toUpperCase(),
+            team: submission.team?.trim() || undefined,
+          },
+        };
+
+        allRegistrations.unshift(apiReg);
+        this.setLocal(STORAGE_KEYS.REGISTRATIONS, allRegistrations);
+
+        return {
+          success: true,
+          registration: apiReg,
+          accessCode: data.access_code,
+          pricing,
+        };
+      } else {
+        const errJson = await apiResponse.json().catch(() => null);
+        if (errJson?.error) {
+          throw new Error(errJson.error);
+        }
+      }
+    } catch (apiErr: any) {
+      if (apiErr.message && !apiErr.message.includes('Failed to fetch') && !apiErr.message.includes('404')) {
+        throw apiErr;
+      }
+      console.warn('API /api/create-reservation indisponível ou em modo local, usando motor local:', apiErr);
+    }
+
+    // 9. Gerar Protocolo e Código de Acesso (Fallback Local / Demo)
     const randomHex = Math.random().toString(36).substring(2, 7).toUpperCase();
     const protocol = `LP5-2612-${randomHex}`;
     const rawAccessCode = Math.random().toString(36).substring(2, 8).toUpperCase();
 
-    // 9. Simulação da URL de fatura / Pix do Asaas
+    // 10. Simulação da URL de fatura / Pix do Asaas
     const isSandbox = settings.asaasEnvironment === 'sandbox';
     const fakeAsaasId = `pay_${Math.random().toString(36).substring(2, 12)}`;
     const invoiceUrl = `https://${isSandbox ? 'sandbox.' : ''}asaas.com/i/${fakeAsaasId}`;
@@ -413,6 +494,32 @@ class StorageService {
   async lookupRegistration(protocol: string, accessCode: string): Promise<AthleteLookupResponse> {
     const cleanProtocol = protocol.trim().toUpperCase();
     const cleanCode = accessCode.trim().toUpperCase();
+    const settings = await this.getSettings();
+
+    // 1. Tentar consulta via API oficial (backend com conciliação)
+    try {
+      const apiRes = await fetch(`/api/lookup?protocol=${encodeURIComponent(cleanProtocol)}&accessCode=${encodeURIComponent(cleanCode)}`);
+      if (apiRes.ok) {
+        const data = await apiRes.json();
+        if (data.registration) {
+          return {
+            registration: data.registration,
+            athlete: data.athlete,
+            event: {
+              eventName: settings.eventName,
+              eventDate: settings.eventDate,
+              distanceKm: settings.distanceKm,
+              startTime: settings.startTime,
+              startLocation: settings.startLocation,
+              kitPickupInfo: settings.kitPickupInfo,
+              organizerContact: settings.organizerContact,
+            },
+          };
+        }
+      }
+    } catch {
+      // Segue para fallback local
+    }
 
     const allRegistrations = this.getLocal<Registration[]>(STORAGE_KEYS.REGISTRATIONS, []);
     const reg = allRegistrations.find((r) => r.protocol.toUpperCase() === cleanProtocol);
@@ -420,8 +527,6 @@ class StorageService {
     if (!reg) {
       throw new Error('Inscrição não encontrada. Verifique o número de protocolo informado.');
     }
-
-    const settings = await this.getSettings();
 
     // Retorna dados com PII mascarado para visualização segura
     const athlete = reg.athlete!;
