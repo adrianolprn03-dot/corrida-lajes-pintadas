@@ -2,6 +2,8 @@ import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
 import { ShirtShowcase } from './components/ShirtShowcase';
+import { CourseElevationSection } from './components/CourseElevationSection';
+import { ScheduleSection } from './components/ScheduleSection';
 import { CategoriesSection } from './components/CategoriesSection';
 import { EventOverview } from './components/EventOverview';
 import { FaqSection } from './components/FaqSection';
@@ -120,21 +122,21 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 selection:bg-orange-500 selection:text-white">
+    <div className="min-h-screen flex flex-col bg-[#060A11] text-slate-100 selection:bg-orange-500 selection:text-white relative font-sans">
       {/* Toast Alert */}
       {toast && (
         <div className="fixed bottom-6 right-6 z-50 animate-in fade-in slide-in-from-bottom-5 duration-300">
           <div className={`p-4 rounded-2xl shadow-xl flex items-center gap-3 text-xs sm:text-sm font-semibold border ${
             toast.type === 'success' 
-              ? 'bg-emerald-50 text-emerald-900 border-emerald-200' 
+              ? 'bg-emerald-950/90 text-emerald-200 border-emerald-500/30 backdrop-blur-md' 
               : toast.type === 'warning' 
-              ? 'bg-amber-50 text-amber-900 border-amber-200' 
-              : 'bg-white text-slate-900 border-slate-200 shadow-2xl'
+              ? 'bg-amber-950/90 text-amber-200 border-amber-500/30 backdrop-blur-md' 
+              : 'bg-slate-900/90 text-white border-white/10 backdrop-blur-md shadow-2xl'
           }`}>
             {toast.type === 'success' ? (
-              <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0" />
+              <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0" />
             ) : (
-              <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
+              <AlertCircle className="w-5 h-5 text-amber-400 shrink-0" />
             )}
             <span>{toast.message}</span>
           </div>
@@ -160,6 +162,9 @@ export default function App() {
           availableCapacity={metrics?.availableCapacity}
         />
 
+        {/* Interactive Course Map, SVG Elevation Profile & Pace Calculator */}
+        <CourseElevationSection onOpenRegister={handleOpenRegister} />
+
         {/* Orange Shirt Presentation & Live Stock */}
         <ShirtShowcase 
           inventory={shirts} 
@@ -169,10 +174,13 @@ export default function App() {
           }}
         />
 
-        {/* Categories (Casa vs Visitante) */}
+        {/* Categories (Casa vs Visitante) & Podium Awards */}
         <CategoriesSection />
 
-        {/* Technical Overview (Course, Location, Medical Support, Schedule) */}
+        {/* Official Race Day Morning Schedule */}
+        <ScheduleSection />
+
+        {/* Technical Logistics & Kit Pickup */}
         <EventOverview settings={settings} />
 
         {/* Frequently Asked Questions */}

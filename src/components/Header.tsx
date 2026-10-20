@@ -1,5 +1,5 @@
-import React from 'react';
-import { Calendar, MapPin, Search, Lock, Ticket, Menu, X, Sparkles } from 'lucide-react';
+import React, { useState } from 'react';
+import { Calendar, MapPin, Search, Lock, Ticket, Menu, X, Sparkles, Flame, Shield, ArrowRight } from 'lucide-react';
 import { EventSettings } from '../types';
 
 interface HeaderProps {
@@ -15,40 +15,39 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenAdmin,
   onOpenRegister,
 }) => {
-  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const getStatusBadge = () => {
     switch (settings.status) {
       case 'OPEN':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-300">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
             Inscrições Abertas
           </span>
         );
       case 'PREPARATION':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-300">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+          <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/30">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
             Em Preparação
           </span>
         );
       case 'SUSPENDED':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-300">
-            <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+          <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-rose-500/10 text-rose-400 border border-rose-500/30">
             Inscrições Suspensas
           </span>
         );
       case 'CLOSED':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-300">
-            Inscrições Encerradas
+          <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-slate-800 text-slate-400 border border-slate-700">
+            Encerradas
           </span>
         );
       case 'SOLD_OUT':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-red-50 text-red-700 border border-red-300">
+          <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-red-500/10 text-red-400 border border-red-500/30">
             Vagas Esgotadas
           </span>
         );
@@ -56,222 +55,232 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/90 shadow-sm transition-all">
-      {/* Top Bar Institucional Compacta (Clean Light) */}
-      <div className="bg-slate-100 text-slate-600 text-xs py-1.5 px-4 sm:px-6 lg:px-8 border-b border-slate-200">
+    <header className="sticky top-0 z-40 bg-[#070C15]/90 backdrop-blur-xl border-b border-white/10 transition-all">
+      {/* Top Bar Institucional Esportiva */}
+      <div className="bg-[#05080E] text-slate-400 text-xs py-1.5 px-4 sm:px-6 lg:px-8 border-b border-white/5">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 text-[11px] truncate">
-            <span className="font-bold text-slate-900 tracking-wide uppercase">
-              Prefeitura Municipal de Lajes Pintadas/RN
+            <span className="font-bold text-white tracking-wide uppercase flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
+              Prefeitura Municipal de Lajes Pintadas / RN
             </span>
-            <span className="hidden sm:inline text-slate-400">•</span>
-            <span className="hidden sm:inline text-slate-600 font-medium">26 de Dezembro de 2026</span>
-            <span className="hidden md:inline text-slate-400">•</span>
-            <span className="hidden md:inline-flex items-center gap-1 text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-300 font-bold">
-              ★ Edição 68 Anos de Emancipação
+            <span className="hidden sm:inline text-slate-600">•</span>
+            <span className="hidden sm:inline text-slate-300 font-medium">26 de Dezembro de 2026 • 06:00h</span>
+            <span className="hidden md:inline text-slate-600">•</span>
+            <span className="hidden md:inline-flex items-center gap-1 text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 font-bold uppercase text-[10px]">
+              ★ 68 Anos de Emancipação
             </span>
-            <span className="hidden md:inline text-slate-400">•</span>
-            <div className="hidden md:inline-flex items-center">{getStatusBadge()}</div>
           </div>
           
           <div className="flex items-center gap-3 shrink-0">
+            <div className="hidden sm:block">{getStatusBadge()}</div>
             <button
               id="btn-admin-header"
               onClick={onOpenAdmin}
-              className="flex items-center gap-1.5 text-slate-700 hover:text-slate-900 transition-colors bg-white hover:bg-slate-50 px-2.5 py-0.5 rounded-md border border-slate-200 text-[11px] font-semibold shadow-xs"
-              title="Acesso restrito à comissão organizadora"
+              className="flex items-center gap-1.5 text-slate-400 hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-2.5 py-0.5 rounded-md border border-white/10 text-[11px] font-medium"
+              title="Acesso da organização"
             >
-              <Lock size={12} className="text-orange-600" />
+              <Lock size={11} className="text-orange-400" />
               <span>Painel Admin</span>
             </button>
           </div>
         </div>
       </div>
 
-      {/* Main Navigation Bar (Clean Light Athletic) */}
+      {/* Main Navigation Bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 sm:h-18">
+        <div className="flex items-center justify-between h-18 sm:h-20">
+          
           {/* Logo e Identidade do Evento */}
           <div className="flex items-center gap-3 shrink-0">
-            <a href="#" className="flex items-center gap-2.5 group">
-              <img
-                src="/assets/brasao_lajes.webp"
-                alt="Brasão Oficial de Lajes Pintadas"
-                className="h-10 sm:h-11 w-auto object-contain transition-transform group-hover:scale-105 drop-shadow-sm"
-              />
-              <div className="flex flex-col justify-center">
-                <span className="font-display font-black text-sm sm:text-base text-slate-900 leading-tight tracking-tight uppercase group-hover:text-orange-600 transition-colors">
-                  5ª Corrida de <span className="text-orange-600">Emancipação</span>
-                </span>
-                <span className="text-[10px] sm:text-[11px] font-bold text-sky-700 tracking-wider uppercase leading-none mt-0.5">
-                  Lajes Pintadas/RN • 5 KM
+            <a href="#" className="flex items-center gap-3 group">
+              <div className="relative">
+                <img
+                  src="/assets/brasao_lajes.webp"
+                  alt="Brasão Oficial de Lajes Pintadas"
+                  className="h-11 sm:h-12 w-auto object-contain transition-transform group-hover:scale-105 drop-shadow-[0_0_12px_rgba(255,85,0,0.3)]"
+                />
+              </div>
+              <div className="flex flex-col">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] sm:text-[11px] font-black text-orange-400 uppercase tracking-widest bg-orange-500/10 px-2 py-0.5 rounded border border-orange-500/20">
+                    5ª Edição Oficial • 5 KM
+                  </span>
+                </div>
+                <h1 className="font-display font-black text-base sm:text-lg text-white uppercase tracking-tight group-hover:text-orange-400 transition-colors leading-tight">
+                  Corrida de Emancipação
+                </h1>
+                <span className="text-[10px] text-slate-400 font-medium tracking-wider uppercase">
+                  Lajes Pintadas • Rio Grande do Norte
                 </span>
               </div>
             </a>
           </div>
 
-          {/* Links Desktop Centrais e Alinhados */}
-          <nav className="hidden lg:flex items-center gap-1 xl:gap-2">
-            <a 
-              href="#evento" 
-              className="px-2.5 xl:px-3 py-1.5 rounded-lg text-xs xl:text-[13px] font-semibold text-slate-600 hover:text-orange-600 hover:bg-orange-50/80 transition-all whitespace-nowrap"
+          {/* Links Centrais Desktop */}
+          <nav className="hidden lg:flex items-center gap-1 bg-white/[0.03] p-1.5 rounded-full border border-white/5">
+            <a
+              href="#percurso"
+              className="px-3.5 py-1.5 rounded-full text-xs font-bold text-slate-300 hover:text-white hover:bg-white/10 transition-all uppercase tracking-wider"
             >
-              O Evento
+              Percurso & Pace
             </a>
-            <a 
-              href="#camisa" 
-              className="px-2.5 xl:px-3 py-1.5 rounded-lg text-xs xl:text-[13px] font-semibold text-slate-600 hover:text-orange-600 hover:bg-orange-50/80 transition-all whitespace-nowrap"
+            <a
+              href="#camisa"
+              className="px-3.5 py-1.5 rounded-full text-xs font-bold text-slate-300 hover:text-white hover:bg-white/10 transition-all uppercase tracking-wider"
             >
-              Camisa Oficial
+              Kit Oficial
             </a>
-            <a 
-              href="#categorias" 
-              className="px-2.5 xl:px-3 py-1.5 rounded-lg text-xs xl:text-[13px] font-semibold text-slate-600 hover:text-orange-600 hover:bg-orange-50/80 transition-all whitespace-nowrap"
+            <a
+              href="#categorias"
+              className="px-3.5 py-1.5 rounded-full text-xs font-bold text-slate-300 hover:text-white hover:bg-white/10 transition-all uppercase tracking-wider"
             >
-              Categorias
+              Premiação
             </a>
-            <a 
-              href="#regulamento" 
-              className="px-2.5 xl:px-3 py-1.5 rounded-lg text-xs xl:text-[13px] font-semibold text-slate-600 hover:text-orange-600 hover:bg-orange-50/80 transition-all whitespace-nowrap"
+            <a
+              href="#cronograma"
+              className="px-3.5 py-1.5 rounded-full text-xs font-bold text-slate-300 hover:text-white hover:bg-white/10 transition-all uppercase tracking-wider"
             >
-              Regulamento
+              Cronograma
             </a>
-            <a 
-              href="#faq" 
-              className="px-2.5 xl:px-3 py-1.5 rounded-lg text-xs xl:text-[13px] font-semibold text-slate-600 hover:text-orange-600 hover:bg-orange-50/80 transition-all whitespace-nowrap"
+            <a
+              href="#evento"
+              className="px-3.5 py-1.5 rounded-full text-xs font-bold text-slate-300 hover:text-white hover:bg-white/10 transition-all uppercase tracking-wider"
             >
-              Dúvidas
+              Informações
+            </a>
+            <a
+              href="#faq"
+              className="px-3.5 py-1.5 rounded-full text-xs font-bold text-slate-300 hover:text-white hover:bg-white/10 transition-all uppercase tracking-wider"
+            >
+              FAQ
             </a>
           </nav>
 
-          {/* Desktop Right Action Buttons */}
-          <div className="hidden lg:flex items-center gap-2.5 shrink-0">
+          {/* Ações da Direita */}
+          <div className="hidden sm:flex items-center gap-2.5">
             <button
               onClick={onOpenLookup}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200/90 border border-slate-200/90 transition-all active:scale-95 whitespace-nowrap shadow-sm"
-              title="Consultar minha inscrição e protocolo"
+              className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-200 hover:text-white border border-white/10 text-xs font-bold tracking-wide uppercase transition-all shadow-sm"
+              title="Consultar comprovante e status"
             >
-              <Ticket size={14} className="text-sky-600" />
+              <Ticket size={14} className="text-orange-400" />
               <span>Minha Inscrição</span>
             </button>
 
-            {settings.status === 'OPEN' ? (
-              <button
-                onClick={onOpenRegister}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs sm:text-[13px] font-black uppercase tracking-wider text-white bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-600 shadow-md shadow-orange-600/20 hover:shadow-orange-600/30 transition-all hover:scale-[1.02] active:scale-95 whitespace-nowrap"
-              >
-                <span>Fazer Inscrição</span>
-              </button>
-            ) : (
-              <button
-                disabled
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-400 bg-slate-100 border border-slate-200 cursor-not-allowed whitespace-nowrap"
-              >
-                Inscrições em Breve
-              </button>
-            )}
+            <button
+              onClick={onOpenRegister}
+              className="relative group overflow-hidden flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 text-white font-display font-black text-xs uppercase tracking-wider shadow-[0_0_20px_rgba(255,85,0,0.4)] hover:shadow-[0_0_30px_rgba(255,85,0,0.7)] transition-all hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <Flame size={14} className="text-amber-200 animate-pulse" />
+              <span>Inscreva-se • R$ 60</span>
+              <ArrowRight size={14} className="transition-transform group-hover:translate-x-0.5" />
+            </button>
           </div>
 
-          {/* Mobile & Tablet Controls (< lg) */}
-          <div className="flex lg:hidden items-center gap-2">
-            {/* Tablet Quick Register */}
-            {settings.status === 'OPEN' ? (
-              <button
-                onClick={onOpenRegister}
-                className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider text-white bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-600 shadow-md shadow-orange-600/20 transition-all whitespace-nowrap"
-              >
-                <span>Inscrição</span>
-              </button>
-            ) : null}
-
-            {/* Mobile Ticket Button (< sm) */}
+          {/* Botão Menu Mobile */}
+          <div className="flex sm:hidden items-center gap-2">
             <button
-              onClick={onOpenLookup}
-              className="p-2 text-slate-600 hover:text-slate-900 rounded-lg hover:bg-slate-100 transition-colors"
-              title="Consultar inscrição"
+              onClick={onOpenRegister}
+              className="px-3 py-2 rounded-lg bg-orange-600 text-white font-display font-black text-xs uppercase shadow-md"
             >
-              <Ticket size={18} className="text-sky-600" />
+              Inscrever
             </button>
-
-            {/* Mobile Hamburger Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 text-slate-600 hover:text-slate-900 rounded-lg hover:bg-slate-100 transition-colors"
-              aria-label="Abrir menu de navegação"
+              className="p-2 rounded-xl text-slate-300 hover:text-white bg-white/5 border border-white/10 transition-colors"
+              aria-label="Abrir Menu"
             >
-              {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+              {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
           </div>
+
         </div>
       </div>
 
-      {/* Mobile Menu Dropdown Light */}
+      {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-slate-200 bg-white/98 backdrop-blur-2xl px-4 pt-3 pb-6 space-y-3 shadow-xl">
-          <div className="pb-2.5 border-b border-slate-100 flex items-center justify-between">
-            <span className="text-xs text-slate-500 font-medium">Situação da Prova:</span>
+        <div className="sm:hidden bg-[#0A101C] border-b border-white/10 px-4 py-5 space-y-3 animate-fadeIn">
+          <div className="pb-3 border-b border-white/10 flex items-center justify-between">
             {getStatusBadge()}
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                onOpenAdmin();
+              }}
+              className="text-xs text-slate-400 flex items-center gap-1.5"
+            >
+              <Lock size={12} className="text-orange-400" />
+              <span>Painel Admin</span>
+            </button>
           </div>
+
           <nav className="flex flex-col space-y-1">
             <a
-              href="#evento"
+              href="#percurso"
               onClick={() => setMobileMenuOpen(false)}
-              className="px-3 py-2 rounded-lg text-sm font-semibold text-slate-700 hover:text-orange-600 hover:bg-orange-50/80 transition-colors"
+              className="px-3 py-2.5 rounded-xl text-sm font-bold text-slate-300 hover:bg-white/5 hover:text-white uppercase"
             >
-              O Evento
+              Percurso & Pace
             </a>
             <a
               href="#camisa"
               onClick={() => setMobileMenuOpen(false)}
-              className="px-3 py-2 rounded-lg text-sm font-semibold text-slate-700 hover:text-orange-600 hover:bg-orange-50/80 transition-colors"
+              className="px-3 py-2.5 rounded-xl text-sm font-bold text-slate-300 hover:bg-white/5 hover:text-white uppercase"
             >
-              Camisa Oficial
+              Kit Oficial & Tamanhos
             </a>
             <a
               href="#categorias"
               onClick={() => setMobileMenuOpen(false)}
-              className="px-3 py-2 rounded-lg text-sm font-semibold text-slate-700 hover:text-orange-600 hover:bg-orange-50/80 transition-colors"
+              className="px-3 py-2.5 rounded-xl text-sm font-bold text-slate-300 hover:bg-white/5 hover:text-white uppercase"
             >
               Categorias & Premiação
             </a>
             <a
-              href="#regulamento"
+              href="#cronograma"
               onClick={() => setMobileMenuOpen(false)}
-              className="px-3 py-2 rounded-lg text-sm font-semibold text-slate-700 hover:text-orange-600 hover:bg-orange-50/80 transition-colors"
+              className="px-3 py-2.5 rounded-xl text-sm font-bold text-slate-300 hover:bg-white/5 hover:text-white uppercase"
             >
-              Regulamento Oficial
+              Cronograma do Dia
+            </a>
+            <a
+              href="#evento"
+              onClick={() => setMobileMenuOpen(false)}
+              className="px-3 py-2.5 rounded-xl text-sm font-bold text-slate-300 hover:bg-white/5 hover:text-white uppercase"
+            >
+              Informações & Retirada de Kit
             </a>
             <a
               href="#faq"
               onClick={() => setMobileMenuOpen(false)}
-              className="px-3 py-2 rounded-lg text-sm font-semibold text-slate-700 hover:text-orange-600 hover:bg-orange-50/80 transition-colors"
+              className="px-3 py-2.5 rounded-xl text-sm font-bold text-slate-300 hover:bg-white/5 hover:text-white uppercase"
             >
               Dúvidas Frequentes
             </a>
           </nav>
-          
-          <div className="pt-2 flex flex-col gap-2">
+
+          <div className="pt-3 border-t border-white/10 space-y-2">
             <button
               onClick={() => {
                 setMobileMenuOpen(false);
                 onOpenLookup();
               }}
-              className="w-full py-2.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 flex items-center justify-center gap-2 shadow-sm"
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-white/5 text-slate-200 border border-white/10 font-bold text-sm uppercase"
             >
-              <Ticket size={15} className="text-sky-600" />
-              Consultar Minha Inscrição
+              <Ticket size={16} className="text-orange-400" />
+              <span>Consultar Minha Inscrição</span>
             </button>
-            {settings.status === 'OPEN' && (
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  onOpenRegister();
-                }}
-                className="w-full py-3 rounded-xl text-xs font-black uppercase tracking-wider text-white bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-600 shadow-md shadow-orange-600/20 text-center"
-              >
-                Fazer Minha Inscrição • R$ 60
-              </button>
-            )}
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                onOpenRegister();
+              }}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-orange-600 to-amber-500 text-white font-display font-black text-sm uppercase shadow-lg shadow-orange-950/50"
+            >
+              <Flame size={16} />
+              <span>Garantir Vaga • R$ 60,00</span>
+            </button>
           </div>
         </div>
       )}

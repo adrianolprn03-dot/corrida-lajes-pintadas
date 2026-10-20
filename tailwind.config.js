@@ -20,21 +20,35 @@ export default {
             700: '#C23800',
             800: '#9A2D00',
             900: '#7C2400',
+            glow: '#FF6A00',
           },
           cyan: {
-            DEFAULT: '#00A3FF',
+            DEFAULT: '#00E5FF',
             light: '#38BDF8',
             dark: '#0284C7',
             50: '#F0F9FF',
             100: '#E0F2FE',
             500: '#00A3FF',
+            glow: '#00F0FF',
           },
-          navy: {
-            DEFAULT: '#0B192C',
-            light: '#132A4A',
-            dark: '#07101C',
-            obsidian: '#050B14',
-          }
+          lime: {
+            DEFAULT: '#CCFF00',
+            glow: '#D4FF1A',
+          },
+          gold: {
+            DEFAULT: '#F59E0B',
+            light: '#FBBF24',
+            dark: '#D97706',
+          },
+          dark: {
+            DEFAULT: '#070C15',
+            pure: '#04070D',
+            surface: '#0B1220',
+            card: '#10192C',
+            cardHover: '#142038',
+            border: '#1E293B',
+            borderGlow: 'rgba(255, 85, 0, 0.25)',
+          },
         }
       },
       fontFamily: {
@@ -45,6 +59,8 @@ export default {
         'pulse-subtle': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         'float': 'float 4s ease-in-out infinite',
         'glow': 'glow 2.5s ease-in-out infinite alternate',
+        'glow-cyan': 'glowCyan 2.5s ease-in-out infinite alternate',
+        'shimmer': 'shimmer 2.5s linear infinite',
       },
       keyframes: {
         float: {
@@ -52,8 +68,16 @@ export default {
           '50%': { transform: 'translateY(-6px)' },
         },
         glow: {
-          '0%': { boxShadow: '0 0 15px rgba(255, 85, 0, 0.25)' },
+          '0%': { boxShadow: '0 0 15px rgba(255, 85, 0, 0.2)' },
           '100%': { boxShadow: '0 0 35px rgba(255, 85, 0, 0.55)' },
+        },
+        glowCyan: {
+          '0%': { boxShadow: '0 0 15px rgba(0, 229, 255, 0.2)' },
+          '100%': { boxShadow: '0 0 35px rgba(0, 229, 255, 0.55)' },
+        },
+        shimmer: {
+          '0%': { backgroundPosition: '-200% 0' },
+          '100%': { backgroundPosition: '200% 0' },
         }
       }
     },

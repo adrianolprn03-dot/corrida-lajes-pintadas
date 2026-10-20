@@ -8,11 +8,14 @@ import {
   Zap, 
   Clock, 
   Flame, 
+  Droplets, 
+  Timer, 
+  CheckCircle2, 
+  Sparkles,
+  Ticket,
   ChevronRight,
-  Droplets,
-  Timer,
-  CheckCircle2,
-  Users
+  TrendingUp,
+  Activity
 } from 'lucide-react';
 import { EventSettings } from '../types';
 
@@ -28,10 +31,9 @@ export const Hero: React.FC<HeroProps> = ({
   settings,
   onOpenRegister,
   onOpenLookup,
-  onOpenAdmin,
   availableCapacity,
 }) => {
-  // Live countdown timer state targeting 2026-12-26 06:00:00
+  // Live countdown timer targeting 2026-12-26 06:00:00
   const [timeLeft, setTimeLeft] = useState<{
     days: number;
     hours: number;
@@ -64,330 +66,299 @@ export const Hero: React.FC<HeroProps> = ({
     return () => clearInterval(interval);
   }, []);
 
-  const totalRegistered = settings.maxCapacity && availableCapacity !== undefined && availableCapacity !== null
-    ? Math.max(0, settings.maxCapacity - availableCapacity)
-    : null;
-
-  const capacityPercent = settings.maxCapacity && totalRegistered !== null
-    ? Math.min(100, Math.round((totalRegistered / settings.maxCapacity) * 100))
-    : null;
-
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-white via-orange-50/20 to-slate-50 text-slate-900 pt-4 pb-8 lg:pt-6 lg:pb-12 border-b border-slate-200/80">
+    <section className="relative overflow-hidden bg-[#060A11] text-white pt-8 pb-16 lg:pt-12 lg:pb-24 border-b border-white/10">
       
-      {/* Dynamic Background Accents (Clean, Light, High Contrast - No Ghost/Muddy Overlays) */}
-      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-        {/* Subtle geometric dot matrix */}
-        <div className="absolute inset-0 bg-dot-pattern opacity-40" />
+      {/* Background Lighting Elements */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {/* Carbon grid pattern */}
+        <div className="absolute inset-0 bg-carbon-grid opacity-30" />
         
-        {/* Warm athletic ambient glows */}
-        <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-gradient-to-br from-orange-400/20 to-amber-300/10 blur-3xl" />
-        <div className="absolute top-1/2 -left-32 w-80 h-80 rounded-full bg-gradient-to-tr from-sky-400/15 to-transparent blur-3xl" />
+        {/* Diagonal speed lines */}
+        <div className="absolute inset-0 bg-speed-lines opacity-20" />
         
-        {/* Angled athletic speed lines in background */}
-        <div className="absolute right-0 top-0 bottom-0 w-1/3 opacity-[0.03] bg-[repeating-linear-gradient(45deg,#000_0,#000_2px,transparent_0,transparent_16px)]" />
+        {/* High-energy radial glows */}
+        <div className="absolute -top-32 right-1/4 w-[600px] h-[600px] rounded-full bg-gradient-to-br from-orange-600/20 via-amber-500/10 to-transparent blur-3xl" />
+        <div className="absolute top-1/2 -left-48 w-[500px] h-[500px] rounded-full bg-gradient-to-tr from-cyan-500/15 via-blue-600/5 to-transparent blur-3xl" />
+        <div className="absolute -bottom-32 right-10 w-[450px] h-[450px] rounded-full bg-gradient-to-t from-orange-600/15 to-transparent blur-3xl" />
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-center">
+        
+        {/* Top Floating Badge Bar */}
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-8 pb-6 border-b border-white/5">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-500/10 text-orange-400 border border-orange-500/30 text-xs font-black uppercase tracking-wider">
+              <Flame size={14} className="text-orange-400" />
+              <span>Inscrições Oficiais 2026</span>
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 text-slate-300 border border-white/10 text-xs font-bold uppercase tracking-wider">
+              <Calendar size={13} className="text-cyan-400" />
+              <span>26 de Dezembro de 2026 • 06:00h</span>
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 text-slate-300 border border-white/10 text-xs font-bold uppercase tracking-wider">
+              <MapPin size={13} className="text-amber-400" />
+              <span>Praça Monsenhor Freitas • Centro</span>
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 text-xs text-slate-400 font-medium">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span>Gateway Asaas Ativo • Pix Instantâneo</span>
+          </div>
+        </div>
+
+        {/* Main Grid: Left Column Text & Conversion + Right Column Visual Kit */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
           
           {/* ======================================================== */}
-          {/* LEFT COLUMN (58%): High-Impact Value & Conversion Flow   */}
+          {/* LEFT COLUMN (7 COLS): Headline, Countdown & Action Card  */}
           {/* ======================================================== */}
-          <div className="lg:col-span-7 flex flex-col justify-center space-y-3.5 sm:space-y-4 text-center lg:text-left">
+          <div className="lg:col-span-7 flex flex-col space-y-6 text-center lg:text-left">
             
-            {/* Top Micro-Badges Bar: 68 Anos History + Official 5th Edition */}
-            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-amber-500/15 to-amber-600/10 border border-amber-400/40 text-amber-900 text-xs font-black uppercase tracking-wider shadow-xs">
-                <Award className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                <span>68 Anos de História • 1958 - 2026</span>
+            {/* Athletic Title */}
+            <div>
+              <div className="inline-flex items-center gap-2 text-xs sm:text-sm font-black uppercase tracking-widest text-cyan-400 mb-2">
+                <Activity size={16} className="text-cyan-400 animate-pulse" />
+                <span>O Maior Evento Esportivo do Agreste Potiguar</span>
               </div>
-
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-300 text-orange-700 text-xs font-bold uppercase tracking-wider shadow-xs">
-                <Flame className="w-3.5 h-3.5 text-orange-600 shrink-0" />
-                <span>5ª Edição Oficial</span>
-              </div>
-
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-300 text-emerald-800 text-xs font-bold uppercase tracking-wider shadow-xs">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>Inscrições Abertas</span>
-              </div>
-            </div>
-
-            {/* Display Headline */}
-            <div className="space-y-1.5">
-              <h1 className="font-display font-black text-3xl sm:text-4xl lg:text-[2.9rem] xl:text-[3.25rem] tracking-tight text-slate-900 leading-[1.05] uppercase">
-                5ª Corrida de <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-600 via-orange-500 to-amber-600">
-                  Emancipação Política
+              <h1 className="font-display font-black text-4xl sm:text-6xl lg:text-7xl uppercase tracking-tighter leading-[0.95] text-white">
+                5ª Corrida de <br className="hidden sm:block" />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 via-amber-400 to-orange-400 drop-shadow-[0_0_35px_rgba(255,85,0,0.5)]">
+                  Emancipação
                 </span>
               </h1>
-
-              {/* Event Specification Pill Strip */}
-              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-1.5 sm:gap-2.5 pt-0.5 text-xs sm:text-sm font-semibold text-slate-700">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-slate-200/90 shadow-xs">
-                  <MapPin className="w-3.5 h-3.5 text-orange-600 shrink-0" />
-                  <span>Lajes Pintadas/RN</span>
-                </span>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-slate-200/90 shadow-xs">
-                  <Calendar className="w-3.5 h-3.5 text-sky-600 shrink-0" />
-                  <span>26 de Dezembro de 2026</span>
-                </span>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-slate-200/90 shadow-xs">
-                  <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                  <span>06:00h</span>
-                </span>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-orange-600 text-white font-bold shadow-xs">
-                  <Zap className="w-3.5 h-3.5" />
-                  <span>5 KM Oficial</span>
-                </span>
-              </div>
+              <p className="mt-3 text-lg sm:text-xl font-bold uppercase tracking-wider text-slate-300">
+                Lajes Pintadas • RN <span className="text-orange-400 font-black">| 5 KM OFICIAL</span>
+              </p>
+              <p className="mt-2 text-sm sm:text-base text-slate-400 max-w-xl mx-auto lg:mx-0 leading-relaxed">
+                Venha celebrar os 68 anos de história de Lajes Pintadas em uma prova rápida, com cronometragem eletrônica, camisa técnica exclusiva, hidratação de elite e troféus para Geral e Casa.
+              </p>
             </div>
 
-            {/* Event Description (Crisp, High Contrast) */}
-            <p className="text-slate-600 text-xs sm:text-sm lg:text-[15px] leading-relaxed max-w-2xl mx-auto lg:mx-0 font-normal">
-              Celebre os <strong>68 anos de emancipação de Lajes Pintadas/RN</strong> no maior encontro esportivo do Agreste Potiguar. Prova oficial com chip de cronometragem, medalha finisher, hidratação completa e a <strong>Camisa Oficial Laranja Dry-Fit</strong> inclusa no kit.
-            </p>
-
-            {/* ======================================================== */}
-            {/* UNIFIED COUNTDOWN & CAPACITY HUD (Fits inside first fold) */}
-            {/* ======================================================== */}
-            <div className="bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-2xl p-3 sm:p-3.5 shadow-sm max-w-lg mx-auto lg:mx-0">
-              <div className="flex items-center justify-between mb-2 text-xs font-bold uppercase tracking-wider text-slate-500">
-                <span className="flex items-center gap-1.5 text-orange-600">
-                  <Timer className="w-3.5 h-3.5" />
-                  <span>Cronômetro Oficial da Prova:</span>
-                </span>
-                <span className="text-[11px] text-slate-400 font-semibold lowercase">
-                  largada em 26/12 às 06h
+            {/* Athletic Digital Countdown Clock */}
+            <div className="bg-[#0B1322] border border-white/10 rounded-3xl p-5 shadow-2xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-full blur-2xl pointer-events-none" />
+              
+              <div className="flex items-center justify-between mb-3 pb-3 border-b border-white/5">
+                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-slate-300">
+                  <Timer size={14} className="text-orange-400" />
+                  <span>Contagem Regressiva para a Largada</span>
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-orange-400 bg-orange-500/10 px-2.5 py-0.5 rounded border border-orange-500/20">
+                  Largada 06:00h
                 </span>
               </div>
 
-              <div className="grid grid-cols-4 gap-2 text-center">
-                <div className="bg-slate-50 border border-slate-200/70 rounded-xl py-1.5 sm:py-2 px-1">
-                  <div className="font-display font-black text-2xl sm:text-3xl text-slate-900 leading-none">
+              <div className="grid grid-cols-4 gap-2 sm:gap-3 text-center">
+                <div className="bg-[#070B13] border border-white/5 rounded-2xl p-2.5 sm:p-3 relative group">
+                  <span className="font-display font-black text-2xl sm:text-4xl text-white block tabular-nums">
                     {String(timeLeft.days).padStart(2, '0')}
-                  </div>
-                  <div className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-0.5">Dias</div>
+                  </span>
+                  <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">
+                    Dias
+                  </span>
                 </div>
 
-                <div className="bg-slate-50 border border-slate-200/70 rounded-xl py-1.5 sm:py-2 px-1">
-                  <div className="font-display font-black text-2xl sm:text-3xl text-slate-900 leading-none">
+                <div className="bg-[#070B13] border border-white/5 rounded-2xl p-2.5 sm:p-3 relative group">
+                  <span className="font-display font-black text-2xl sm:text-4xl text-white block tabular-nums">
                     {String(timeLeft.hours).padStart(2, '0')}
-                  </div>
-                  <div className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-0.5">Horas</div>
+                  </span>
+                  <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">
+                    Horas
+                  </span>
                 </div>
 
-                <div className="bg-slate-50 border border-slate-200/70 rounded-xl py-1.5 sm:py-2 px-1">
-                  <div className="font-display font-black text-2xl sm:text-3xl text-slate-900 leading-none">
+                <div className="bg-[#070B13] border border-white/5 rounded-2xl p-2.5 sm:p-3 relative group">
+                  <span className="font-display font-black text-2xl sm:text-4xl text-white block tabular-nums">
                     {String(timeLeft.minutes).padStart(2, '0')}
-                  </div>
-                  <div className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-0.5">Minutos</div>
+                  </span>
+                  <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">
+                    Minutos
+                  </span>
                 </div>
 
-                <div className="bg-orange-50 border border-orange-200 rounded-xl py-1.5 sm:py-2 px-1 relative overflow-hidden">
-                  <div className="font-display font-black text-2xl sm:text-3xl text-orange-600 leading-none">
+                <div className="bg-[#070B13] border border-orange-500/30 rounded-2xl p-2.5 sm:p-3 relative group shadow-[0_0_15px_rgba(255,85,0,0.15)]">
+                  <span className="font-display font-black text-2xl sm:text-4xl text-orange-400 block tabular-nums animate-pulse">
                     {String(timeLeft.seconds).padStart(2, '0')}
+                  </span>
+                  <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-orange-400">
+                    Segundos
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Fast Action Checkout Card */}
+            <div className="bg-gradient-to-r from-orange-500/10 via-[#0B1322] to-amber-500/10 border border-orange-500/30 rounded-3xl p-5 sm:p-6 shadow-[0_10px_40px_rgba(255,85,0,0.15)] relative">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="text-center sm:text-left">
+                  <div className="flex items-center justify-center sm:justify-start gap-2 text-xs font-bold text-orange-400 uppercase tracking-wider">
+                    <span className="w-2 h-2 rounded-full bg-orange-400"></span>
+                    <span>1º Lote Oficial de Inscrição</span>
                   </div>
-                  <div className="text-[9px] sm:text-[10px] font-bold text-orange-600 uppercase tracking-wider mt-0.5">Segundos</div>
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-500 animate-pulse" />
+                  <div className="flex items-baseline justify-center sm:justify-start gap-2 mt-1">
+                    <span className="font-display font-black text-3xl sm:text-4xl text-white">
+                      R$ 60,00
+                    </span>
+                    <span className="text-xs text-slate-400 font-medium">
+                      + taxa Pix R$ 0,99
+                    </span>
+                  </div>
+                  <span className="text-xs text-emerald-400 font-bold block mt-0.5">
+                    ✓ Com direito à Camisa Técnica Oficial Laranja + Medalha Finisher
+                  </span>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto shrink-0">
+                  <button
+                    onClick={onOpenRegister}
+                    className="w-full sm:w-auto flex items-center justify-center gap-3 px-8 py-4 rounded-2xl bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 text-white font-display font-black text-base uppercase tracking-wider shadow-[0_0_30px_rgba(255,85,0,0.5)] hover:shadow-[0_0_45px_rgba(255,85,0,0.8)] hover:scale-[1.03] active:scale-[0.98] transition-all"
+                  >
+                    <Flame size={18} className="text-amber-200" />
+                    <span>Garantir Minha Vaga</span>
+                    <ArrowRight size={18} />
+                  </button>
                 </div>
               </div>
 
-              {/* Integrated Capacity Strip inside HUD */}
-              {settings.maxCapacity && (
-                <div className="mt-2.5 pt-2 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 text-xs">
-                  <div className="flex items-center gap-1.5 text-slate-600 font-semibold">
-                    <Users className="w-3.5 h-3.5 text-orange-600 shrink-0" />
-                    <span>Lote Atual: <strong>{availableCapacity} vagas restantes</strong> de {settings.maxCapacity}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-20 sm:w-24 bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                      <div 
-                        className="bg-gradient-to-r from-orange-500 to-amber-500 h-full rounded-full transition-all duration-500"
-                        style={{ width: `${capacityPercent}%` }}
-                      />
-                    </div>
-                    <span className="font-black text-orange-600 text-[11px]">{capacityPercent}%</span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Primary Action Buttons (CTAs) - 100% visible on First Fold */}
-            <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 pt-0.5">
-              {settings.status === 'OPEN' ? (
+              {/* Fast Secondary Link */}
+              <div className="mt-4 pt-3 border-t border-white/5 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
+                <span>Reserva com trava de 30 minutos garantida no Pix</span>
                 <button
-                  id="btn-hero-register"
-                  onClick={onOpenRegister}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-7 py-3 rounded-xl text-base font-black text-white bg-gradient-to-r from-orange-600 via-orange-500 to-amber-600 hover:from-orange-500 hover:to-orange-600 shadow-md shadow-orange-600/30 hover:shadow-orange-600/40 transition-all transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+                  onClick={onOpenLookup}
+                  className="text-slate-300 hover:text-orange-400 font-bold flex items-center gap-1 transition-colors underline decoration-orange-500/50"
                 >
-                  <Zap className="w-5 h-5 fill-white" />
-                  <span>GARANTIR MINHA INSCRIÇÃO • R$ 60</span>
-                  <ArrowRight className="w-5 h-5" />
+                  <Ticket size={13} className="text-orange-400" />
+                  <span>Já se inscreveu? Consultar comprovante / 2ª via</span>
                 </button>
-              ) : (
-                <div className="w-full sm:w-auto p-3 rounded-xl bg-slate-50 border border-slate-200 text-center sm:text-left">
-                  <div className="text-xs font-semibold uppercase tracking-wider text-amber-700">
-                    Situação das Inscrições:
-                  </div>
-                  <div className="font-bold text-sm text-slate-900 mt-0.5">
-                    {settings.status === 'PREPARATION' && 'Em preparação regulamentar'}
-                    {settings.status === 'SUSPENDED' && 'Inscrições suspensas temporariamente'}
-                    {settings.status === 'CLOSED' && 'Inscrições encerradas pela organização'}
-                    {settings.status === 'SOLD_OUT' && 'Vagas esgotadas'}
-                  </div>
-                  {settings.status === 'PREPARATION' && onOpenAdmin && (
-                    <button
-                      id="btn-admin-hero-setup"
-                      onClick={onOpenAdmin}
-                      className="text-[11px] text-orange-600 hover:text-orange-700 font-semibold underline mt-1 block cursor-pointer"
-                    >
-                      Painel Administrativo: Abrir Inscrições &rarr;
-                    </button>
-                  )}
-                </div>
-              )}
-
-              <button
-                id="btn-hero-lookup"
-                onClick={onOpenLookup}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 shadow-xs transition-all cursor-pointer"
-              >
-                <span>Consultar Inscrição</span>
-              </button>
+              </div>
             </div>
 
-            {/* Trust & Inclusions Strip */}
-            <div className="pt-1.5 flex flex-wrap items-center justify-center lg:justify-start gap-x-4 gap-y-1.5 text-xs text-slate-600">
-              <span className="inline-flex items-center gap-1 font-medium">
-                <CheckCircle2 className="w-3.5 h-3.5 text-orange-600 shrink-0" />
-                <span>Camisa Dry-Fit Inclusa</span>
-              </span>
-              <span className="inline-flex items-center gap-1 font-medium">
-                <CheckCircle2 className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                <span>Chip de Cronometragem</span>
-              </span>
-              <span className="inline-flex items-center gap-1 font-medium">
-                <CheckCircle2 className="w-3.5 h-3.5 text-sky-600 shrink-0" />
-                <span>Medalha Finisher</span>
-              </span>
-              <span className="inline-flex items-center gap-1 font-medium">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                <span>Pagamento Seguro Asaas</span>
-              </span>
+            {/* 4 Telemetry Quick Pills */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2">
+              <div className="athletic-card p-3 rounded-2xl flex items-center gap-2.5 text-left">
+                <div className="w-9 h-9 rounded-xl bg-orange-500/10 text-orange-400 flex items-center justify-center shrink-0 border border-orange-500/20">
+                  <Zap size={18} />
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-400 uppercase font-bold block">Distância</span>
+                  <span className="text-xs font-black text-white uppercase">5.0 KM Asfalto</span>
+                </div>
+              </div>
+
+              <div className="athletic-card p-3 rounded-2xl flex items-center gap-2.5 text-left">
+                <div className="w-9 h-9 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center shrink-0 border border-cyan-500/20">
+                  <Timer size={18} />
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-400 uppercase font-bold block">Cronometragem</span>
+                  <span className="text-xs font-black text-white uppercase">Chip Eletrônico</span>
+                </div>
+              </div>
+
+              <div className="athletic-card p-3 rounded-2xl flex items-center gap-2.5 text-left">
+                <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center shrink-0 border border-blue-500/20">
+                  <Droplets size={18} />
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-400 uppercase font-bold block">Hidratação</span>
+                  <span className="text-xs font-black text-white uppercase">A cada 2 km</span>
+                </div>
+              </div>
+
+              <div className="athletic-card p-3 rounded-2xl flex items-center gap-2.5 text-left">
+                <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/20">
+                  <Award size={18} />
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-400 uppercase font-bold block">Premiação</span>
+                  <span className="text-xs font-black text-white uppercase">Troféus + Medalha</span>
+                </div>
+              </div>
             </div>
 
           </div>
 
           {/* ======================================================== */}
-          {/* RIGHT COLUMN (42%): Editorial Sports Magazine Showcase    */}
+          {/* RIGHT COLUMN (5 COLS): Visual Athletic Kit & Trophy Card */}
           {/* ======================================================== */}
           <div className="lg:col-span-5 flex flex-col items-center">
-            <div className="w-full max-w-md lg:max-w-none space-y-2.5">
+            <div className="relative w-full max-w-md">
               
-              {/* Main Visual Showcase Card */}
-              <div className="relative group rounded-3xl overflow-hidden border border-slate-200/90 shadow-xl bg-white transition-all duration-300 hover:shadow-2xl">
+              {/* Backlight Glow Effect */}
+              <div className="absolute -inset-1 rounded-3xl bg-gradient-to-tr from-orange-600/40 via-amber-500/20 to-cyan-500/20 blur-xl opacity-75 animate-pulse-subtle" />
+              
+              {/* Main Visual Card */}
+              <div className="relative bg-[#090F1A] border border-white/10 rounded-3xl p-6 shadow-2xl overflow-hidden">
                 
-                {/* Real Historic Photo Container */}
-                <div className="relative aspect-[16/11] sm:aspect-[4/3] w-full overflow-hidden bg-slate-900">
-                  <img
-                    src="/assets/corrida_2025.webp"
-                    alt="Chegada da Corrida de Emancipação de Lajes Pintadas"
-                    className="w-full h-full object-cover object-[center_35%] transform transition-transform duration-700 group-hover:scale-105"
-                    loading="eager"
-                  />
-                  
-                  {/* Subtle Athletic Gradient Scrim for crisp text and badge contrast */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/25 to-slate-950/10 pointer-events-none" />
-
-                  {/* Top-Right: Prominent 68 Anos Commemorative Emblem Badge */}
-                  <div className="absolute top-3 right-3 z-10 flex items-center gap-2 p-1.5 pr-3 rounded-2xl bg-white/95 backdrop-blur-md border border-amber-300/80 shadow-md">
-                    <img
-                      src="/assets/logo_68_anos_clean.webp"
-                      alt="Selo Comemorativo 68 Anos de Emancipação"
-                      className="w-10 h-10 sm:w-11 sm:h-11 object-contain drop-shadow-xs"
-                    />
-                    <div className="text-left">
-                      <span className="block text-[9px] font-black uppercase text-amber-700 tracking-wider leading-none">
-                        Edição Histórica
-                      </span>
-                      <span className="block text-xs font-black text-slate-900 leading-tight">
-                        68 Anos Lajes
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Top-Left: Distance & Timing Tag */}
-                  <div className="absolute top-3 left-3 z-10">
-                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-orange-600 text-white shadow-md">
-                      <Flame className="w-3.5 h-3.5" />
-                      5 KM Oficial
+                {/* Top Badge on Card */}
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-orange-500 animate-ping"></span>
+                    <span className="text-xs font-black text-white uppercase tracking-wider">
+                      Kit Oficial Exclusivo
                     </span>
                   </div>
+                  <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 uppercase">
+                    Modelo 2026
+                  </span>
+                </div>
 
-                  {/* Bottom Caption & Location Anchor */}
-                  <div className="absolute bottom-3 left-3 right-3 z-10 text-white">
-                    <div className="flex items-center justify-between text-xs font-bold text-amber-300">
-                      <span className="flex items-center gap-1.5">
-                        <MapPin className="w-3.5 h-3.5 text-orange-400 shrink-0" />
-                        Pórtico de Chegada • Lajes Pintadas/RN
-                      </span>
-                      <span className="text-white/80 text-[11px] font-medium bg-black/40 px-2 py-0.5 rounded-md">
-                        Edição Anterior
-                      </span>
-                    </div>
-                    <p className="text-xs sm:text-sm font-semibold text-white/95 leading-tight mt-1">
-                      Emoção, superação e orgulho no maior evento esportivo do município.
-                    </p>
+                {/* Hero Shirt Image with Floating Depth */}
+                <div className="relative my-2 py-4 flex items-center justify-center group cursor-pointer" onClick={onOpenRegister}>
+                  <div className="absolute inset-0 bg-gradient-to-b from-orange-500/10 via-transparent to-transparent rounded-2xl" />
+                  <img
+                    src="/assets/camisa_oficial_lajes.webp"
+                    alt="Camisa Oficial Laranja da 5ª Corrida"
+                    className="w-full max-h-[320px] object-contain drop-shadow-[0_20px_35px_rgba(255,85,0,0.35)] transition-transform duration-500 group-hover:scale-105 group-hover:-rotate-1"
+                  />
+                  
+                  {/* Floating Tags */}
+                  <div className="absolute -top-1 right-2 bg-[#060A11]/90 backdrop-blur-md border border-orange-500/40 px-3 py-1 rounded-full text-[11px] font-black text-orange-400 uppercase shadow-lg">
+                    Dry-Fit UV50+
+                  </div>
+                  
+                  <div className="absolute bottom-2 left-2 bg-[#060A11]/90 backdrop-blur-md border border-cyan-500/40 px-3 py-1 rounded-full text-[11px] font-black text-cyan-300 uppercase shadow-lg">
+                    Laranja Oficial
                   </div>
                 </div>
 
-                {/* Sub-Card: Camisa Oficial 03 / Laranja Quick Preview & Access */}
-                <div className="p-2.5 sm:p-3 bg-gradient-to-r from-orange-50/80 via-white to-amber-50/60 border-t border-slate-100 flex items-center justify-between gap-3">
-                  <a href="#camisa" className="flex items-center gap-2.5 sm:gap-3 flex-1 min-w-0 group/camisa">
-                    <img
-                      src="/assets/camisa_oficial_lajes.webp"
-                      alt="Camisa Oficial Laranja - Corrida de Emancipação"
-                      className="w-11 h-11 sm:w-12 sm:h-12 object-contain rounded-xl border border-orange-200/80 bg-white p-1 shrink-0 drop-shadow-xs group-hover/camisa:scale-105 transition-transform"
-                    />
-                    <div className="truncate">
-                      <div className="flex items-center gap-1 text-xs font-black uppercase text-slate-900 group-hover/camisa:text-orange-600 transition-colors">
-                        <span>Camisa Oficial 03 • Laranja</span>
-                        <ChevronRight className="w-3.5 h-3.5 text-orange-600 shrink-0" />
-                      </div>
-                      <p className="text-[11px] text-slate-600 font-medium truncate">
-                        Tecido Dry-Fit UV50+ • Inclusa na Inscrição
-                      </p>
-                    </div>
-                  </a>
-                  
-                  <a
-                    href="#camisa"
-                    className="px-3 sm:px-3.5 py-1.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold whitespace-nowrap shadow-xs transition-colors shrink-0"
-                  >
-                    Ver Camisa
-                  </a>
+                {/* Kit Breakdown Pills */}
+                <div className="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-white/10 text-xs">
+                  <div className="flex items-center gap-2 text-slate-300">
+                    <CheckCircle2 size={14} className="text-orange-400 shrink-0" />
+                    <span>Camisa Técnica Pro</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-slate-300">
+                    <CheckCircle2 size={14} className="text-orange-400 shrink-0" />
+                    <span>Número com Chip</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-slate-300">
+                    <CheckCircle2 size={14} className="text-orange-400 shrink-0" />
+                    <span>Medalha de Metal</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-slate-300">
+                    <CheckCircle2 size={14} className="text-orange-400 shrink-0" />
+                    <span>Seguro Atleta Pro</span>
+                  </div>
                 </div>
+
+                {/* Bottom CTA on Card */}
+                <button
+                  onClick={onOpenRegister}
+                  className="w-full mt-5 py-3 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 border border-white/10 transition-colors"
+                >
+                  <span>Ver Grade de Tamanhos (PP ao XG)</span>
+                  <ChevronRight size={14} />
+                </button>
 
               </div>
-
-              {/* Sub-feature badges strip */}
-              <div className="grid grid-cols-2 gap-2 text-center">
-                <div className="p-2 rounded-xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-center gap-2">
-                  <Droplets className="w-3.5 h-3.5 text-sky-600 shrink-0" />
-                  <span className="text-xs font-bold text-slate-800">Hidratação Completa</span>
-                </div>
-                <div className="p-2 rounded-xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-center gap-2">
-                  <Award className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                  <span className="text-xs font-bold text-slate-800">Medalha Para Todos</span>
-                </div>
-              </div>
-
             </div>
           </div>
 
         </div>
+
       </div>
     </section>
   );
