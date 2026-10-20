@@ -4,8 +4,8 @@
 // ==============================================================================
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createClient } from '@supabase/supabase-js';
 import { memoryStore } from './lib/state';
+import { getAdminSupabaseClient } from './lib/supabase-client';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const startTime = Date.now();
@@ -17,11 +17,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const category = (req.query.category as string) || 'ALL';
     const status = (req.query.status as string) || 'ALL';
 
-    const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SERVICE_ROLE_KEY;
+    const supabase = getAdminSupabaseClient();
 
-    if (supabaseUrl && supabaseServiceKey) {
-      const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    if (supabase) {
       let query = supabase
         .from('registrations')
         .select('*, athlete:athletes(*)', { count: 'exact' });

@@ -7,6 +7,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import { memoryStore } from './lib/state';
+import { getAdminSupabaseClient } from './lib/supabase-client';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const startTime = Date.now();
@@ -53,11 +54,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // 2. Tentar busca no Supabase se configurado
-    const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SERVICE_ROLE_KEY;
+    const supabase = getAdminSupabaseClient();
 
-    if (supabaseUrl && supabaseServiceKey) {
-      const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    if (supabase) {
       const { data, error } = await supabase.rpc('lookup_registration_by_protocol', {
         p_protocol: cleanProtocol,
         p_raw_access_code: cleanCode,

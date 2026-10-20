@@ -8,6 +8,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import { AsaasClient } from './lib/asaas';
 import { memoryStore } from './lib/state';
+import { getAdminSupabaseClient } from './lib/supabase-client';
 
 function isValidCPF(cpf: string): boolean {
   const clean = cpf.replace(/\D/g, '');
@@ -108,14 +109,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
     // 4. Executar Reserva Transacional Atômica
-    const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SERVICE_ROLE_KEY;
-
+    const supabase = getAdminSupabaseClient();
     let reservationResult: any;
 
-    if (supabaseUrl && supabaseServiceKey) {
+    if (supabase) {
       // 4.1 Via Supabase RPC com SELECT FOR UPDATE no PostgreSQL
-      const supabase = createClient(supabaseUrl, supabaseServiceKey);
       const { data, error } = await supabase.rpc('create_registration_reservation', {
         p_full_name: fullName,
         p_cpf: cleanCpf,

@@ -4,7 +4,7 @@
 // ==============================================================================
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createClient } from '@supabase/supabase-js';
+import { getAdminSupabaseClient } from './lib/supabase-client';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Configuração CORS
@@ -16,16 +16,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).end();
   }
 
-  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SERVICE_ROLE_KEY || process.env.VITE_SERVICE_ROLE_KEY;
+  const supabase = getAdminSupabaseClient();
 
   if (req.method === 'POST') {
     const { size, totalStock, items } = req.body || {};
 
-    if (supabaseUrl && supabaseServiceKey) {
+    if (supabase) {
       try {
-        const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
         // Atualização em lote (batch)
         if (Array.isArray(items) && items.length > 0) {
           for (const item of items) {
@@ -62,9 +59,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   // GET: Obter estoque direto do Supabase via Service Role
-  if (supabaseUrl && supabaseServiceKey) {
+  if (supabase) {
     try {
-      const supabase = createClient(supabaseUrl, supabaseServiceKey);
       const { data, error } = await supabase
         .from('shirt_inventory')
         .select('*')
