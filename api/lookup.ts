@@ -5,9 +5,41 @@
 // ==============================================================================
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createClient } from '@supabase/supabase-js';
-import { memoryStore } from './lib/state';
-import { getAdminSupabaseClient } from './lib/supabase-client';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { memoryStore } from './lib/state.js';
+
+function normalizeSupabaseUrl(rawUrl?: string): string {
+  if (!rawUrl) return '';
+  let url = rawUrl.trim().replace(/^["']|["']$/g, '');
+  const dashboardMatch = url.match(/supabase\.com\/dashboard\/project\/([a-z0-9_-]+)/i);
+  if (dashboardMatch) return `https://${dashboardMatch[1]}.supabase.co`;
+  url = url.replace(/\/rest\/v1\/?$/, '');
+  url = url.replace(/\/+$/, '');
+  return url;
+}
+
+function normalizeKey(rawKey?: string): string {
+  if (!rawKey) return '';
+  return rawKey.trim().replace(/^["']|["']$/g, '');
+}
+
+function getSupabase(): SupabaseClient | null {
+  const rawUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  const rawKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.SERVICE_ROLE_KEY ||
+    process.env.VITE_SERVICE_ROLE_KEY ||
+    process.env.SUPABASE_ANON_KEY ||
+    process.env.VITE_SUPABASE_ANON_KEY;
+  const url = normalizeSupabaseUrl(rawUrl);
+  const key = normalizeKey(rawKey);
+  if (!url || !key) return null;
+  try {
+    return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+  } catch {
+    return null;
+  }
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const startTime = Date.now();
@@ -54,7 +86,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // 2. Tentar busca no Supabase se configurado
-    const supabase = getAdminSupabaseClient();
+    const supabase = getSupabase();
 
     if (supabase) {
       const { data, error } = await supabase.rpc('lookup_registration_by_protocol', {
