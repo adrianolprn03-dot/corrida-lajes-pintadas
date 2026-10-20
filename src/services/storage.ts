@@ -410,6 +410,15 @@ class StorageService {
     }
 
     // 3. Validação de Regras Casa / Visitante e Consistência de Residência
+    const registrationChannel = submission.channel === 'PRESENCIAL_PREFEITURA' ? 'PRESENCIAL_PREFEITURA' : 'ONLINE';
+
+    // REGRA REGIMENTAL ESTREITA: Inscrições da categoria Casa são exclusivamente presenciais na sede da Prefeitura
+    if (submission.originType === 'CASA' && registrationChannel !== 'PRESENCIAL_PREFEITURA') {
+      throw new Error(
+        'Inscrições da categoria Casa são realizadas exclusivamente de forma presencial na sede da Prefeitura de Lajes Pintadas/RN. Apresente documento de identificação e comprovação do vínculo exigido pelo regulamento.'
+      );
+    }
+
     if (submission.originType === 'CASA') {
       if (!submission.casaProofType) {
         throw new Error('Para a categoria Casa, é obrigatório selecionar o tipo de vínculo com Lajes Pintadas.');
@@ -478,6 +487,12 @@ class StorageService {
           casaProofType: submission.casaProofType,
           shirtSize: submission.shirtSize,
           paymentMethod: submission.paymentMethod,
+          channel: registrationChannel,
+          attendantName: submission.attendantName,
+          attendantId: submission.attendantId,
+          documentVerificationStatus: submission.documentVerificationStatus,
+          documentTypePresented: submission.documentTypePresented,
+          documentVerificationNotes: submission.documentVerificationNotes,
         }),
       });
 
@@ -510,6 +525,14 @@ class StorageService {
           kitDelivered: false,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
+          channel: registrationChannel,
+          documentVerificationStatus: submission.documentVerificationStatus || (submission.originType === 'CASA' ? 'APROVADO' : undefined),
+          documentTypePresented: submission.documentTypePresented || null,
+          documentVerificationNotes: submission.documentVerificationNotes || null,
+          documentCheckedBy: submission.attendantName || null,
+          documentCheckedAt: registrationChannel === 'PRESENCIAL_PREFEITURA' ? new Date().toISOString() : null,
+          attendantName: submission.attendantName || null,
+          attendantId: submission.attendantId || null,
           athlete: {
             fullName: submission.fullName.trim(),
             cpf: cleanCpf,
@@ -593,6 +616,14 @@ class StorageService {
       kitDelivered: false,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      channel: registrationChannel,
+      documentVerificationStatus: submission.documentVerificationStatus || (submission.originType === 'CASA' ? 'APROVADO' : undefined),
+      documentTypePresented: submission.documentTypePresented || null,
+      documentVerificationNotes: submission.documentVerificationNotes || null,
+      documentCheckedBy: submission.attendantName || null,
+      documentCheckedAt: registrationChannel === 'PRESENCIAL_PREFEITURA' ? new Date().toISOString() : null,
+      attendantName: submission.attendantName || null,
+      attendantId: submission.attendantId || null,
       athlete: {
         fullName: submission.fullName.trim(),
         cpf: cleanCpf,
@@ -852,6 +883,14 @@ class StorageService {
             kitNotes: d.kit_notes,
             createdAt: d.created_at,
             updatedAt: d.updated_at,
+            channel: d.channel || 'ONLINE',
+            documentVerificationStatus: d.document_verification_status || (d.origin_type === 'CASA' ? 'APROVADO' : undefined),
+            documentTypePresented: d.document_type_presented || null,
+            documentVerificationNotes: d.document_verification_notes || null,
+            documentCheckedBy: d.document_checked_by || null,
+            documentCheckedAt: d.document_checked_at || null,
+            attendantName: d.attendant_name || null,
+            attendantId: d.attendant_id || null,
             athlete: d.athlete ? {
               fullName: d.athlete.full_name,
               cpf: d.athlete.cpf,
@@ -870,6 +909,22 @@ class StorageService {
       console.warn('Falha ao buscar inscrições via API admin, usando local:', e);
     }
     return this.getLocal<Registration[]>(STORAGE_KEYS.REGISTRATIONS, []);
+  }
+
+  // Consulta de inscrição existente por CPF (usada pelo Atendimento Presencial)
+  async lookupRegistrationByCpf(cpf: string): Promise<Registration | null> {
+    const cleanCpf = cpf.replace(/\D/g, '');
+    const all = await this.getAdminRegistrations();
+    const found = all.find((r) => r.athlete?.cpf?.replace(/\D/g, '') === cleanCpf);
+    return found || null;
+  }
+
+  // Obter inscrição por protocolo
+  async getRegistrationByProtocol(protocol: string): Promise<Registration | null> {
+    const all = await this.getAdminRegistrations();
+    const cleanProtocol = protocol.trim().toUpperCase();
+    const found = all.find((r) => r.protocol.toUpperCase() === cleanProtocol);
+    return found || null;
   }
 
   // Excluir ou Cancelar Inscrição de Teste (Admin)
@@ -1017,6 +1072,13 @@ class StorageService {
         kitNotes: 'Apresentou RG e Comprovante de Residência no Centro.',
         createdAt: '2026-10-10T14:20:00Z',
         updatedAt: '2026-10-15T09:15:00Z',
+        channel: 'PRESENCIAL_PREFEITURA',
+        documentVerificationStatus: 'APROVADO',
+        documentTypePresented: 'RG + Comprovante de Residência',
+        documentVerificationNotes: 'Documento original verificado na sede da Prefeitura.',
+        documentCheckedBy: 'Servidor Atendente - Prefeitura',
+        documentCheckedAt: '2026-10-10T14:20:00Z',
+        attendantName: 'Servidor Atendente - Prefeitura',
         athlete: {
           fullName: 'Francisco de Assis Bezerra',
           cpf: '12345678909',
@@ -1051,6 +1113,13 @@ class StorageService {
         kitDelivered: false,
         createdAt: '2026-10-11T09:50:00Z',
         updatedAt: '2026-10-11T10:05:00Z',
+        channel: 'PRESENCIAL_PREFEITURA',
+        documentVerificationStatus: 'APROVADO',
+        documentTypePresented: 'Conta de Energia Elétrica (Residência Fixa)',
+        documentVerificationNotes: 'Apresentou comprovante em nome do titular.',
+        documentCheckedBy: 'Servidor Atendente - Prefeitura',
+        documentCheckedAt: '2026-10-11T09:50:00Z',
+        attendantName: 'Servidor Atendente - Prefeitura',
         athlete: {
           fullName: 'Maria Helena dos Santos',
           cpf: '98765432100',
@@ -1085,6 +1154,7 @@ class StorageService {
         kitDelivered: false,
         createdAt: '2026-10-12T16:30:00Z',
         updatedAt: '2026-10-12T16:40:00Z',
+        channel: 'ONLINE',
         athlete: {
           fullName: 'Carlos Eduardo Fontes',
           cpf: '45678912345',

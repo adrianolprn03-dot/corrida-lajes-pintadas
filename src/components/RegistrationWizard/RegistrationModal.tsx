@@ -61,9 +61,9 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
   });
 
   const [step2Data, setStep2Data] = React.useState<Step2Data>({
-    originType: 'CASA',
+    originType: 'VISITANTE',
     gender: 'MASCULINO',
-    casaProofType: 'NATURAL_E_RESIDENTE',
+    casaProofType: undefined,
     shirtSize: initialShirtSize || 'M',
     paymentMethod: 'PIX',
   });

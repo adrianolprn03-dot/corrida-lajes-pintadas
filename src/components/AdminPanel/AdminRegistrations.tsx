@@ -15,11 +15,12 @@ import {
   Check, 
   ExternalLink,
   ShieldAlert,
-  UserCheck
+  UserCheck,
+  Building2
 } from 'lucide-react';
-import { Registration, RegistrationStatus, Category, ShirtSize, PaymentMethod, CasaProofType } from '../../types';
+import { Registration, RegistrationStatus, Category, ShirtSize, PaymentMethod, CasaProofType, RegistrationChannel, DocumentVerificationStatus } from '../../types';
 import { exportRegistrationsToCSV, exportRegistrationsToExcel } from '../../lib/exportUtils';
-import { formatCPF, formatPhone } from '../../lib/masks';
+import { formatCPF, formatPhone, formatDateTimeBR } from '../../lib/masks';
 
 interface AdminRegistrationsProps {
   registrations: Registration[];
@@ -27,6 +28,7 @@ interface AdminRegistrationsProps {
   onUpdateStatus: (id: string, status: RegistrationStatus, notes?: string) => Promise<void>;
   onReconcileAsaas: (id: string) => Promise<void>;
   onReissueCode: (id: string, reason: string) => Promise<string>;
+  onOpenPresential?: () => void;
 }
 
 export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
@@ -35,12 +37,17 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
   onUpdateStatus,
   onReconcileAsaas,
   onReissueCode,
+  onOpenPresential,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [channelFilter, setChannelFilter] = useState<string>('ALL');
   const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
+  const [genderFilter, setGenderFilter] = useState<string>('ALL');
+  const [verificationFilter, setVerificationFilter] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [paymentFilter, setPaymentFilter] = useState<string>('ALL');
   const [sizeFilter, setSizeFilter] = useState<string>('ALL');
+  const [attendantFilter, setAttendantFilter] = useState<string>('ALL');
   
   // Selected registration for details modal
   const [selectedReg, setSelectedReg] = useState<Registration | null>(null);
@@ -52,6 +59,16 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
   const [codeCopied, setCodeCopied] = useState(false);
   const [isReconciling, setIsReconciling] = useState(false);
   const [actionMessage, setActionMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Distinct attendants list for filter
+  const attendantOptions = useMemo(() => {
+    const set = new Set<string>();
+    registrations.forEach((r) => {
+      const name = r.attendantName || r.documentCheckedBy;
+      if (name) set.add(name);
+    });
+    return Array.from(set);
+  }, [registrations]);
 
   // Filtered registrations
   const filteredRegistrations = useMemo(() => {
@@ -69,14 +86,58 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
         protocol.includes(search) ||
         email.includes(search);
 
+      const matchesChannel =
+        channelFilter === 'ALL' ||
+        (channelFilter === 'PRESENCIAL_PREFEITURA'
+          ? reg.channel === 'PRESENCIAL_PREFEITURA'
+          : reg.channel !== 'PRESENCIAL_PREFEITURA');
+
       const matchesCategory = categoryFilter === 'ALL' || reg.category === categoryFilter;
+
+      const matchesGender =
+        genderFilter === 'ALL' ||
+        (genderFilter === 'MASCULINO'
+          ? ['CASA_MASCULINO', 'VISITANTE_MASCULINO'].includes(reg.category) || reg.gender === 'MASCULINO'
+          : ['CASA_FEMININO', 'VISITANTE_FEMININO'].includes(reg.category) || reg.gender === 'FEMININO');
+
+      const matchesVerification =
+        verificationFilter === 'ALL' ||
+        reg.documentVerificationStatus === verificationFilter ||
+        (verificationFilter === 'PENDENTE' && !reg.documentVerificationStatus && reg.originType === 'CASA');
+
       const matchesStatus = statusFilter === 'ALL' || reg.status === statusFilter;
       const matchesPayment = paymentFilter === 'ALL' || reg.paymentMethod === paymentFilter;
       const matchesSize = sizeFilter === 'ALL' || reg.shirtSize === sizeFilter;
 
-      return matchesSearch && matchesCategory && matchesStatus && matchesPayment && matchesSize;
+      const matchesAttendant =
+        attendantFilter === 'ALL' ||
+        reg.attendantName === attendantFilter ||
+        reg.documentCheckedBy === attendantFilter;
+
+      return (
+        matchesSearch &&
+        matchesChannel &&
+        matchesCategory &&
+        matchesGender &&
+        matchesVerification &&
+        matchesStatus &&
+        matchesPayment &&
+        matchesSize &&
+        matchesAttendant
+      );
     });
-  }, [registrations, searchTerm, categoryFilter, statusFilter, paymentFilter, sizeFilter]);
+  }, [
+    registrations,
+    searchTerm,
+    channelFilter,
+    categoryFilter,
+    genderFilter,
+    verificationFilter,
+    statusFilter,
+    paymentFilter,
+    sizeFilter,
+    attendantFilter,
+  ]);
 
   const handleExportCSV = () => {
     exportRegistrationsToCSV(filteredRegistrations, 'Inscricoes_Corrida_LajesPintadas_2026');
@@ -164,8 +225,19 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
             )}
           </div>
 
-          {/* Export Buttons */}
-          <div className="flex items-center gap-2">
+          {/* Export & Action Buttons */}
+          <div className="flex flex-wrap items-center gap-2">
+            {onOpenPresential && (
+              <button
+                onClick={onOpenPresential}
+                className="flex items-center gap-2 px-3.5 py-2.5 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-xl shadow-sm shadow-orange-600/20 transition"
+                title="Cadastrar atleta presencialmente na sede da Prefeitura de Lajes Pintadas"
+              >
+                <Building2 className="w-4 h-4" />
+                <span>Nova Inscrição Presencial</span>
+              </button>
+            )}
+
             <button
               onClick={handleExportExcel}
               className="flex items-center gap-2 px-3.5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm transition"
@@ -193,65 +265,120 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
         </div>
 
         {/* Filters Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t border-slate-100">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5 pt-2 border-t border-slate-100">
           <div>
-            <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Categoria</label>
+            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Canal</label>
             <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
+              value={channelFilter}
+              onChange={(e) => setChannelFilter(e.target.value)}
+              className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
             >
-              <option value="ALL">Todas as Categorias</option>
-              <option value="CASA_MASCULINO">Casa Masculino</option>
-              <option value="CASA_FEMININO">Casa Feminino</option>
-              <option value="VISITANTE_MASCULINO">Visitante Masculino</option>
-              <option value="VISITANTE_FEMININO">Visitante Feminino</option>
+              <option value="ALL">Todos os Canais</option>
+              <option value="ONLINE">Online</option>
+              <option value="PRESENCIAL_PREFEITURA">Presencial — Prefeitura</option>
             </select>
           </div>
 
           <div>
-            <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Situação</label>
+            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Categoria</label>
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
+            >
+              <option value="ALL">Todas Categorias</option>
+              <option value="CASA_MASCULINO">Casa Masc.</option>
+              <option value="CASA_FEMININO">Casa Fem.</option>
+              <option value="VISITANTE_MASCULINO">Visit. Masc.</option>
+              <option value="VISITANTE_FEMININO">Visit. Fem.</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Sexo / Gênero</label>
+            <select
+              value={genderFilter}
+              onChange={(e) => setGenderFilter(e.target.value)}
+              className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
+            >
+              <option value="ALL">Todos</option>
+              <option value="MASCULINO">Masculino</option>
+              <option value="FEMININO">Feminino</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Conferência Vínculo</label>
+            <select
+              value={verificationFilter}
+              onChange={(e) => setVerificationFilter(e.target.value)}
+              className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
+            >
+              <option value="ALL">Todos os Status</option>
+              <option value="APROVADO">Aprovada</option>
+              <option value="PENDENTE">Pendente</option>
+              <option value="PENDENTE_COMPLEMENTACAO">Pend. Complem.</option>
+              <option value="REJEITADO">Rejeitada</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Situação Inscrição</label>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
             >
-              <option value="ALL">Todos os Status</option>
+              <option value="ALL">Todos</option>
               <option value="CONFIRMED">Confirmada (Paga)</option>
               <option value="RESERVED">Reservada (Pendente)</option>
-              <option value="IN_REVIEW">Em Análise / Auditoria</option>
+              <option value="IN_REVIEW">Em Auditoria</option>
               <option value="CANCELLED">Cancelada</option>
               <option value="REFUNDED">Reembolsada</option>
             </select>
           </div>
 
           <div>
-            <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Pagamento</label>
+            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Pagamento</label>
             <select
               value={paymentFilter}
               onChange={(e) => setPaymentFilter(e.target.value)}
-              className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
             >
-              <option value="ALL">Todos os Meios</option>
+              <option value="ALL">Todos</option>
               <option value="PIX">Pix Oficial</option>
-              <option value="CREDIT_CARD">Cartão de Crédito</option>
+              <option value="CREDIT_CARD">Cartão 1x</option>
             </select>
           </div>
 
           <div>
-            <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Camisa</label>
+            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Camisa</label>
             <select
               value={sizeFilter}
               onChange={(e) => setSizeFilter(e.target.value)}
-              className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
             >
-              <option value="ALL">Todos os Tamanhos</option>
+              <option value="ALL">Todas</option>
               <option value="PP">PP</option>
               <option value="P">P</option>
               <option value="M">M</option>
               <option value="G">G</option>
               <option value="GG">GG</option>
               <option value="XG">XG</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Servidor Responsável</label>
+            <select
+              value={attendantFilter}
+              onChange={(e) => setAttendantFilter(e.target.value)}
+              className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
+            >
+              <option value="ALL">Todos</option>
+              {attendantOptions.map((att) => (
+                <option key={att} value={att}>{att}</option>
+              ))}
             </select>
           </div>
         </div>
@@ -274,7 +401,8 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
               <tr>
                 <th className="py-3 px-4">Protocolo</th>
                 <th className="py-3 px-4">Atleta</th>
-                <th className="py-3 px-4">Categoria</th>
+                <th className="py-3 px-4">Canal</th>
+                <th className="py-3 px-4">Categoria / Vínculo</th>
                 <th className="py-3 px-4">Camisa</th>
                 <th className="py-3 px-4">Pagamento</th>
                 <th className="py-3 px-4">Situação</th>
@@ -285,7 +413,7 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
             <tbody className="divide-y divide-slate-100">
               {filteredRegistrations.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-400">
+                  <td colSpan={9} className="py-12 text-center text-slate-400">
                     Nenhuma inscrição encontrada para os filtros selecionados.
                   </td>
                 </tr>
@@ -294,6 +422,7 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
                   const isConfirmed = reg.status === 'CONFIRMED';
                   const isReserved = reg.status === 'RESERVED';
                   const isCasa = reg.originType === 'CASA';
+                  const isPresential = reg.channel === 'PRESENCIAL_PREFEITURA';
 
                   return (
                     <tr key={reg.id} className="hover:bg-slate-50/80 transition">
@@ -309,14 +438,39 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
                         </div>
                       </td>
                       <td className="py-3 px-4 whitespace-nowrap">
+                        {isPresential ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                            <Building2 className="w-3 h-3 text-amber-700" />
+                            <span>Presencial</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                            <span>Online</span>
+                          </span>
+                        )}
+                        {reg.attendantName && (
+                          <div className="text-[9px] text-slate-400 truncate max-w-[90px]" title={reg.attendantName}>
+                            Por: {reg.attendantName}
+                          </div>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 whitespace-nowrap">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
                           isCasa ? 'bg-orange-100 text-orange-800 border border-orange-200' : 'bg-blue-100 text-blue-800 border border-blue-200'
                         }`}>
                           {categoryLabels[reg.category] || reg.category}
                         </span>
-                        {isCasa && reg.casaProofType && (
-                          <div className="text-[10px] text-slate-400 mt-0.5 truncate max-w-[120px]" title={casaProofLabels[reg.casaProofType]}>
-                            {reg.casaProofType}
+                        {isCasa && (
+                          <div className="mt-0.5">
+                            {reg.documentVerificationStatus === 'APROVADO' ? (
+                              <span className="text-[10px] text-emerald-700 font-bold block">✓ Vínculo Aprovado</span>
+                            ) : reg.documentVerificationStatus === 'PENDENTE_COMPLEMENTACAO' ? (
+                              <span className="text-[10px] text-amber-700 font-bold block">⏳ Pend. Complem.</span>
+                            ) : reg.documentVerificationStatus === 'REJEITADO' ? (
+                              <span className="text-[10px] text-red-700 font-bold block">✕ Vínculo Rejeitado</span>
+                            ) : (
+                              <span className="text-[10px] text-slate-400 font-medium block">Pendente Conf.</span>
+                            )}
                           </div>
                         )}
                       </td>
@@ -457,27 +611,72 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
                 </div>
               </div>
 
-              {/* Casa Category Audit Section */}
+              {/* Casa Category & Presential Audit Section */}
               <div className="bg-orange-50/60 rounded-xl p-4 border border-orange-200">
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between mb-3">
                   <h4 className="text-xs font-bold text-orange-900 uppercase tracking-wider flex items-center gap-1.5">
                     <ShieldAlert className="w-4 h-4 text-orange-600" />
-                    Auditoria de Elegibilidade da Categoria
+                    Canal de Inscrição & Elegibilidade de Categoria
                   </h4>
-                  <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-orange-200 text-orange-800">
-                    {selectedReg.category}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-800 border border-slate-200">
+                      {selectedReg.channel === 'PRESENCIAL_PREFEITURA' ? 'Presencial — Prefeitura' : 'Online'}
+                    </span>
+                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-orange-200 text-orange-800">
+                      {categoryLabels[selectedReg.category] || selectedReg.category}
+                    </span>
+                  </div>
                 </div>
 
                 {selectedReg.originType === 'CASA' ? (
-                  <div className="space-y-2 text-xs">
-                    <p className="text-orange-950 font-medium">
-                      <strong>Declaração de Vínculo:</strong> {selectedReg.casaProofType ? casaProofLabels[selectedReg.casaProofType] : 'Não especificado'}
-                    </p>
-                    <p className="text-orange-800 text-[11px] leading-relaxed">
-                      A comprovação formal deverá ser validada na entrega do kit através de: Certidão de Nascimento (para natural), Título Eleitoral do município ou Comprovante de Residência em nome do atleta/pais.
-                    </p>
-                    <div className="flex gap-2 pt-2">
+                  <div className="space-y-3 text-xs">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-white/70 p-3 rounded-lg border border-orange-200/80">
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">Vínculo Regimental:</span>
+                        <strong className="text-orange-950 font-bold">
+                          {selectedReg.casaProofType ? casaProofLabels[selectedReg.casaProofType] : 'Casa'}
+                        </strong>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">Conferência Documental:</span>
+                        <strong className={`font-bold ${
+                          selectedReg.documentVerificationStatus === 'APROVADO'
+                            ? 'text-emerald-700'
+                            : selectedReg.documentVerificationStatus === 'PENDENTE_COMPLEMENTACAO'
+                            ? 'text-amber-700'
+                            : 'text-slate-700'
+                        }`}>
+                          {selectedReg.documentVerificationStatus || 'Pendente'}
+                        </strong>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">Servidor Responsável:</span>
+                        <strong className="text-slate-900 font-bold">
+                          {selectedReg.attendantName || selectedReg.documentCheckedBy || 'Atendimento Presencial'}
+                        </strong>
+                      </div>
+                      {selectedReg.documentTypePresented && (
+                        <div className="col-span-2">
+                          <span className="text-slate-400 block text-[10px]">Documento Apresentado:</span>
+                          <span className="text-slate-800 font-medium">{selectedReg.documentTypePresented}</span>
+                        </div>
+                      )}
+                      {selectedReg.documentCheckedAt && (
+                        <div>
+                          <span className="text-slate-400 block text-[10px]">Data da Conferência:</span>
+                          <span className="text-slate-800 font-medium">{formatDateTimeBR(selectedReg.documentCheckedAt)}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {selectedReg.documentVerificationNotes && (
+                      <div className="bg-white/90 p-2.5 rounded-lg border border-orange-200 text-[11px] text-slate-700">
+                        <strong className="text-orange-900 block text-[10px] uppercase">Observações Internas da Conferência:</strong>
+                        <span>{selectedReg.documentVerificationNotes}</span>
+                      </div>
+                    )}
+
+                    <div className="flex flex-wrap gap-2 pt-1">
                       <button
                         onClick={() => onUpdateStatus(selectedReg.id, 'IN_REVIEW', 'Colocado em análise para validação de residência')}
                         className="px-3 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-lg font-bold text-xs transition"
@@ -494,7 +693,7 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
                   </div>
                 ) : (
                   <p className="text-slate-600 text-xs">
-                    Atleta inscrito na categoria <strong>Visitante</strong>. Não requer comprovação de vínculo com Lajes Pintadas/RN.
+                    Atleta inscrito na categoria <strong>Visitante</strong> via canal <strong>Online</strong>. Não requer comprovação de vínculo com Lajes Pintadas/RN.
                   </p>
                 )}
               </div>

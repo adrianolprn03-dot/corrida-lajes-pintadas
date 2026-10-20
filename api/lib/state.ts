@@ -43,6 +43,14 @@ export interface StoredRegistration {
   reservationExpiresAt: string;
   createdAt: string;
   updatedAt: string;
+  channel?: 'ONLINE' | 'PRESENCIAL_PREFEITURA';
+  documentVerificationStatus?: 'PENDENTE' | 'APROVADO' | 'PENDENTE_COMPLEMENTACAO' | 'REJEITADO';
+  documentTypePresented?: string;
+  documentVerificationNotes?: string;
+  documentCheckedBy?: string;
+  documentCheckedAt?: string;
+  attendantName?: string;
+  attendantId?: string;
 }
 
 // Estado singleton em memória para garantir consistência sob carga concorrente

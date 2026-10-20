@@ -9,10 +9,12 @@ import {
   History, 
   X,
   AlertTriangle,
-  RefreshCw
+  RefreshCw,
+  Building2
 } from 'lucide-react';
 import { AdminOverview } from './AdminOverview';
 import { AdminRegistrations } from './AdminRegistrations';
+import { AdminPresentialRegistration } from './AdminPresentialRegistration';
 import { AdminShirtsAndKits } from './AdminShirtsAndKits';
 import { AdminSettings } from './AdminSettings';
 import { AdminAuditLogs } from './AdminAuditLogs';
@@ -35,7 +37,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
     }
   });
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'registrations' | 'shirts' | 'settings' | 'audit'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'registrations' | 'presential' | 'shirts' | 'settings' | 'audit'>('overview');
   const [settings, setSettings] = useState<EventSettings | null>(null);
   const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
   const [registrations, setRegistrations] = useState<Registration[]>([]);
@@ -177,6 +179,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
             {[
               { id: 'overview', label: 'Visão Geral & KPIs', icon: BarChart3 },
               { id: 'registrations', label: 'Inscrições & Atletas', icon: Users },
+              { id: 'presential', label: 'Inscrição Presencial (Casa)', icon: Building2 },
               { id: 'shirts', label: 'Camisas & Entrega de Kits', icon: Shirt },
               { id: 'settings', label: 'Parâmetros & Regras', icon: Settings },
               { id: 'audit', label: 'Trilha de Auditoria', icon: History },
@@ -227,6 +230,17 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
                 onUpdateStatus={handleUpdateStatus}
                 onReconcileAsaas={handleReconcileAsaas}
                 onReissueCode={handleReissueCode}
+                onOpenPresential={() => setActiveTab('presential')}
+              />
+            )}
+
+            {activeTab === 'presential' && settings && (
+              <AdminPresentialRegistration
+                currentUser={currentUser}
+                settings={settings}
+                inventory={shirts}
+                onRegistrationCreated={loadData}
+                onGoToRegistrations={() => setActiveTab('registrations')}
               />
             )}
 

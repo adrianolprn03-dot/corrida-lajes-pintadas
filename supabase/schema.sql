@@ -884,3 +884,22 @@ BEGIN
     );
 END;
 $$;
+
+-- ==============================================================================
+-- MIGRAÇÃO INCREMENTAL: ATENDIMENTO PRESENCIAL (CATEGORIA CASA - PREFEITURA)
+-- ==============================================================================
+-- Compatível com registros históricos (preserva integridade e não recria tabelas)
+ALTER TABLE registrations 
+    ADD COLUMN IF NOT EXISTS channel TEXT NOT NULL DEFAULT 'ONLINE',
+    ADD COLUMN IF NOT EXISTS document_verification_status TEXT DEFAULT 'PENDENTE',
+    ADD COLUMN IF NOT EXISTS document_type_presented TEXT DEFAULT NULL,
+    ADD COLUMN IF NOT EXISTS document_verification_notes TEXT DEFAULT NULL,
+    ADD COLUMN IF NOT EXISTS document_checked_by TEXT DEFAULT NULL,
+    ADD COLUMN IF NOT EXISTS document_checked_at TIMESTAMPTZ DEFAULT NULL,
+    ADD COLUMN IF NOT EXISTS attendant_name TEXT DEFAULT NULL,
+    ADD COLUMN IF NOT EXISTS attendant_id TEXT DEFAULT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_registrations_channel ON registrations(channel);
+CREATE INDEX IF NOT EXISTS idx_registrations_doc_status ON registrations(document_verification_status);
+CREATE INDEX IF NOT EXISTS idx_registrations_attendant ON registrations(attendant_name);
+

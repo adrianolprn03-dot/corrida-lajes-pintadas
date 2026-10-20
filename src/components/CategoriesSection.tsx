@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Home, Globe, Award, ChevronDown, ChevronUp, CheckCircle2, FileText, AlertCircle, Medal, Trophy } from 'lucide-react';
+import { Home, Globe, Award, ChevronDown, ChevronUp, CheckCircle2, FileText, AlertCircle, Medal, Trophy, Building2 } from 'lucide-react';
 
 export const CategoriesSection: React.FC = () => {
   const [showProofGuide, setShowProofGuide] = useState(false);
@@ -36,15 +36,26 @@ export const CategoriesSection: React.FC = () => {
                 </div>
 
                 <h3 className="font-condensed font-extrabold text-2xl sm:text-3xl uppercase text-slate-900 leading-none">
-                  Casa Lajespintadense
+                  Casa — Lajespintadense
                 </h3>
 
                 <p className="font-sans text-xs text-slate-600 mt-2 leading-relaxed">
                   Exclusivo para corredores que possuem vínculo formal de naturalidade ou residência comprovada em Lajes Pintadas/RN.
                 </p>
 
+                {/* Aviso Oficial de Inscrição Exclusivamente Presencial */}
+                <div className="mt-4 p-3.5 bg-orange-50/90 border-2 border-orange-200 rounded-lg text-xs font-sans text-orange-950 space-y-1">
+                  <div className="font-bold flex items-center gap-1.5 text-orange-700">
+                    <Building2 className="w-4 h-4 shrink-0" />
+                    <span>Atendimento Presencial Obrigatório</span>
+                  </div>
+                  <p className="text-[11px] leading-relaxed text-orange-900">
+                    Inscrições exclusivamente presenciais na sede da Prefeitura de Lajes Pintadas/RN. Apresente documento de identificação e comprovação do vínculo exigido pelo regulamento.
+                  </p>
+                </div>
+
                 {/* Subdivisões de Pódio */}
-                <div className="mt-6 pt-5 border-t border-slate-200 space-y-3">
+                <div className="mt-5 pt-4 border-t border-slate-200 space-y-3">
                   <div className="font-sans text-xs font-bold uppercase tracking-wider text-orange-600">
                     Subdivisões de Pódio:
                   </div>
@@ -72,7 +83,7 @@ export const CategoriesSection: React.FC = () => {
               </div>
 
               <div className="mt-6 pt-4 border-t border-slate-200 text-[11px] font-sans text-orange-700 font-medium">
-                * Requer ratificação documental na entrega do kit
+                * Inscrição e conferência documental realizadas na sede da Prefeitura
               </div>
             </div>
 

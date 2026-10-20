@@ -94,7 +94,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       shirtSize,
       paymentMethod,
       idempotencyKey,
+      channel,
+      attendantName,
+      attendantId,
+      documentVerificationStatus,
+      documentTypePresented,
+      documentVerificationNotes,
     } = req.body;
+
+    const registrationChannel = channel === 'PRESENCIAL_PREFEITURA' ? 'PRESENCIAL_PREFEITURA' : 'ONLINE';
+
+    // REGRA REGIMENTAL ESTREITA: Inscrições da categoria Casa são exclusivamente presenciais na sede da Prefeitura
+    if (originType === 'CASA' && registrationChannel !== 'PRESENCIAL_PREFEITURA') {
+      return res.status(403).json({
+        error: 'Inscrições da categoria Casa são realizadas exclusivamente de forma presencial na sede da Prefeitura de Lajes Pintadas/RN. Apresente documento de identificação e comprovação do vínculo exigido pelo regulamento.',
+      });
+    }
+
+    if (registrationChannel === 'PRESENCIAL_PREFEITURA' && !attendantName) {
+      return res.status(400).json({ error: 'Identificação do servidor atendente é obrigatória para inscrições presenciais.' });
+    }
 
     // 1. Validações de entrada obrigatórias
     if (!fullName || !cpf || !birthDate || !email || !phone || !city || !state || !shirtSize || !paymentMethod) {
@@ -228,13 +247,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    // Atualizar registro com dados Asaas
+    // Atualizar registro com dados Asaas e Atendimento
     reservationResult.asaas_payment_id = payment.id;
     reservationResult.invoice_url = payment.invoiceUrl;
     reservationResult.pix_qr_code = pixQr;
     reservationResult.pix_copy_paste = pixCopy;
+    reservationResult.channel = registrationChannel;
+    reservationResult.document_verification_status = documentVerificationStatus || (originType === 'CASA' ? 'APROVADO' : 'PENDENTE');
+    reservationResult.document_type_presented = documentTypePresented || null;
+    reservationResult.document_checked_by = attendantName || null;
+    reservationResult.attendant_name = attendantName || null;
 
-    // Persistir dados do Asaas no Supabase para consulta e conciliação
+    // Persistir dados no Supabase para consulta e conciliação
     if (supabase && reservationResult.registration_id) {
       try {
         await supabase
@@ -245,11 +269,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             asaas_invoice_url: payment.invoiceUrl,
             asaas_pix_qr_code: pixQr,
             asaas_pix_copy_paste: pixCopy,
+            channel: registrationChannel,
+            document_verification_status: documentVerificationStatus || (originType === 'CASA' ? 'APROVADO' : 'PENDENTE'),
+            document_type_presented: documentTypePresented || null,
+            document_verification_notes: documentVerificationNotes || null,
+            document_checked_by: attendantName || null,
+            document_checked_at: new Date().toISOString(),
+            attendant_name: attendantName || null,
+            attendant_id: attendantId || null,
             updated_at: new Date().toISOString(),
           })
           .eq('id', reservationResult.registration_id);
       } catch (updateErr) {
-        console.warn('[create-reservation] Aviso ao atualizar dados Asaas no Supabase:', updateErr);
+        console.warn('[create-reservation] Aviso ao atualizar dados no Supabase:', updateErr);
       }
     }
 
@@ -261,6 +293,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       memReg.invoiceUrl = payment.invoiceUrl;
       memReg.pixQrCode = pixQr || undefined;
       memReg.pixCopyPaste = pixCopy || undefined;
+      memReg.channel = registrationChannel;
+      memReg.documentVerificationStatus = (documentVerificationStatus as any) || (originType === 'CASA' ? 'APROVADO' : 'PENDENTE');
+      memReg.documentTypePresented = documentTypePresented;
+      memReg.documentVerificationNotes = documentVerificationNotes;
+      memReg.documentCheckedBy = attendantName;
+      memReg.documentCheckedAt = new Date().toISOString();
+      memReg.attendantName = attendantName;
+      memReg.attendantId = attendantId;
     }
 
     const durationMs = Date.now() - startTime;

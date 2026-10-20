@@ -20,6 +20,14 @@ export type ShirtSize = 'PP' | 'P' | 'M' | 'G' | 'GG' | 'XG';
 
 export type PaymentMethod = 'PIX' | 'CREDIT_CARD';
 
+export type RegistrationChannel = 'ONLINE' | 'PRESENCIAL_PREFEITURA';
+
+export type DocumentVerificationStatus = 
+  | 'PENDENTE' 
+  | 'APROVADO' 
+  | 'PENDENTE_COMPLEMENTACAO' 
+  | 'REJEITADO';
+
 export type RegistrationStatus = 
   | 'RESERVED' 
   | 'CONFIRMED' 
@@ -115,6 +123,14 @@ export interface RegistrationSubmission {
   privacyAccepted: boolean;
   termsVersion: string;
   privacyVersion: string;
+
+  // Presential attendance fields
+  channel?: RegistrationChannel;
+  attendantName?: string;
+  attendantId?: string;
+  documentVerificationStatus?: DocumentVerificationStatus;
+  documentTypePresented?: string;
+  documentVerificationNotes?: string;
 }
 
 export interface Registration {
@@ -137,6 +153,8 @@ export interface Registration {
   asaasInvoiceUrl?: string | null;
   asaasPixQrCode?: string | null;
   asaasPixCopyPaste?: string | null;
+  pixQrCodeUrl?: string | null;
+  pixPayload?: string | null;
   reservationExpiresAt: string;
   paidAt?: string | null;
   kitDelivered: boolean;
@@ -146,6 +164,16 @@ export interface Registration {
   createdAt: string;
   updatedAt: string;
   athlete?: AthleteData;
+
+  // Presential and Document Audit Fields
+  channel?: RegistrationChannel;
+  documentVerificationStatus?: DocumentVerificationStatus;
+  documentTypePresented?: string | null;
+  documentVerificationNotes?: string | null;
+  documentCheckedBy?: string | null;
+  documentCheckedAt?: string | null;
+  attendantName?: string | null;
+  attendantId?: string | null;
 }
 
 export interface PricingBreakdown {

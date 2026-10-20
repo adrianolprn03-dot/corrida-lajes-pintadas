@@ -32,9 +32,13 @@ export interface ExportRow {
   Cidade: string;
   UF: string;
   Equipe: string;
+  Canal: string;
   Categoria: string;
   Origem: string;
   'Vínculo Casa': string;
+  'Conferência Documental': string;
+  'Documento Apresentado': string;
+  'Servidor Atendente': string;
   Camisa: string;
   Situação: string;
   'Status Financeiro': string;
@@ -60,9 +64,13 @@ export function prepareRegistrationsForExport(registrations: Registration[]): Ex
       Cidade: sanitizeFormulaInjection(athlete?.city || 'N/A'),
       UF: sanitizeFormulaInjection(athlete?.state || 'N/A'),
       Equipe: sanitizeFormulaInjection(athlete?.team || '-'),
+      Canal: sanitizeFormulaInjection(r.channel === 'PRESENCIAL_PREFEITURA' ? 'Presencial — Prefeitura' : 'Online'),
       Categoria: sanitizeFormulaInjection(r.category.replace('_', ' ')),
       Origem: sanitizeFormulaInjection(r.originType),
       'Vínculo Casa': sanitizeFormulaInjection(r.casaProofType || '-'),
+      'Conferência Documental': sanitizeFormulaInjection(r.documentVerificationStatus || (r.originType === 'CASA' ? 'PENDENTE' : 'N/A')),
+      'Documento Apresentado': sanitizeFormulaInjection(r.documentTypePresented || '-'),
+      'Servidor Atendente': sanitizeFormulaInjection(r.attendantName || r.documentCheckedBy || '-'),
       Camisa: sanitizeFormulaInjection(r.shirtSize),
       Situação: sanitizeFormulaInjection(r.status),
       'Status Financeiro': sanitizeFormulaInjection(r.financialStatus),
