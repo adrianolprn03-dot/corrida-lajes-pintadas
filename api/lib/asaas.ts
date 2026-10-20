@@ -56,9 +56,10 @@ export class AsaasClient {
   constructor(config: AsaasConfig) {
     this.apiKey = config.apiKey;
     this.isMock = config.environment === 'mock' || !config.apiKey;
-    this.baseUrl = config.environment === 'production' 
+    const env = (config.environment || '').toLowerCase();
+    this.baseUrl = env === 'production' || env === 'prod'
       ? 'https://api.asaas.com/v3' 
-      : 'https://sandbox.asaas.com/v3';
+      : 'https://api-sandbox.asaas.com/v3';
     this.maxRetries = config.maxRetries ?? 3;
     this.baseDelayMs = config.baseDelayMs ?? 400;
   }
@@ -106,8 +107,28 @@ export class AsaasClient {
 
       if (!response.ok) {
         asaasMetrics.failedCalls++;
-        const errorBody = await response.text();
-        throw new Error(`Asaas API error (${response.status}): ${errorBody}`);
+        const contentType = response.headers.get('content-type') || '';
+        let errorMsg = `Asaas API error (${response.status})`;
+        if (contentType.includes('application/json')) {
+          try {
+            const errJson = await response.json();
+            if (errJson?.errors && Array.isArray(errJson.errors) && errJson.errors[0]?.description) {
+              errorMsg = `Gateway Asaas: ${errJson.errors[0].description}`;
+            } else if (errJson?.message) {
+              errorMsg = `Gateway Asaas: ${errJson.message}`;
+            }
+          } catch {}
+        } else {
+          const errorBody = await response.text();
+          errorMsg = `Gateway Asaas retornou status ${response.status}: ${errorBody.slice(0, 100)}`;
+        }
+        throw new Error(errorMsg);
+      }
+
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        const text = await response.text();
+        throw new Error(`Gateway Asaas retornou resposta não-JSON (${response.status}): ${text.slice(0, 100)}`);
       }
 
       asaasMetrics.successCalls++;

@@ -131,8 +131,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const pricing = calculatePricing(paymentMethod);
 
     // 3. Inicializar AsaasClient com tratamento de rate-limit (429), conciliação e backoff
-    const asaasApiKey = process.env.ASAAS_API_KEY || '';
-    const asaasEnv = (process.env.ASAAS_ENVIRONMENT as any) || (process.env.NODE_ENV === 'test' ? 'mock' : 'sandbox');
+    const asaasApiKey = normalizeKey(process.env.ASAAS_API_KEY || '');
+    const asaasEnvRaw = normalizeKey(process.env.ASAAS_ENVIRONMENT || '').toLowerCase();
+    const asaasEnv = asaasEnvRaw === 'production' || asaasEnvRaw === 'prod' 
+      ? 'production' 
+      : (process.env.NODE_ENV === 'test' ? 'mock' : 'sandbox');
+
     const asaasClient = new AsaasClient({
       apiKey: asaasApiKey,
       environment: asaasApiKey ? asaasEnv : 'mock',
@@ -241,6 +245,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     reservationResult.pix_qr_code = pixQr;
     reservationResult.pix_copy_paste = pixCopy;
 
+    // Persistir dados do Asaas no Supabase para consulta e conciliação
+    if (supabase && reservationResult.registration_id) {
+      try {
+        await supabase
+          .from('registrations')
+          .update({
+            asaas_payment_id: payment.id,
+            asaas_customer_id: customer.id,
+            asaas_invoice_url: payment.invoiceUrl,
+            asaas_pix_qr_code: pixQr,
+            asaas_pix_copy_paste: pixCopy,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', reservationResult.registration_id);
+      } catch (updateErr) {
+        console.warn('[create-reservation] Aviso ao atualizar dados Asaas no Supabase:', updateErr);
+      }
+    }
+
     // Atualizar no motor em memória se ativo
     const memReg = memoryStore.registrations.get(reservationResult.protocol);
     if (memReg) {
@@ -259,6 +282,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const durationMs = Date.now() - startTime;
     memoryStore.recordLatency(durationMs);
     console.error('[create-reservation] Erro:', err.message);
+
+    // Se a pré-reserva já foi criada no Supabase mas o gateway falhou,
+    // cancelamos/removemos a pré-reserva órfã para NÃO bloquear o CPF do atleta nem prender estoque!
+    const supabase = getSupabase();
+    if (supabase && reservationResult?.registration_id) {
+      try {
+        await supabase.from('registrations').delete().eq('id', reservationResult.registration_id);
+        if (req.body?.shirtSize) {
+          const { data: stockRow } = await supabase
+            .from('shirt_inventory')
+            .select('reserved_count')
+            .eq('size', req.body.shirtSize)
+            .single();
+          if (stockRow) {
+            await supabase
+              .from('shirt_inventory')
+              .update({
+                reserved_count: Math.max(0, stockRow.reserved_count - 1),
+                updated_at: new Date().toISOString(),
+              })
+              .eq('size', req.body.shirtSize);
+          }
+        }
+      } catch (cleanErr) {
+        console.error('[create-reservation] Falha na limpeza de reserva órfã:', cleanErr);
+      }
+    }
+
     return res.status(400).json({ error: err.message || 'Erro ao processar reserva' });
   }
 }

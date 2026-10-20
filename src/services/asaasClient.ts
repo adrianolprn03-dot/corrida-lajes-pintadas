@@ -57,9 +57,10 @@ export class AsaasGateway {
 
   constructor(config: AsaasConfig) {
     this.environment = config.environment;
-    this.baseUrl = config.environment === 'production'
+    const env = (config.environment || '').toLowerCase();
+    this.baseUrl = env === 'production' || env === 'prod'
       ? 'https://api.asaas.com/v3'
-      : 'https://sandbox.asaas.com/v3';
+      : 'https://api-sandbox.asaas.com/v3';
     this.apiKey = config.apiKey;
     this.webhookSecret = config.webhookSecret;
   }

@@ -482,6 +482,10 @@ class StorageService {
       });
 
       if (apiResponse.ok) {
+        const contentType = apiResponse.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+          throw new Error('Servidor retornou resposta inesperada. Por favor, atualize a página (F5) e tente novamente.');
+        }
         const data = await apiResponse.json();
         const apiReg: Registration = {
           id: data.registration_id || crypto.randomUUID(),
@@ -528,10 +532,22 @@ class StorageService {
           pricing,
         };
       } else {
-        const errJson = await apiResponse.json().catch(() => null);
-        if (errJson?.error) {
-          throw new Error(errJson.error);
+        const contentType = apiResponse.headers.get('content-type') || '';
+        let errMessage = 'Erro ao processar reserva no servidor.';
+        if (contentType.includes('application/json')) {
+          const errJson = await apiResponse.json().catch(() => null);
+          if (errJson?.error) {
+            errMessage = errJson.error;
+          }
+        } else {
+          const rawText = await apiResponse.text().catch(() => '');
+          if (rawText.includes('<!DOCTYPE') || rawText.includes('<html')) {
+            errMessage = 'Serviço temporariamente em sincronização. Por favor, atualize a página e tente novamente.';
+          } else if (rawText) {
+            errMessage = rawText.slice(0, 150);
+          }
         }
+        throw new Error(errMessage);
       }
     } catch (apiErr: any) {
       if (apiErr.message && !apiErr.message.includes('Failed to fetch') && !apiErr.message.includes('404')) {
@@ -804,7 +820,73 @@ class StorageService {
 
   // Obter Lista Completa de Inscrições (Admin)
   async getAdminRegistrations(): Promise<Registration[]> {
+    try {
+      const apiRes = await fetch('/api/admin-registrations?pageSize=500');
+      if (apiRes.ok) {
+        const json = await apiRes.json();
+        if (json.items && Array.isArray(json.items) && json.items.length > 0) {
+          const mapped: Registration[] = json.items.map((d: any) => ({
+            id: d.id,
+            athleteId: d.athlete_id,
+            protocol: d.protocol,
+            category: d.category,
+            originType: d.origin_type,
+            gender: d.gender,
+            casaProofType: d.casa_proof_type,
+            shirtSize: d.shirt_size,
+            status: d.status,
+            financialStatus: d.financial_status,
+            paymentMethod: d.payment_method,
+            baseAmountCents: d.base_amount_cents,
+            processingFeeCents: d.processing_fee_cents,
+            totalAmountCents: d.total_amount_cents,
+            asaasPaymentId: d.asaas_payment_id,
+            asaasInvoiceUrl: d.asaas_invoice_url,
+            asaasPixQrCode: d.asaas_pix_qr_code,
+            asaasPixCopyPaste: d.asaas_pix_copy_paste,
+            reservationExpiresAt: d.reservation_expires_at,
+            paidAt: d.paid_at,
+            kitDelivered: d.kit_delivered,
+            kitDeliveredAt: d.kit_delivered_at,
+            kitDeliveredBy: d.kit_delivered_by,
+            kitNotes: d.kit_notes,
+            createdAt: d.created_at,
+            updatedAt: d.updated_at,
+            athlete: d.athlete ? {
+              fullName: d.athlete.full_name,
+              cpf: d.athlete.cpf,
+              birthDate: d.athlete.birth_date,
+              email: d.athlete.email,
+              phone: d.athlete.phone,
+              city: d.athlete.city,
+              state: d.athlete.state,
+              team: d.athlete.team,
+            } : undefined,
+          }));
+          return mapped;
+        }
+      }
+    } catch (e) {
+      console.warn('Falha ao buscar inscrições via API admin, usando local:', e);
+    }
     return this.getLocal<Registration[]>(STORAGE_KEYS.REGISTRATIONS, []);
+  }
+
+  // Excluir ou Cancelar Inscrição de Teste (Admin)
+  async deleteAdminRegistration(registrationId?: string, protocol?: string): Promise<boolean> {
+    try {
+      const res = await fetch('/api/admin-registrations', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: registrationId, protocol }),
+      });
+      if (res.ok) {
+        const all = this.getLocal<Registration[]>(STORAGE_KEYS.REGISTRATIONS, []);
+        this.setLocal(STORAGE_KEYS.REGISTRATIONS, all.filter((r) => r.id !== registrationId && r.protocol !== protocol));
+        return true;
+      }
+    } catch {}
+    return false;
   }
 
   // Reemitir Código de Acesso (Admin)
