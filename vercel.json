@@ -55,35 +55,35 @@
   "rewrites": [
     {
       "source": "/api/create-reservation",
-      "destination": "/api/create-reservation.ts"
+      "destination": "/api/create-reservation"
     },
     {
       "source": "/api/webhook-asaas",
-      "destination": "/api/webhook-asaas.ts"
+      "destination": "/api/webhook-asaas"
     },
     {
       "source": "/api/lookup",
-      "destination": "/api/lookup.ts"
+      "destination": "/api/lookup"
     },
     {
       "source": "/api/health",
-      "destination": "/api/health.ts"
+      "destination": "/api/health"
     },
     {
       "source": "/api/metrics",
-      "destination": "/api/metrics.ts"
+      "destination": "/api/metrics"
     },
     {
       "source": "/api/admin/inventory",
-      "destination": "/api/admin-inventory.ts"
+      "destination": "/api/admin-inventory"
     },
     {
       "source": "/api/admin/settings",
-      "destination": "/api/admin-settings.ts"
+      "destination": "/api/admin-settings"
     },
     {
       "source": "/api/admin/registrations",
-      "destination": "/api/admin-registrations.ts"
+      "destination": "/api/admin-registrations"
     },
     {
       "source": "/(.*)",

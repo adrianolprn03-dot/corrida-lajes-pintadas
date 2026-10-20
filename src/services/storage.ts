@@ -122,7 +122,7 @@ class StorageService {
   async getSettings(): Promise<EventSettings> {
     // 1. Tentar via API oficial Vercel Serverless (com Service Role para bypass de RLS)
     try {
-      const apiRes = await fetch('/api/admin/settings');
+      const apiRes = await fetch('/api/admin-settings');
       if (apiRes.ok) {
         const json = await apiRes.json();
         if (json.settings) {
@@ -220,7 +220,7 @@ class StorageService {
 
     // 1. Salvar via API oficial Vercel Serverless (com Service Role)
     try {
-      await fetch('/api/admin/settings', {
+      await fetch('/api/admin-settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),
@@ -264,7 +264,7 @@ class StorageService {
   async getShirtInventory(): Promise<ShirtInventoryItem[]> {
     // 1. Tentar via API oficial Vercel Serverless (com Service Role para bypass seguro de RLS)
     try {
-      const apiRes = await fetch('/api/admin/inventory');
+      const apiRes = await fetch('/api/admin-inventory');
       if (apiRes.ok) {
         const json = await apiRes.json();
         if (json.items && json.items.length > 0) {
@@ -322,7 +322,7 @@ class StorageService {
 
     // Sincronizar em segundo plano para o Supabase garantir consistência transacional
     try {
-      fetch('/api/admin/inventory', {
+      fetch('/api/admin-inventory', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ items: items.map((i) => ({ size: i.size, totalStock: i.totalStock })) }),
@@ -359,7 +359,7 @@ class StorageService {
 
     // 1. Tentar salvar via API Oficial do Vercel Serverless (com bypass RLS seguro)
     try {
-      await fetch('/api/admin/inventory', {
+      await fetch('/api/admin-inventory', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ size, totalStock: newTotalStock }),
