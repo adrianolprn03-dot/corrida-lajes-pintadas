@@ -83,6 +83,7 @@ function calculatePricing(paymentMethod: 'PIX' | 'CREDIT_CARD') {
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const startTime = Date.now();
+  let reservationResult: any = null;
 
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -146,7 +147,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // 4. Executar Reserva Transacional Atômica
     const supabase = getSupabase();
-    let reservationResult: any;
 
     if (supabase) {
       // 4.1 Via Supabase RPC com SELECT FOR UPDATE no PostgreSQL
