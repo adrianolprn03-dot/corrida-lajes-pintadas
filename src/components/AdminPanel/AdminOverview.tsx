@@ -115,7 +115,7 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-              Taxas Gateway (Asaas)
+              Taxas de Serviço (10%)
             </span>
             <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
               <DollarSign className="w-4 h-4" />

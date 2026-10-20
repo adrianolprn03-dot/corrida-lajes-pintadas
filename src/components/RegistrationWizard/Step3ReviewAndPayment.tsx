@@ -183,7 +183,7 @@ export const Step3ReviewAndPayment: React.FC<Step3ReviewAndPaymentProps> = ({
                 <CreditCard className="text-orange-600" size={22} />
               )}
               <span className="font-display font-bold text-slate-900 text-base">
-                Pagamento via {reg.paymentMethod === 'PIX' ? 'Pix Asaas' : 'Cartão de Crédito 1x'}
+                Pagamento via {reg.paymentMethod === 'PIX' ? 'Pix Instantâneo' : 'Cartão de Crédito 1x'}
               </span>
             </div>
             <span className="font-display font-extrabold text-xl text-orange-600">
@@ -227,11 +227,11 @@ export const Step3ReviewAndPayment: React.FC<Step3ReviewAndPaymentProps> = ({
                 rel="noopener noreferrer"
                 className="w-full py-3.5 px-6 rounded-xl font-bold text-sm text-white bg-orange-600 hover:bg-orange-700 shadow-md shadow-orange-600/30 flex items-center justify-center gap-2 text-center transition-all"
               >
-                <span>Acessar Ambiente de Pagamento Asaas</span>
+                <span>Acessar Ambiente Seguro de Pagamento</span>
                 <ExternalLink size={16} />
               </a>
               <p className="text-[11px] text-slate-500 text-center mt-2">
-                Ambiente seguro 256-bit SSL com certificação PCI-DSS do Asaas Gestão Financeira.
+                Ambiente seguro 256-bit SSL com certificação bancária PCI-DSS.
               </p>
             </div>
           )}
@@ -329,7 +329,7 @@ export const Step3ReviewAndPayment: React.FC<Step3ReviewAndPaymentProps> = ({
             <span className="font-semibold text-slate-900">{formatCentsToBRL(pricing.baseAmountCents)}</span>
           </div>
           <div className="flex justify-between text-xs text-slate-600">
-            <span>Processamento Gateway Asaas ({step2.paymentMethod === 'PIX' ? 'Pix' : 'Cartão 1x'}):</span>
+            <span>Taxa de Serviço ({step2.paymentMethod === 'PIX' ? 'Pix' : 'Cartão 1x'} - 10%):</span>
             <span className="font-semibold text-slate-900">{formatCentsToBRL(pricing.feeCents)}</span>
           </div>
           <div className="flex justify-between text-sm font-extrabold text-slate-900 pt-2 border-t border-slate-200">

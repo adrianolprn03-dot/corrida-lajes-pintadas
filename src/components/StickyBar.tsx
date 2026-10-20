@@ -53,7 +53,7 @@ export const StickyBar: React.FC<StickyBarProps> = ({
               </span>
             </div>
             <p className="font-sans text-[11px] text-slate-500 hidden xs:block mt-0.5">
-              1º Lote Oficial: <strong className="text-slate-900">R$ 60,00</strong> (+ taxa Asaas) com Camisa e Medalha
+              1º Lote Oficial: <strong className="text-slate-900">R$ 60,00</strong> (+ 10% taxa) com Camisa e Medalha
             </p>
           </div>
         </div>

@@ -60,25 +60,14 @@ function isValidCPF(cpf: string): boolean {
 }
 
 function calculatePricing(paymentMethod: 'PIX' | 'CREDIT_CARD') {
-  const basePriceCents = 6000; // R$ 60,00 net
-  if (paymentMethod === 'PIX') {
-    const feeCents = 99; // R$ 0,99
-    return {
-      baseAmountCents: basePriceCents,
-      feeCents,
-      totalAmountCents: basePriceCents + feeCents,
-    };
-  } else {
-    // Cartão de crédito à vista em parcela única
-    const fixedFee = 49;
-    const percentFee = 0.0299;
-    const totalCents = Math.round((basePriceCents + fixedFee) / (1 - percentFee));
-    return {
-      baseAmountCents: basePriceCents,
-      feeCents: totalCents - basePriceCents,
-      totalAmountCents: totalCents,
-    };
-  }
+  const basePriceCents = 6000; // R$ 60,00
+  const feeCents = Math.round(basePriceCents * 0.10); // R$ 6,00 (10% de taxa de serviço)
+  const totalAmountCents = basePriceCents + feeCents; // R$ 66,00
+  return {
+    baseAmountCents: basePriceCents,
+    feeCents,
+    totalAmountCents,
+  };
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {

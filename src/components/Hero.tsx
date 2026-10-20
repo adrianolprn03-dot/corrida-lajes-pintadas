@@ -173,7 +173,7 @@ export const Hero: React.FC<HeroProps> = ({
                     {formattedBasePrice}
                   </span>
                   <span className="font-sans text-xs text-white/60">
-                    (+ taxa Asaas)
+                    (+ 10% taxa de serviço)
                   </span>
                 </div>
               </div>

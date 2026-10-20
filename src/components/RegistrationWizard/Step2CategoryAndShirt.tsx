@@ -325,7 +325,7 @@ export const Step2CategoryAndShirt: React.FC<Step2CategoryAndShirtProps> = ({
                 {formatCentsToBRL(pixPricing.totalAmountCents)}
               </div>
               <p className="text-[11px] text-slate-500 mt-0.5">
-                R$ 60,00 + {formatCentsToBRL(pixPricing.feeCents)} (tarifa Asaas)
+                R$ 60,00 + {formatCentsToBRL(pixPricing.feeCents)} (taxa de serviço 10%)
               </p>
             </div>
           </button>
@@ -358,7 +358,7 @@ export const Step2CategoryAndShirt: React.FC<Step2CategoryAndShirtProps> = ({
                 {formatCentsToBRL(cardPricing.totalAmountCents)}
               </div>
               <p className="text-[11px] text-slate-500 mt-0.5">
-                R$ 60,00 + {formatCentsToBRL(cardPricing.feeCents)} (taxa processamento)
+                R$ 60,00 + {formatCentsToBRL(cardPricing.feeCents)} (taxa de serviço 10%)
               </p>
             </div>
           </button>

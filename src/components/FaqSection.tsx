@@ -25,7 +25,7 @@ const FAQ_ITEMS: FaqItem[] = [
     id: 'faq-3',
     category: 'pagamento',
     question: 'Por que há uma taxa de processamento além dos R$ 60,00 da inscrição?',
-    answer: 'O regulamento da prova fixa a inscrição no valor líquido de R$ 60,00 com direito à camisa oficial e medalha finisher. O acréscimo operacional no checkout (R$ 0,99 no Pix) corresponde à tarifa bancária do gateway Asaas, garantindo a reserva atômica de vaga por 30 minutos e a conciliação instantânea sem intermediários manuais.',
+    answer: 'O regulamento da prova fixa a inscrição no valor base de R$ 60,00 com direito à camisa oficial e medalha finisher. O acréscimo de 10% (R$ 6,00) corresponde à taxa de processamento e serviço da plataforma, garantindo a reserva garantida da sua vaga por 30 minutos e a confirmação automática do pagamento.',
   },
   {
     id: 'faq-4',

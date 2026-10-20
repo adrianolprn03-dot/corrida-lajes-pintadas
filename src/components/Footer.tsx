@@ -88,7 +88,7 @@ export const Footer: React.FC<FooterProps> = ({
                 </div>
                 <div className="flex items-center gap-1.5">
                   <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>Gateway Asaas Seguro</span>
+                  <span>Pagamento 100% Seguro</span>
                 </div>
               </div>
             </div>
@@ -182,7 +182,7 @@ export const Footer: React.FC<FooterProps> = ({
           <div className="max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-12 flex flex-col sm:flex-row items-center justify-between gap-2 text-center sm:text-left">
             <p>© 2026 Prefeitura Municipal de Lajes Pintadas/RN. Todos os direitos reservados.</p>
             <p className="text-white/80 font-medium">
-              Inscrição: R$ 60,00 (+ taxa Asaas) • 5 KM • 26/12/2026
+              Inscrição: R$ 60,00 (+ 10% taxa) • 5 KM • 26/12/2026
             </p>
           </div>
         </div>

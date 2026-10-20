@@ -98,7 +98,7 @@ export const RegulationModal: React.FC<RegulationModalProps> = ({
                   <strong>Percurso:</strong> {settings.distanceKm} km • <strong>Local:</strong> {settings.startLocation}
                 </p>
                 <p>
-                  <strong>Inscrição:</strong> R$ 60,00 (+ taxas de gateway Asaas) com direito à Camisa Oficial Laranja.
+                  <strong>Inscrição:</strong> R$ 60,00 (+ taxa de serviço de 10%) com direito à Camisa Oficial Laranja.
                 </p>
               </div>
 

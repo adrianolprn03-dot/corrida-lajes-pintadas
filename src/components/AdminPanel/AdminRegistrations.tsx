@@ -264,7 +264,7 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
             Mostrando {filteredRegistrations.length} de {registrations.length} inscrições
           </div>
           <div className="text-[11px] text-slate-500 font-medium">
-            Clique em "Detalhes" para auditar categoria Casa, emitir código ou verificar Asaas
+            Clique em "Detalhes" para auditar categoria Casa, emitir código ou verificar pagamento
           </div>
         </div>
 
@@ -330,7 +330,7 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
                           {(reg.totalAmountCents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                         </div>
                         <div className="text-[10px] text-slate-400">
-                          {reg.paymentMethod === 'PIX' ? 'Pix (Taxa R$ 0,99)' : 'Cartão 1x'}
+                          {reg.paymentMethod === 'PIX' ? 'Pix (Taxa 10%)' : 'Cartão 1x (Taxa 10%)'}
                         </div>
                       </td>
                       <td className="py-3 px-4 whitespace-nowrap">
@@ -499,10 +499,10 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
                 )}
               </div>
 
-              {/* Financial & Asaas Gateway Section */}
+              {/* Financial & Online Gateway Section */}
               <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 space-y-3">
                 <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                  Situação Financeira & Gateway Asaas
+                  Situação Financeira & Pagamento Online
                 </h4>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
                   <div>
@@ -510,7 +510,7 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
                     <span className="font-semibold text-slate-800">R$ 60,00</span>
                   </div>
                   <div>
-                    <span className="text-slate-400 block text-[11px]">Tarifa Gateway:</span>
+                    <span className="text-slate-400 block text-[11px]">Taxa de Serviço:</span>
                     <span className="font-semibold text-slate-800">
                       {(selectedReg.processingFeeCents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                     </span>
@@ -522,7 +522,7 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
                     </span>
                   </div>
                   <div>
-                    <span className="text-slate-400 block text-[11px]">ID Pagamento Asaas:</span>
+                    <span className="text-slate-400 block text-[11px]">ID da Cobrança:</span>
                     <span className="font-mono text-slate-700">{selectedReg.asaasPaymentId || 'N/A'}</span>
                   </div>
                   <div>
@@ -546,7 +546,7 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 rounded-lg text-xs font-bold transition"
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
-                      <span>Abrir Fatura Asaas</span>
+                      <span>Abrir Fatura Online</span>
                     </a>
                   )}
 
@@ -560,7 +560,7 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
                     }`}
                   >
                     <RefreshCw className={`w-3.5 h-3.5 ${isReconciling ? 'animate-spin' : ''}`} />
-                    <span>{selectedReg.status === 'CONFIRMED' ? 'Já Confirmada no Sistema' : 'Simular Confirmação Webhook Asaas'}</span>
+                    <span>{selectedReg.status === 'CONFIRMED' ? 'Já Confirmada no Sistema' : 'Simular Confirmação de Pagamento'}</span>
                   </button>
                 </div>
               </div>

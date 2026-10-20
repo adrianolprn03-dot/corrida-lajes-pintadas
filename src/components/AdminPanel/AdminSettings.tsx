@@ -177,7 +177,7 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({
             {
               id: 'OPEN',
               title: 'Inscrições Abertas',
-              desc: 'Público pode se cadastrar e pagar pelo Asaas normalmente.',
+              desc: 'Público pode se cadastrar e pagar online normalmente.',
               color: 'border-emerald-300 hover:border-emerald-400',
               activeColor: 'border-emerald-600 bg-emerald-50/50',
             },
@@ -323,17 +323,17 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
         <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-3">
           <DollarSign className="w-4 h-4 text-orange-600" />
-          Gateway de Pagamentos Asaas & Tarifas Exatas
+          Gateway de Pagamentos & Tarifas da Taxa de Serviço
         </h4>
 
         <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-900 leading-relaxed">
-          <strong>Regra Regimental Estrita:</strong> O valor base municipal da inscrição é <strong>R$ 60,00</strong>. As tarifas do Asaas são repassadas ao atleta sem parcelamento (à vista), garantindo a liquidez municipal líquida de R$ 60,00 integral por atleta.
+          <strong>Regra Regimental Estrita:</strong> O valor base municipal da inscrição é <strong>R$ 60,00</strong> com taxa de serviço de <strong>10% (R$ 6,00)</strong>, garantindo a liquidez municipal líquida de R$ 60,00 integral por atleta.
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
           <div>
             <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">
-              Ambiente Asaas
+              Ambiente do Gateway
             </label>
             <select
               value={formData.asaasEnvironment}
@@ -355,7 +355,7 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({
               onChange={(e) => setFormData({ ...formData, asaasPixFixedFeeCents: parseInt(e.target.value) || 0 })}
               className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
-            <p className="text-[10px] text-slate-400 mt-1">Padrão: 99 (R$ 0,99)</p>
+            <p className="text-[10px] text-slate-400 mt-1">Padrão: 600 (R$ 6,00 - 10%)</p>
           </div>
 
           <div>
@@ -368,7 +368,7 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({
               onChange={(e) => setFormData({ ...formData, asaasCreditFixedFeeCents: parseInt(e.target.value) || 0 })}
               className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
-            <p className="text-[10px] text-slate-400 mt-1">Padrão: 49 (R$ 0,49)</p>
+            <p className="text-[10px] text-slate-400 mt-1">Padrão: 600 (R$ 6,00 - 10%)</p>
           </div>
 
           <div>
@@ -382,7 +382,7 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({
               onChange={(e) => setFormData({ ...formData, asaasCreditPercentFee: parseFloat(e.target.value) || 0 })}
               className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
-            <p className="text-[10px] text-slate-400 mt-1">Padrão: 0.0299 (2,99%)</p>
+            <p className="text-[10px] text-slate-400 mt-1">Padrão: 0.10 (10%)</p>
           </div>
         </div>
 

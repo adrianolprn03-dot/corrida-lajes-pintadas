@@ -380,7 +380,7 @@ export const AthleteArea: React.FC<AthleteAreaProps> = ({ isOpen, onClose }) => 
                     rel="noopener noreferrer"
                     className="w-full py-3 px-4 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs flex items-center justify-center gap-2"
                   >
-                    <span>Concluir Pagamento no Asaas</span>
+                    <span>Concluir Pagamento Online</span>
                     <ExternalLink size={14} />
                   </a>
                 </div>

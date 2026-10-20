@@ -52,9 +52,9 @@ export const INITIAL_SETTINGS: EventSettings = {
   organizerContact: 'esportes@lajespintadas.rn.gov.br | WhatsApp: (84) 98800-0000',
   revenueResponsible: 'Tesouraria do Fundo Municipal de Esportes',
   asaasEnvironment: 'sandbox',
-  asaasPixFixedFeeCents: 99, // R$ 0,99
-  asaasCreditFixedFeeCents: 49, // R$ 0,49
-  asaasCreditPercentFee: 0.0299, // 2,99%
+  asaasPixFixedFeeCents: 600, // R$ 6,00 (10%)
+  asaasCreditFixedFeeCents: 600, // R$ 6,00 (10%)
+  asaasCreditPercentFee: 0.10, // 10%
   termsVersion: 'v1.0-2026',
   privacyVersion: 'v1.0-2026',
   termsContent: `REGULAMENTO OFICIAL - 5ª CORRIDA DE EMANCIPAÇÃO POLÍTICA DE LAJES PINTADAS/RN
@@ -73,7 +73,7 @@ A 5ª Corrida de Emancipação Política de Lajes Pintadas/RN será realizada no
 2.4. A declaração do vínculo para a categoria Casa realizada na inscrição é uma autodeclaração prévia. A homologação definitiva do resultado e premiação dependerá da comprovação documental cabal (Certidão de Nascimento, Título Eleitoral do Município ou Comprovante de Residência idôneo).
 
 3. DO VALOR E DO KIT
-3.1. A taxa de inscrição é de R$ 60,00 (sessenta reais), acrescida exclusivamente das tarifas exatas de processamento do gateway de pagamento oficial (Asaas).
+3.1. A taxa de inscrição é de R$ 60,00 (sessenta reais), acrescida exclusivamente da taxa de serviço de 10% de processamento da plataforma de pagamento oficial.
 3.2. A inscrição confere direito ao Kit Oficial contendo camisa técnica dry-fit oficial laranja, chip de cronometragem eletrônica, número de peito e medalha finisher para os que concluírem o percurso dentro do tempo regulamentar.
 3.3. Não será permitida troca de tamanho de camisa no ato da retirada do kit, prevalecendo estritamente a grade selecionada no ato da inscrição.
 
@@ -86,7 +86,7 @@ A Prefeitura Municipal de Lajes Pintadas e a Comissão Organizadora da 5ª Corri
 
 1. COLETA E FINALIDADE: Os dados cadastrais coletados (Nome, CPF, Data de Nascimento, E-mail, Telefone/WhatsApp, Endereço de Residência e Equipe) destinam-se exclusivamente à identificação do participante, apuração de categorias por faixa etária e residência, segurança médica no percurso e emissão do seguro de prova.
 2. SIGILO E NÃO EXPOSIÇÃO: Em nenhuma hipótese o CPF, telefone, data de nascimento ou e-mail dos inscritos serão publicados em listas públicas de largada ou murais públicos. A consulta à inscrição é protegida por protocolo e código de acesso pessoal gerado com hash criptográfico.
-3. COMPARTILHAMENTO CONTROLADO: Os dados estritamente necessários para cobrança são transmitidos via conexão criptografada SSL/TLS ao gateway financeiro credenciado (Asaas Gestão Financeira).`,
+3. COMPARTILHAMENTO CONTROLADO: Os dados estritamente necessários para cobrança são transmitidos via conexão criptografada SSL/TLS ao gateway financeiro credenciado.`,
   updatedAt: new Date().toISOString(),
 };
 
@@ -1004,8 +1004,8 @@ class StorageService {
         financialStatus: 'CONFIRMED',
         paymentMethod: 'PIX',
         baseAmountCents: 6000,
-        processingFeeCents: 99,
-        totalAmountCents: 6099,
+        processingFeeCents: 600,
+        totalAmountCents: 6600,
         netReceivedCents: 6000,
         asaasPaymentId: 'pay_demo_001',
         asaasInvoiceUrl: 'https://asaas.com/i/pay_demo_001',
@@ -1041,8 +1041,8 @@ class StorageService {
         financialStatus: 'CONFIRMED',
         paymentMethod: 'CREDIT_CARD',
         baseAmountCents: 6000,
-        processingFeeCents: 235,
-        totalAmountCents: 6235,
+        processingFeeCents: 600,
+        totalAmountCents: 6600,
         netReceivedCents: 6000,
         asaasPaymentId: 'pay_demo_002',
         asaasInvoiceUrl: 'https://asaas.com/i/pay_demo_002',
@@ -1075,8 +1075,8 @@ class StorageService {
         financialStatus: 'CONFIRMED',
         paymentMethod: 'PIX',
         baseAmountCents: 6000,
-        processingFeeCents: 99,
-        totalAmountCents: 6099,
+        processingFeeCents: 600,
+        totalAmountCents: 6600,
         netReceivedCents: 6000,
         asaasPaymentId: 'pay_demo_003',
         asaasInvoiceUrl: 'https://asaas.com/i/pay_demo_003',
@@ -1109,11 +1109,11 @@ class StorageService {
         financialStatus: 'PENDING',
         paymentMethod: 'PIX',
         baseAmountCents: 6000,
-        processingFeeCents: 99,
-        totalAmountCents: 6099,
+        processingFeeCents: 600,
+        totalAmountCents: 6600,
         asaasPaymentId: 'pay_demo_004',
         asaasInvoiceUrl: 'https://asaas.com/i/pay_demo_004',
-        asaasPixCopyPaste: '00020101021226830014br.gov.bcb.pix2561asaas.com/pix/pay_demo_00452040000530398654060.995802BR5925PREF MUNIC LAJES PINTADAS6014LAJES PINTADAS62070503***6304',
+        asaasPixCopyPaste: '00020101021226830014br.gov.bcb.pix2561asaas.com/pix/pay_demo_00452040000530398654066.005802BR5925PREF MUNIC LAJES PINTADAS6014LAJES PINTADAS62070503***6304',
         reservationExpiresAt: new Date(Date.now() + 25 * 60 * 1000).toISOString(),
         kitDelivered: false,
         createdAt: new Date().toISOString(),
