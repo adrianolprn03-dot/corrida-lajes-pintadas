@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, MapPin, Clock, ShieldCheck, Ticket, Zap, Award, Flame, Calendar } from 'lucide-react';
+import { ArrowRight, Clock, ShieldCheck, Ticket, Zap, Award } from 'lucide-react';
 import { EventSettings } from '../types';
 import { formatCentsToBRL } from '../lib/pricing';
 
@@ -77,25 +77,12 @@ export const Hero: React.FC<HeroProps> = ({
           {/* Left Column (7 cols): Main Typography & Event Information */}
           <div className="lg:col-span-7 space-y-6">
             
-            {/* Top Institutional Badge */}
-            <div className="flex flex-wrap items-center gap-2.5">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-sans font-bold uppercase tracking-wider bg-orange-500/20 text-[#FF9D42] border border-orange-500/40 backdrop-blur-md">
-                <Flame className="w-3.5 h-3.5 text-[#FF7A00]" />
-                <span>5ª Edição Oficial • 2026</span>
-              </span>
-
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-sans font-medium text-white/80 bg-white/10 border border-white/15 backdrop-blur-md">
-                <MapPin className="w-3 h-3 text-[#FF9D42]" />
-                <span>Lajes Pintadas • RN</span>
-              </span>
-            </div>
-
             {/* Monumental Headline */}
             <div>
-              <h1 className="font-condensed font-extrabold text-[clamp(3.8rem,7.5vw,7.6rem)] uppercase tracking-[-0.02em] leading-[0.88] text-white">
-                A CIDADE<br />
+              <h1 className="font-condensed font-extrabold text-[clamp(2.7rem,5.6vw,5.5rem)] uppercase tracking-[-0.02em] leading-[0.9] text-white">
+                5ª CORRIDA DE<br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF7A00] via-[#FFAE34] to-[#FF5500]">
-                  É SUA PISTA.
+                  EMANCIPAÇÃO POLÍTICA
                 </span>
               </h1>
               
