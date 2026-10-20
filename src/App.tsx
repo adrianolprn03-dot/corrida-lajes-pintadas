@@ -121,7 +121,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#070D18] text-white selection:bg-[#FF7A00] selection:text-[#070D18] relative font-sans">
+    <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-slate-900 selection:bg-[#FF7A00] selection:text-white relative font-sans">
       {/* Toast Alert */}
       {toast && (
         <div className="fixed bottom-6 right-6 z-50 animate-in fade-in slide-in-from-bottom-5 duration-200">

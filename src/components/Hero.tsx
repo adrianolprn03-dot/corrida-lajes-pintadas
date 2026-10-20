@@ -50,24 +50,24 @@ export const Hero: React.FC<HeroProps> = ({
   }, []);
 
   return (
-    <section className="relative min-h-[720px] lg:min-h-[820px] flex items-center overflow-hidden border-b border-white/10 text-white bg-[#070D18]">
-      {/* BACKGROUND IMAGE WITH CINEMATIC SPORTS OVERLAYS */}
+    <section className="relative min-h-[720px] lg:min-h-[820px] flex items-center overflow-hidden border-b border-slate-800 text-white bg-slate-950">
+      {/* BACKGROUND IMAGE: AUTHENTIC 2025 RACE PHOTO IN LAJES PINTADAS BEHIND TEXT */}
       <div className="absolute inset-0 z-0">
         <img
-          src="/assets/corredores_banner.webp"
-          alt="Pelotão de corredores na 5ª Corrida de Emancipação"
-          className="w-full h-full object-cover object-center filter brightness-[0.78] contrast-[1.12]"
+          src="/assets/corrida_2025.webp"
+          alt="Largada e Chegada da Corrida de Emancipação de Lajes Pintadas"
+          className="w-full h-full object-cover object-[center_32%] filter brightness-[0.72] contrast-[1.12]"
           loading="eager"
           decoding="async"
         />
-        {/* Layer 1: Left-to-right gradient for text readability */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#070D18]/98 via-[#070D18]/90 to-[#070D18]/40 sm:to-transparent" />
+        {/* Layer 1: Left-to-right gradient ensuring text legibility while displaying the finish arch & runners */}
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-950/82 to-slate-950/45 sm:to-slate-950/25" />
         
         {/* Layer 2: Top and bottom vignette */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#070D18] via-transparent to-[#070D18]/80" />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-slate-950/70" />
         
-        {/* Layer 3: Warm subtle orange athletic glow on top-left */}
-        <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-orange-600/15 rounded-full blur-[120px] pointer-events-none" />
+        {/* Layer 3: Warm subtle athletic glow */}
+        <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-orange-600/15 rounded-full blur-[130px] pointer-events-none" />
       </div>
 
       {/* CONTENT LAYER */}

@@ -87,18 +87,18 @@ export const FaqSection: React.FC = () => {
   };
 
   return (
-    <section id="faq" className="bg-[#070D18] text-white py-16 sm:py-24 border-b border-white/10">
+    <section id="faq" className="bg-white text-slate-900 py-16 sm:py-24 border-b border-slate-200">
       <div className="max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-12">
         
         {/* Section Header */}
         <div className="mb-12">
-          <span className="font-sans text-xs font-semibold uppercase tracking-widest text-[#FF7A00] block mb-2">
+          <span className="font-sans text-xs font-semibold uppercase tracking-widest text-orange-600 block mb-2">
             Central de Informações
           </span>
-          <h2 className="font-condensed font-extrabold text-4xl sm:text-6xl uppercase tracking-tight text-white leading-none">
+          <h2 className="font-condensed font-extrabold text-4xl sm:text-6xl uppercase tracking-tight text-slate-900 leading-none">
             Dúvidas Frequentes
           </h2>
-          <p className="font-sans text-sm sm:text-base text-white/70 mt-3 max-w-2xl leading-relaxed">
+          <p className="font-sans text-sm sm:text-base text-slate-600 mt-3 max-w-2xl leading-relaxed">
             Consulte as principais orientações sobre o regulamento, categorias de premiação, reserva temporária no Pix e entrega dos kits oficiais.
           </p>
         </div>
@@ -106,13 +106,13 @@ export const FaqSection: React.FC = () => {
         {/* Filter Bar & Search */}
         <div className="mb-8 space-y-4">
           <div className="relative">
-            <Search className="w-4 h-4 text-white/50 absolute left-4 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Buscar por palavra-chave (ex: kit, comprovante, casa, pix)..."
-              className="w-full pl-11 pr-4 py-3.5 bg-[#0D1626] border border-white/15 rounded-[2px] text-sm text-white placeholder-white/40 focus:outline-none focus:ring-1 focus:ring-[#FF7A00]"
+              className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-300 rounded text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:bg-white"
             />
           </div>
 
@@ -122,10 +122,10 @@ export const FaqSection: React.FC = () => {
                 key={cat.id}
                 type="button"
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`px-3.5 py-1.5 font-sans text-xs font-medium rounded-[2px] transition ${
+                className={`px-3.5 py-1.5 font-sans text-xs font-medium rounded transition ${
                   selectedCategory === cat.id
-                    ? 'bg-gradient-to-r from-[#FF7A00] to-[#FF5500] text-[#070D18] font-bold shadow-sm'
-                    : 'bg-[#0D1626] border border-white/15 text-white/70 hover:text-white'
+                    ? 'bg-orange-600 text-white font-bold shadow-xs'
+                    : 'bg-slate-100 border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-200'
                 }`}
               >
                 {cat.label}
@@ -135,9 +135,9 @@ export const FaqSection: React.FC = () => {
         </div>
 
         {/* Discrete Accordion List */}
-        <div className="border border-white/10 bg-[#0D1626] rounded-[4px] divide-y divide-white/10 overflow-hidden shadow-xl">
+        <div className="border border-slate-200 bg-white rounded-lg divide-y divide-slate-200 overflow-hidden shadow-sm">
           {filteredFaqs.length === 0 ? (
-            <div className="p-8 text-center text-sm text-white/50">
+            <div className="p-8 text-center text-sm text-slate-500">
               Nenhuma pergunta encontrada com o termo pesquisado.
             </div>
           ) : (
@@ -145,23 +145,23 @@ export const FaqSection: React.FC = () => {
               const isOpen = openId === item.id;
 
               return (
-                <div key={item.id} className="transition-colors hover:bg-white/[0.02]">
+                <div key={item.id} className="transition-colors hover:bg-slate-50/60">
                   <button
                     type="button"
                     onClick={() => toggleFaq(item.id)}
                     aria-expanded={isOpen}
-                    className="w-full p-5 text-left flex items-center justify-between gap-4 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#FF7A00]"
+                    className="w-full p-5 text-left flex items-center justify-between gap-4 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-orange-500"
                   >
-                    <span className="font-sans font-semibold text-sm sm:text-base text-white">
+                    <span className="font-sans font-semibold text-sm sm:text-base text-slate-900">
                       {item.question}
                     </span>
-                    <div className="p-1 text-white/60 shrink-0">
-                      {isOpen ? <ChevronUp className="w-4 h-4 text-[#FF7A00]" /> : <ChevronDown className="w-4 h-4" />}
+                    <div className="p-1 text-slate-400 shrink-0">
+                      {isOpen ? <ChevronUp className="w-4 h-4 text-orange-600" /> : <ChevronDown className="w-4 h-4" />}
                     </div>
                   </button>
 
                   {isOpen && (
-                    <div className="px-5 pb-5 pt-1 font-sans text-xs sm:text-sm text-white/75 leading-relaxed border-t border-white/5 animate-in fade-in duration-150">
+                    <div className="px-5 pb-5 pt-1 font-sans text-xs sm:text-sm text-slate-600 leading-relaxed border-t border-slate-100 animate-in fade-in duration-150">
                       <p>{item.answer}</p>
                     </div>
                   )}
@@ -172,11 +172,11 @@ export const FaqSection: React.FC = () => {
         </div>
 
         {/* Support Link */}
-        <div className="mt-8 p-4 bg-[#0D1626] border border-white/10 rounded-[2px] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-sans text-white/70">
+        <div className="mt-8 p-4 bg-slate-50 border border-slate-200 rounded flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-sans text-slate-600">
           <span>Precisa de esclarecimentos adicionais sobre o edital da prova?</span>
           <a
             href="mailto:esportes@lajespintadas.rn.gov.br"
-            className="font-semibold text-[#FF9D42] hover:underline flex items-center gap-1.5"
+            className="font-semibold text-orange-600 hover:underline flex items-center gap-1.5"
           >
             <Mail className="w-3.5 h-3.5" />
             <span>esportes@lajespintadas.rn.gov.br</span>

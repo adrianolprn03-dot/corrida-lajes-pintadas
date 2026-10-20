@@ -33,7 +33,7 @@ export const StickyBar: React.FC<StickyBarProps> = ({
   return (
     <aside
       aria-label="Barra de ação rápida"
-      className="fixed bottom-0 left-0 right-0 z-40 bg-[#070D18]/95 backdrop-blur-md border-t border-white/10 py-3 px-4 sm:px-6 shadow-[0_-6px_25px_rgba(0,0,0,0.5)] animate-in slide-in-from-bottom-3 duration-200 text-white"
+      className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 py-3 px-4 sm:px-6 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] animate-in slide-in-from-bottom-3 duration-200 text-slate-900"
     >
       <div className="max-w-[1280px] mx-auto flex items-center justify-between gap-4">
         {/* Left: Quick Event Details */}
@@ -41,19 +41,19 @@ export const StickyBar: React.FC<StickyBarProps> = ({
           <img
             src="/assets/brasao_lajes.webp"
             alt="Brasão"
-            className="w-7 h-7 object-contain hidden sm:block filter drop-shadow-sm brightness-105"
+            className="w-7 h-7 object-contain hidden sm:block filter drop-shadow-sm"
           />
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-condensed font-extrabold text-sm uppercase text-white leading-none">
+              <span className="font-condensed font-extrabold text-sm uppercase text-slate-900 leading-none">
                 5ª Corrida de Emancipação
               </span>
-              <span className="hidden md:inline font-sans text-xs text-[#FF9D42]">
+              <span className="hidden md:inline font-sans text-xs text-orange-600 font-semibold">
                 • 5 KM • 26/12 • 06:00h
               </span>
             </div>
-            <p className="font-sans text-[11px] text-white/70 hidden xs:block mt-0.5">
-              1º Lote Oficial: <strong className="text-white">R$ 60,00</strong> (+ taxa Asaas) com Camisa e Medalha
+            <p className="font-sans text-[11px] text-slate-500 hidden xs:block mt-0.5">
+              1º Lote Oficial: <strong className="text-slate-900">R$ 60,00</strong> (+ taxa Asaas) com Camisa e Medalha
             </p>
           </div>
         </div>
@@ -62,16 +62,16 @@ export const StickyBar: React.FC<StickyBarProps> = ({
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <button
             onClick={onOpenLookup}
-            className="px-3 py-2 font-sans font-medium text-xs text-white hover:text-[#FF7A00] border border-white/20 bg-white/5 rounded-[2px] transition flex items-center gap-1.5"
+            className="px-3 py-1.5 font-sans font-medium text-xs text-slate-700 hover:text-slate-950 border border-slate-300 bg-slate-50 hover:bg-slate-100 rounded transition flex items-center gap-1.5 whitespace-nowrap"
           >
-            <Ticket className="w-3.5 h-3.5 text-[#FF7A00]" />
+            <Ticket className="w-3.5 h-3.5 text-orange-600" />
             <span className="hidden sm:inline">Minha</span> Inscrição
           </button>
 
           {settings.status === 'OPEN' ? (
             <button
               onClick={onOpenRegister}
-              className="px-5 py-2.5 font-sans font-bold text-xs sm:text-sm text-[#070D18] bg-gradient-to-r from-[#FF7A00] to-[#FF5500] hover:from-[#FF8D24] hover:to-[#FF681A] rounded-[2px] transition flex items-center gap-1.5 uppercase tracking-wide shadow-md shadow-orange-600/30"
+              className="px-4 sm:px-5 py-2 font-sans font-bold text-xs sm:text-sm text-white bg-orange-600 hover:bg-orange-500 active:bg-orange-700 rounded transition flex items-center gap-1.5 uppercase tracking-wide shadow-sm whitespace-nowrap"
             >
               <Zap className="w-3.5 h-3.5 fill-current" />
               <span>Inscrever-se</span>
@@ -80,9 +80,9 @@ export const StickyBar: React.FC<StickyBarProps> = ({
           ) : (
             <button
               disabled
-              className="px-4 py-2 font-sans font-medium text-xs text-white/40 bg-white/10 rounded-[2px] cursor-not-allowed"
+              className="px-4 py-2 font-sans font-medium text-xs text-slate-400 bg-slate-100 rounded cursor-not-allowed whitespace-nowrap"
             >
-              Inscrições em Breve
+              Em Breve
             </button>
           )}
         </div>
