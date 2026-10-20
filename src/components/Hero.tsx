@@ -50,28 +50,28 @@ export const Hero: React.FC<HeroProps> = ({
   }, []);
 
   return (
-    <section className="relative min-h-[720px] lg:min-h-[820px] flex items-center overflow-hidden border-b border-slate-200 text-slate-900 bg-white">
+    <section className="relative overflow-hidden border-b border-slate-200 text-slate-900 bg-white pt-8 pb-14 sm:pt-12 sm:pb-20 lg:pt-14 lg:pb-24">
       {/* BACKGROUND IMAGE: FOTO AUTÊNTICA DA CORRIDA 2025 COM DEGRADÊ SUAVE PARA BRANCO */}
-      <div className="absolute inset-0 z-0">
+      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         <img
           src="/assets/corrida_2025.webp"
           alt="Largada e Chegada da Corrida de Emancipação de Lajes Pintadas"
-          className="w-full h-full object-cover object-[center_32%] filter brightness-[1.0] contrast-[1.05]"
+          className="w-full h-full object-cover object-[center_34%] filter brightness-[1.02] contrast-[1.04]"
           loading="eager"
           decoding="async"
         />
-        {/* Layer 1: Degradê suave da esquerda para a direita (branco sólido na esquerda para leitura perfeita, revelando corredores e pórtico à direita) */}
-        <div className="absolute inset-0 bg-gradient-to-r from-white via-white/95 to-white/40 lg:to-transparent" />
+        {/* Layer 1: Degradê suave horizontal - Branco no lado esquerdo para leitura perfeita, revelando os corredores e pórtico à direita */}
+        <div className="absolute inset-0 bg-gradient-to-r from-white via-white/95 30% via-white/70 65% to-white/30 lg:to-white/15" />
         
-        {/* Layer 2: Degradê superior e inferior para transição harmônica com o menu e seções */}
-        <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-white/70" />
+        {/* Layer 2: Degradê vertical - Proteção do topo e fusão suave com o rodapé da primeira dobra */}
+        <div className="absolute inset-0 bg-gradient-to-b from-white/90 via-transparent 25% via-transparent 75% to-white" />
         
         {/* Layer 3: Brilho esportivo quente sutil */}
-        <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-orange-500/10 rounded-full blur-[140px] pointer-events-none" />
+        <div className="absolute -top-24 -left-24 w-[550px] h-[550px] bg-orange-400/10 rounded-full blur-[140px]" />
       </div>
 
       {/* CONTENT LAYER */}
-      <div className="relative z-10 w-full max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-12 py-16 sm:py-24">
+      <div className="relative z-10 w-full max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
           
           {/* Left Column (7 cols): Main Typography & Event Information */}
@@ -79,9 +79,9 @@ export const Hero: React.FC<HeroProps> = ({
             
             {/* Monumental Headline */}
             <div>
-              <h1 className="font-condensed font-extrabold text-[clamp(2.7rem,5.6vw,5.5rem)] uppercase tracking-[-0.02em] leading-[0.9] text-slate-950">
+              <h1 className="font-condensed font-extrabold text-[clamp(2.5rem,5.2vw,5.2rem)] uppercase tracking-tight leading-[0.98] text-slate-950">
                 5ª CORRIDA DE<br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-600 via-orange-500 to-amber-600">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-600 via-orange-500 to-amber-600 drop-shadow-sm">
                   EMANCIPAÇÃO POLÍTICA
                 </span>
               </h1>
