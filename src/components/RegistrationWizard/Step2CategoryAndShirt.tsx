@@ -60,10 +60,10 @@ export const Step2CategoryAndShirt: React.FC<Step2CategoryAndShirtProps> = ({
     e.preventDefault();
     setError(null);
 
-    // Validação Categoria Casa: Exclusivamente presencial
-    if (data.originType === 'CASA') {
+    // Validação Categoria Local: Exclusivamente presencial
+    if (data.originType === 'CASA' || data.originType === 'LOCAL') {
       setError(
-        'Casa — Lajespintadense: Inscrições exclusivamente presenciais na sede da Prefeitura de Lajes Pintadas/RN. Apresente documento de identificação e comprovação do vínculo exigido pelo regulamento.'
+        'Local — Lajespintadense: Inscrições exclusivamente presenciais na sede da Prefeitura de Lajes Pintadas/RN. Apresente documento de identificação e comprovação do vínculo exigido pelo regulamento.'
       );
       return;
     }
@@ -87,7 +87,7 @@ export const Step2CategoryAndShirt: React.FC<Step2CategoryAndShirtProps> = ({
         </div>
       )}
 
-      {/* 1. Origem: Casa ou Visitante */}
+      {/* 1. Origem: Local ou Visitante */}
       <div>
         <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">
           1. Origem da Participação <span className="text-red-500">*</span>
@@ -100,20 +100,20 @@ export const Step2CategoryAndShirt: React.FC<Step2CategoryAndShirtProps> = ({
               setError(null);
             }}
             className={`p-4 rounded-xl border-2 text-left transition-all flex items-start gap-3 ${
-              data.originType === 'CASA'
+              data.originType === 'CASA' || data.originType === 'LOCAL'
                 ? 'border-orange-500 bg-orange-50/50 shadow-sm'
                 : 'border-slate-200 bg-white hover:border-slate-300'
             }`}
           >
             <div
               className={`p-2 rounded-lg ${
-                data.originType === 'CASA' ? 'bg-orange-600 text-white' : 'bg-slate-100 text-slate-600'
+                data.originType === 'CASA' || data.originType === 'LOCAL' ? 'bg-orange-600 text-white' : 'bg-slate-100 text-slate-600'
               }`}
             >
               <Home size={20} />
             </div>
             <div>
-              <div className="font-display font-bold text-slate-900 text-sm">Categoria Casa</div>
+              <div className="font-display font-bold text-slate-900 text-sm">Categoria Local</div>
               <p className="text-xs text-slate-500 mt-0.5">
                 Naturais de Lajes Pintadas/RN ou moradores atuais da cidade.
               </p>
@@ -149,24 +149,24 @@ export const Step2CategoryAndShirt: React.FC<Step2CategoryAndShirtProps> = ({
         </div>
       </div>
 
-      {/* Aviso Obrigatório e Orientação Casa */}
-      {data.originType === 'CASA' && (
+      {/* Aviso Obrigatório e Orientação Local */}
+      {(data.originType === 'CASA' || data.originType === 'LOCAL') && (
         <div className="p-5 rounded-2xl bg-amber-50 border-2 border-amber-300 text-amber-950 space-y-3">
           <div className="flex items-center gap-2.5 font-bold text-sm text-amber-900">
             <Building2 size={20} className="text-amber-700 shrink-0" />
-            <span>Casa — Lajespintadense</span>
+            <span>Local — Lajespintadense</span>
           </div>
           <p className="text-sm font-semibold leading-relaxed text-amber-950">
             Inscrições exclusivamente presenciais na sede da Prefeitura de Lajes Pintadas/RN. Apresente documento de identificação e comprovação do vínculo exigido pelo regulamento.
           </p>
           <div className="text-xs text-amber-800 bg-amber-100/60 p-3 rounded-xl border border-amber-200">
-            A inscrição da categoria Casa requer conferência presencial de documentos por servidor autorizado na sede da Prefeitura Municipal. Não é permitida a finalização ou cobrança online para esta categoria.
+            A inscrição da categoria Local requer conferência presencial de documentos por servidor autorizado na sede da Prefeitura Municipal. Não é permitida a finalização ou cobrança online para esta categoria.
           </div>
         </div>
       )}
 
       {/* Fluxo completo liberado apenas para Visitante (online) */}
-      {data.originType !== 'CASA' && (
+      {data.originType !== 'CASA' && data.originType !== 'LOCAL' && (
         <>
           {/* 2. Gênero / Participação */}
           <div>
@@ -332,9 +332,9 @@ export const Step2CategoryAndShirt: React.FC<Step2CategoryAndShirtProps> = ({
           <span>Voltar</span>
         </button>
 
-        {data.originType === 'CASA' ? (
+        {data.originType === 'CASA' || data.originType === 'LOCAL' ? (
           <div className="flex-1 py-3 px-4 rounded-xl text-center text-xs font-semibold bg-amber-100 text-amber-900 border border-amber-300">
-            Inscrições Casa exclusivamente presenciais na sede da Prefeitura
+            Inscrições Categoria Local exclusivamente presenciais na sede da Prefeitura
           </div>
         ) : (
           <button

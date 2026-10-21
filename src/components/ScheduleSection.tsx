@@ -27,7 +27,7 @@ export const ScheduleSection: React.FC = () => {
     {
       time: '07:15',
       title: 'Cerimônia Oficial de Pódios',
-      desc: 'Premiação solene com troféus para Casa, Visitante e PCD (Masculino e Feminino).',
+      desc: 'Premiação solene com troféus para Local, Visitante e PCD (Masculino e Feminino).',
     },
     {
       time: '08:30',

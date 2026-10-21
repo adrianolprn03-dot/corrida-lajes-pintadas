@@ -530,7 +530,7 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
 
           <div class="title-box">
             <strong style="font-size: 11px; text-transform: uppercase; color: #0f172a; letter-spacing: 0.5px;">
-              COMPROVANTE OFICIAL DE ATENDIMENTO PRESENCIAL — CATEGORIA CASA
+              COMPROVANTE OFICIAL DE ATENDIMENTO PRESENCIAL — CATEGORIA LOCAL
             </strong>
             <div style="font-size: 9px; color: #64748b; margin-top: 1px;">
               Emitido na sede da Prefeitura Municipal de Lajes Pintadas/RN • Atendimento Presencial
@@ -555,7 +555,7 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
             <div class="grid-3" style="margin-top: 8px; padding-top: 6px; border-top: 1px solid #f1f5f9;">
               <div>
                 <span class="label">Categoria Oficial</span>
-                <span class="value">Casa — Lajespintadense (${athleteGender})</span>
+                <span class="value">Local — Lajespintadense (${athleteGender})</span>
               </div>
               <div>
                 <span class="label">Camisa Oficial</span>
@@ -663,7 +663,7 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
               <span>Sede da Prefeitura Municipal de Lajes Pintadas/RN</span>
             </div>
             <h2 className="text-xl md:text-2xl font-black tracking-tight uppercase">
-              Atendimento Presencial — Categoria Casa
+              Atendimento Presencial — Categoria Local
             </h2>
             <p className="text-xs md:text-sm text-orange-100 mt-1 max-w-2xl">
               Módulo restrito para servidores autorizados cadastrarem atletas de Lajes Pintadas com conferência física do vínculo regimental, cobrança Asaas e controle unificado de vagas.
@@ -860,7 +860,7 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
                 <span>Nenhuma inscrição encontrada para o CPF {cpfSearch}</span>
               </div>
               <p className="text-xs text-emerald-800">
-                O atleta está apto para iniciar o atendimento presencial da categoria Casa na sede da Prefeitura.
+                O atleta está apto para iniciar o atendimento presencial da categoria Local na sede da Prefeitura.
               </p>
               <div className="pt-2">
                 <button
@@ -894,7 +894,7 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
               </p>
             </div>
             <span className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-xs font-extrabold border border-orange-200">
-              Categoria Casa — Lajespintadense
+              Categoria Local — Lajespintadense
             </span>
           </div>
 
@@ -1047,7 +1047,7 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
                       : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
                   }`}
                 >
-                  {g === 'MASCULINO' ? 'Casa Masculino (5 km)' : 'Casa Feminino (5 km)'}
+                  {g === 'MASCULINO' ? 'Local Masculino (5 km)' : 'Local Feminino (5 km)'}
                 </button>
               ))}
             </div>
@@ -1137,7 +1137,7 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
       )}
 
       {/* =========================================================================
-          ETAPA 3: CONFERIR O VÍNCULO (CATEGORIA CASA)
+          ETAPA 3: CONFERIR O VÍNCULO (CATEGORIA LOCAL)
           ========================================================================= */}
       {currentStep === 3 && (
         <form onSubmit={handleValidateStage3} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
@@ -1146,10 +1146,10 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
               Etapa 3 de 5
             </div>
             <h3 className="text-lg font-black text-slate-900">
-              Conferência Presencial do Vínculo Regimental — Categoria Casa
+              Conferência Presencial do Vínculo Regimental — Categoria Local
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              Conforme regulamento oficial da prova, atletas da Categoria Casa devem comprovar naturalidade ou residência no município de Lajes Pintadas/RN.
+              Conforme regulamento oficial da prova, atletas da Categoria Local devem comprovar naturalidade ou residência no município de Lajes Pintadas/RN.
             </p>
           </div>
 
@@ -1348,7 +1348,7 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
               Pagamento da Inscrição Presencial via Asaas
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              O vínculo Casa foi validado. Gere a cobrança oficial no Asaas (Pix ou Cartão). O atleta efetua o pagamento diretamente no próprio celular.
+              O vínculo Local foi validado. Gere a cobrança oficial no Asaas (Pix ou Cartão). O atleta efetua o pagamento diretamente no próprio celular.
             </p>
           </div>
 
@@ -1687,7 +1687,7 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
             {/* Título do Documento */}
             <div className="text-center bg-slate-50 p-3 rounded-xl border border-slate-200">
               <h4 className="font-black text-slate-900 uppercase text-xs md:text-sm tracking-wide">
-                COMPROVANTE OFICIAL DE ATENDIMENTO PRESENCIAL — CATEGORIA CASA
+                COMPROVANTE OFICIAL DE ATENDIMENTO PRESENCIAL — CATEGORIA LOCAL
               </h4>
               <p className="text-[11px] text-slate-500 mt-0.5">
                 Emitido pela equipe autorizada na sede da Prefeitura Municipal de Lajes Pintadas/RN
@@ -1720,7 +1720,7 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
               <div>
                 <span className="text-[10px] font-bold text-slate-400 uppercase block">Categoria</span>
                 <strong className="text-slate-900 block font-bold">
-                  Casa — Lajespintadense (
+                  Local — Lajespintadense (
                   {(createdRegistration?.gender || formData.gender) === 'FEMININO' ? 'Feminino' : 'Masculino'})
                 </strong>
               </div>

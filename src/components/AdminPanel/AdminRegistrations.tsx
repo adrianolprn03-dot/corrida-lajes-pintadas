@@ -188,8 +188,10 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
   };
 
   const categoryLabels: Record<Category, string> = {
-    CASA_MASCULINO: 'Casa Masc.',
-    CASA_FEMININO: 'Casa Fem.',
+    LOCAL_MASCULINO: 'Local Masc.',
+    LOCAL_FEMININO: 'Local Fem.',
+    CASA_MASCULINO: 'Local Masc.',
+    CASA_FEMININO: 'Local Fem.',
     VISITANTE_MASCULINO: 'Visit. Masc.',
     VISITANTE_FEMININO: 'Visit. Fem.',
   };

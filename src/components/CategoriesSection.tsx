@@ -25,7 +25,7 @@ export const CategoriesSection: React.FC = () => {
         <div className="border border-slate-200 bg-white rounded-lg overflow-hidden mb-10 shadow-sm">
           <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-200">
             
-            {/* COLUMN 1: CASA LAJESPINTADENSE */}
+            {/* COLUMN 1: LOCAL LAJESPINTADENSE */}
             <div className="p-6 sm:p-8 flex flex-col justify-between hover:bg-slate-50/60 transition">
               <div>
                 <div className="flex items-center justify-between mb-4">
@@ -36,7 +36,7 @@ export const CategoriesSection: React.FC = () => {
                 </div>
 
                 <h3 className="font-condensed font-extrabold text-2xl sm:text-3xl uppercase text-slate-900 leading-none">
-                  Casa — Lajespintadense
+                  Local — Lajespintadense
                 </h3>
 
                 <p className="font-sans text-xs text-slate-600 mt-2 leading-relaxed">
@@ -60,11 +60,11 @@ export const CategoriesSection: React.FC = () => {
                     Subdivisões de Pódio:
                   </div>
                   <div className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded text-xs font-sans">
-                    <span className="font-semibold text-slate-900">Casa Masculino</span>
+                    <span className="font-semibold text-slate-900">Local Masculino</span>
                     <span className="text-orange-600 font-mono font-bold">1º ao 3º Lugar</span>
                   </div>
                   <div className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded text-xs font-sans">
-                    <span className="font-semibold text-slate-900">Casa Feminino</span>
+                    <span className="font-semibold text-slate-900">Local Feminino</span>
                     <span className="text-orange-600 font-mono font-bold">1º ao 3º Lugar</span>
                   </div>
                 </div>
@@ -212,7 +212,7 @@ export const CategoriesSection: React.FC = () => {
           </span>
         </div>
 
-        {/* Proof Guide Accordion for Categoria Casa */}
+        {/* Proof Guide Accordion for Categoria Local */}
         <div className="border border-slate-200 bg-white rounded-lg shadow-sm overflow-hidden">
           <button
             type="button"
@@ -223,7 +223,7 @@ export const CategoriesSection: React.FC = () => {
             <div className="flex items-center gap-3">
               <FileText className="w-4 h-4 text-orange-600 shrink-0" />
               <span className="font-sans font-semibold text-xs sm:text-sm text-slate-900">
-                Quais documentos são aceitos para comprovar a Categoria Casa Lajespintadense?
+                Quais documentos são aceitos para comprovar a Categoria Local Lajespintadense?
               </span>
             </div>
             <div className="p-1 text-slate-500">
@@ -234,7 +234,7 @@ export const CategoriesSection: React.FC = () => {
           {showProofGuide && (
             <div className="px-6 pb-6 pt-2 border-t border-slate-200 font-sans text-xs text-slate-600 space-y-2 animate-in fade-in duration-150">
               <p>
-                Para homologação da categoria Casa na entrega do kit oficial, o atleta deverá apresentar <strong>um</strong> dos seguintes documentos válidos com foto:
+                Para homologação da categoria Local na entrega do kit oficial, o atleta deverá apresentar <strong>um</strong> dos seguintes documentos válidos com foto:
               </p>
               <ul className="list-disc list-inside space-y-1.5 pl-2">
                 <li><strong className="text-slate-900">Certidão de Nascimento ou RG:</strong> comprovando naturalidade em Lajes Pintadas/RN (inclusive para residentes fora);</li>

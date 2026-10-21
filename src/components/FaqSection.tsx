@@ -12,8 +12,8 @@ const FAQ_ITEMS: FaqItem[] = [
   {
     id: 'faq-1',
     category: 'categoria',
-    question: 'Quem tem direito a se inscrever na Categoria "Casa"?',
-    answer: 'A categoria Casa destina-se estritamente aos atletas que nasceram em Lajes Pintadas/RN ou que residem atualmente no município, abrangendo também os lajenses naturais que residam em outras localidades. A veracidade da declaração deverá ser comprovada formalmente na retirada do kit através de Certidão de Nascimento, Título de Eleitor do município ou Comprovante de Residência idôneo.',
+    question: 'Quem tem direito a se inscrever na Categoria "Local" (Lajespintadense)?',
+    answer: 'A categoria Local destina-se estritamente aos atletas que nasceram em Lajes Pintadas/RN ou que residem atualmente no município, abrangendo também os lajenses naturais que residam em outras localidades. As inscrições são realizadas exclusivamente de forma presencial na sede da Prefeitura. A comprovação do vínculo ocorre mediante Certidão de Nascimento, Título de Eleitor do município ou Comprovante de Residência idôneo.',
   },
   {
     id: 'faq-2',
@@ -111,7 +111,7 @@ export const FaqSection: React.FC = () => {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar por palavra-chave (ex: kit, comprovante, casa, pix)..."
+              placeholder="Buscar por palavra-chave (ex: kit, comprovante, local, pix)..."
               className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-300 rounded text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:bg-white"
             />
           </div>

@@ -318,7 +318,7 @@ export const AthleteArea: React.FC<AthleteAreaProps> = ({ isOpen, onClose }) => 
 
                 {result.registration.casaProofType && (
                   <div className="p-3 rounded-xl bg-orange-50 text-xs text-orange-900 border border-orange-200">
-                    <strong>Vínculo Declarado (Categoria Casa):</strong>{' '}
+                    <strong>Vínculo Declarado (Categoria Local):</strong>{' '}
                     {result.registration.casaProofType === 'NATURAL' && 'Natural de Lajes Pintadas/RN'}
                     {result.registration.casaProofType === 'RESIDENTE' && 'Morador Atual de Lajes Pintadas/RN'}
                     {result.registration.casaProofType === 'NATURAL_E_RESIDENTE' && 'Natural e Morador Atual'}

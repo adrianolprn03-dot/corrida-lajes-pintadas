@@ -32,11 +32,18 @@ export default function App() {
   const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Dedicated Admin routing (/admin or #admin)
+  const [isAdminOpen, setIsAdminOpen] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const path = window.location.pathname.toLowerCase();
+    const hash = window.location.hash.toLowerCase();
+    return path === '/admin' || path.startsWith('/admin') || hash === '#admin';
+  });
+
   // Modals state
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [preselectedSize, setPreselectedSize] = useState<ShirtSize | undefined>(undefined);
   const [isAthleteAreaOpen, setIsAthleteAreaOpen] = useState(false);
-  const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isRegulationOpen, setIsRegulationOpen] = useState(false);
   const [regulationTab, setRegulationTab] = useState<'terms' | 'privacy'>('terms');
 
@@ -71,7 +78,38 @@ export default function App() {
 
   useEffect(() => {
     loadData();
+
+    // Browser navigation listener (Back/Forward or direct typing)
+    const handlePopState = () => {
+      const path = window.location.pathname.toLowerCase();
+      const hash = window.location.hash.toLowerCase();
+      setIsAdminOpen(path === '/admin' || path.startsWith('/admin') || hash === '#admin');
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    window.addEventListener('hashchange', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('hashchange', handlePopState);
+    };
   }, []);
+
+  const handleOpenAdmin = () => {
+    if (window.location.pathname !== '/admin') {
+      window.history.pushState({}, '', '/admin');
+    }
+    setIsAdminOpen(true);
+  };
+
+  const handleCloseAdmin = () => {
+    setIsAdminOpen(false);
+    if (window.location.pathname.startsWith('/admin')) {
+      window.history.pushState({}, '', '/');
+    } else if (window.location.hash === '#admin') {
+      window.history.pushState({}, '', window.location.pathname);
+    }
+    loadData();
+  };
 
   const handleOpenRegister = async () => {
     try {
@@ -146,7 +184,7 @@ export default function App() {
       <Header
         settings={settings}
         onOpenLookup={() => setIsAthleteAreaOpen(true)}
-        onOpenAdmin={() => setIsAdminOpen(true)}
+        onOpenAdmin={handleOpenAdmin}
         onOpenRegister={handleOpenRegister}
       />
 
@@ -157,7 +195,7 @@ export default function App() {
           settings={settings}
           onOpenRegister={handleOpenRegister}
           onOpenLookup={() => setIsAthleteAreaOpen(true)}
-          onOpenAdmin={() => setIsAdminOpen(true)}
+          onOpenAdmin={handleOpenAdmin}
           availableCapacity={metrics?.availableCapacity}
         />
 
@@ -170,7 +208,7 @@ export default function App() {
           }}
         />
 
-        {/* Categories (Casa vs Visitante) & Podium Awards */}
+        {/* Categories (Local vs Visitante) & Podium Awards */}
         <CategoriesSection />
 
         {/* Official Race Day Morning Schedule */}
@@ -194,7 +232,7 @@ export default function App() {
       <Footer
         onOpenRegulation={handleOpenRegulation}
         onOpenAthleteArea={() => setIsAthleteAreaOpen(true)}
-        onOpenAdmin={() => setIsAdminOpen(true)}
+        onOpenAdmin={handleOpenAdmin}
         onOpenRegister={handleOpenRegister}
       />
 
@@ -236,14 +274,11 @@ export default function App() {
           />
         )}
 
-        {/* Admin Panel Modal / Dashboard */}
+        {/* Admin Panel Page / Dashboard */}
         {isAdminOpen && (
           <AdminPanel
             isOpen={isAdminOpen}
-            onClose={() => {
-              setIsAdminOpen(false);
-              loadData();
-            }}
+            onClose={handleCloseAdmin}
           />
         )}
       </Suspense>

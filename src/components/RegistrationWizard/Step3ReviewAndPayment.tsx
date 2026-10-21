@@ -68,12 +68,14 @@ export const Step3ReviewAndPayment: React.FC<Step3ReviewAndPaymentProps> = ({
       ? 'VISITANTE_MASCULINO'
       : 'VISITANTE_FEMININO';
 
-  const categoryName = {
-    CASA_MASCULINO: 'Casa Masculino (5 km)',
-    CASA_FEMININO: 'Casa Feminino (5 km)',
+  const categoryName = ({
+    CASA_MASCULINO: 'Local Masculino (5 km)',
+    CASA_FEMININO: 'Local Feminino (5 km)',
+    LOCAL_MASCULINO: 'Local Masculino (5 km)',
+    LOCAL_FEMININO: 'Local Feminino (5 km)',
     VISITANTE_MASCULINO: 'Visitante Masculino (5 km)',
     VISITANTE_FEMININO: 'Visitante Feminino (5 km)',
-  }[computedCategory];
+  } as Record<string, string>)[computedCategory] || 'Visitante Masculino (5 km)';
 
   const pricing = calculatePricing(step2.paymentMethod, {
     basePriceCents: settings.basePriceCents,
@@ -362,7 +364,7 @@ export const Step3ReviewAndPayment: React.FC<Step3ReviewAndPaymentProps> = ({
               <span>Regulamento Oficial ({settings.termsVersion})</span>
               <FileText size={12} />
             </button>
-            , declarando estar em plenas condições de saúde para a prova de 5 km e ciente das regras de comprovação da Categoria Casa.
+            , declarando estar em plenas condições de saúde para a prova de 5 km e ciente das regras de comprovação da Categoria Local.
           </span>
         </label>
 

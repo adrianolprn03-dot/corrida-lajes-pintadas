@@ -35,7 +35,7 @@ export interface ExportRow {
   Canal: string;
   Categoria: string;
   Origem: string;
-  'Vínculo Casa': string;
+  'Vínculo Local': string;
   'Conferência Documental': string;
   'Documento Apresentado': string;
   'Servidor Atendente': string;
@@ -66,9 +66,9 @@ export function prepareRegistrationsForExport(registrations: Registration[]): Ex
       Equipe: sanitizeFormulaInjection(athlete?.team || '-'),
       Canal: sanitizeFormulaInjection(r.channel === 'PRESENCIAL_PREFEITURA' ? 'Presencial — Prefeitura' : 'Online'),
       Categoria: sanitizeFormulaInjection(r.category.replace('_', ' ')),
-      Origem: sanitizeFormulaInjection(r.originType),
-      'Vínculo Casa': sanitizeFormulaInjection(r.casaProofType || '-'),
-      'Conferência Documental': sanitizeFormulaInjection(r.documentVerificationStatus || (r.originType === 'CASA' ? 'PENDENTE' : 'N/A')),
+      Origem: sanitizeFormulaInjection(r.originType === 'CASA' ? 'LOCAL' : r.originType),
+      'Vínculo Local': sanitizeFormulaInjection(r.casaProofType || '-'),
+      'Conferência Documental': sanitizeFormulaInjection(r.documentVerificationStatus || (r.originType === 'LOCAL' || r.originType === 'CASA' ? 'APROVADO' : 'N/A')),
       'Documento Apresentado': sanitizeFormulaInjection(r.documentTypePresented || '-'),
       'Servidor Atendente': sanitizeFormulaInjection(r.attendantName || r.documentCheckedBy || '-'),
       Camisa: sanitizeFormulaInjection(r.shirtSize),

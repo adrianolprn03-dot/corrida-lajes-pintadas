@@ -6,21 +6,44 @@ export type EventStatus = 'PREPARATION' | 'OPEN' | 'SUSPENDED' | 'CLOSED' | 'SOL
 
 export type AthleteGender = 'MASCULINO' | 'FEMININO';
 
-export type OriginType = 'CASA' | 'VISITANTE';
+// Categoria Local (anteriormente chamada Casa) e Visitante
+export type OriginType = 'CASA' | 'VISITANTE' | 'LOCAL';
 
 export type CasaProofType = 'NATURAL' | 'RESIDENTE' | 'NATURAL_E_RESIDENTE';
+export type LocalProofType = CasaProofType;
 
 export type Category = 
   | 'CASA_MASCULINO' 
   | 'CASA_FEMININO' 
   | 'VISITANTE_MASCULINO' 
-  | 'VISITANTE_FEMININO';
+  | 'VISITANTE_FEMININO'
+  | 'LOCAL_MASCULINO'
+  | 'LOCAL_FEMININO';
 
 export type ShirtSize = 'PP' | 'P' | 'M' | 'G' | 'GG' | 'XG';
 
 export type PaymentMethod = 'PIX' | 'CREDIT_CARD';
 
 export type RegistrationChannel = 'ONLINE' | 'PRESENCIAL_PREFEITURA';
+
+// Perfis de Acesso ao Painel Administrativo
+export type AdminRole = 
+  | 'ADMIN_GERAL'      // Administrador Geral: Acesso total a todas as áreas, finanças, Asaas, operadores e configurações
+  | 'ATENDIMENTO'      // Atendimento Presencial: Inscrições presenciais (Local), consulta de atletas e comprovantes
+  | 'FINANCEIRO'       // Gestão Financeira: Visão Geral, conciliação Asaas, relatórios contábeis e taxas
+  | 'ENTREGA_KIT';     // Entrega de Kits: Busca de atleta por CPF/Protocolo e baixa na entrega do kit oficial
+
+export interface AdminOperator {
+  id: string;
+  username: string;
+  name: string;
+  role: AdminRole;
+  email: string;
+  isActive: boolean;
+  createdAt: string;
+  lastLoginAt?: string | null;
+  password?: string;
+}
 
 export type DocumentVerificationStatus = 
   | 'PENDENTE' 
@@ -81,11 +104,24 @@ export interface ShirtInventoryItem {
   id: string;
   size: ShirtSize;
   displayOrder: number;
+  // Estoque Consolidado
   totalStock: number;
   reservedCount: number;
   confirmedCount: number;
   isActive: boolean;
   availableStock: number; // totalStock - (reservedCount + confirmedCount)
+
+  // Estoque Exclusivo Atletas Locais (Lajespintadense - Atendimento Presencial)
+  localTotalStock?: number;
+  localReservedCount?: number;
+  localConfirmedCount?: number;
+  localAvailableStock?: number;
+
+  // Estoque Exclusivo Visitantes (Inscrições Gerais)
+  visitorTotalStock?: number;
+  visitorReservedCount?: number;
+  visitorConfirmedCount?: number;
+  visitorAvailableStock?: number;
 }
 
 export interface AthleteData {
@@ -218,4 +254,11 @@ export interface AdminMetrics {
   inReviewCount: number;
   shirts: Record<ShirtSize, { total: number; reserved: number; confirmed: number; available: number }>;
   kitsDeliveredCount: number;
+  // Indicadores Especiais Locais vs Visitantes e Asaas
+  localCount?: number;
+  visitorCount?: number;
+  presentialCount?: number;
+  onlineCount?: number;
+  asaasStatus?: 'CONNECTED' | 'SANDBOX' | 'OFFLINE';
+  asaasLatencyMs?: number;
 }

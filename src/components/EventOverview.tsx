@@ -111,7 +111,7 @@ export const EventOverview: React.FC<EventOverviewProps> = ({ settings }) => {
               </div>
               <div className="flex items-start gap-2.5 text-xs font-sans text-slate-700">
                 <CheckCircle2 className="w-4 h-4 text-orange-600 shrink-0 mt-0.5" />
-                <span><strong className="text-slate-900">Comprovante de Vínculo (Cat. Casa):</strong> Certidão, Título ou Comprovante de Residência.</span>
+                <span><strong className="text-slate-900">Comprovante de Vínculo (Cat. Local):</strong> Certidão, Título ou Comprovante de Residência.</span>
               </div>
             </div>
 
