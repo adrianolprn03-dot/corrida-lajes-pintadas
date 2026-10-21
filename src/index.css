@@ -38,7 +38,12 @@
     outline: 2px solid #FF7A00;
     outline-offset: 2px;
   }
+
+  input, select, textarea {
+    color: #0F172A;
+  }
 }
+
 
 @layer utilities {
   .btn-race-primary {

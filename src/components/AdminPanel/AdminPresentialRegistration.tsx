@@ -650,7 +650,7 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-slate-900">
       {/* Header Banner */}
       <div className="bg-gradient-to-r from-orange-600 via-orange-700 to-amber-700 rounded-3xl p-6 text-white shadow-lg shadow-orange-600/20 relative overflow-hidden">
         <div className="absolute -right-8 -bottom-8 opacity-10 pointer-events-none">
@@ -880,7 +880,7 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
           ETAPA 2: CADASTRAR OU CONFERIR OS DADOS
           ========================================================================= */}
       {currentStep === 2 && (
-        <form onSubmit={handleValidateStage2} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
+        <form onSubmit={handleValidateStage2} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6 text-slate-900">
           <div className="border-b border-slate-100 pb-4 flex items-center justify-between">
             <div>
               <div className="text-orange-600 font-bold text-xs uppercase tracking-wider mb-1">
@@ -909,7 +909,7 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
                 value={formData.fullName}
                 onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                 placeholder="Ex: Maria da Silva Souza"
-                className={`w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl text-xs md:text-sm font-medium ${
+                className={`w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl text-xs md:text-sm font-semibold text-slate-900 placeholder:text-slate-400 ${
                   stage2Errors.fullName ? 'border-red-400 bg-red-50/30' : 'border-slate-200'
                 } focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500`}
               />
@@ -927,7 +927,7 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
                 type="text"
                 value={formData.cpf}
                 readOnly
-                className="w-full px-3.5 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-xs md:text-sm font-mono font-bold text-slate-700 cursor-not-allowed"
+                className="w-full px-3.5 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-xs md:text-sm font-mono font-bold text-slate-900 cursor-not-allowed"
               />
             </div>
 
@@ -940,7 +940,7 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
                 type="date"
                 value={formData.birthDate}
                 onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
-                className={`w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl text-xs md:text-sm font-medium ${
+                className={`w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl text-xs md:text-sm font-semibold text-slate-900 placeholder:text-slate-400 ${
                   stage2Errors.birthDate ? 'border-red-400 bg-red-50/30' : 'border-slate-200'
                 } focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500`}
               />
@@ -959,7 +959,7 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 placeholder="atleta@exemplo.com"
-                className={`w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl text-xs md:text-sm font-medium ${
+                className={`w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl text-xs md:text-sm font-semibold text-slate-900 placeholder:text-slate-400 ${
                   stage2Errors.email ? 'border-red-400 bg-red-50/30' : 'border-slate-200'
                 } focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500`}
               />
@@ -979,7 +979,7 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
                 onChange={(e) => setFormData({ ...formData, phone: maskPhone(e.target.value) })}
                 placeholder="(84) 99999-9999"
                 maxLength={15}
-                className={`w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl text-xs md:text-sm font-medium ${
+                className={`w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl text-xs md:text-sm font-semibold text-slate-900 placeholder:text-slate-400 ${
                   stage2Errors.phone ? 'border-red-400 bg-red-50/30' : 'border-slate-200'
                 } focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500`}
               />
@@ -997,7 +997,7 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
                 type="text"
                 value={formData.city}
                 onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs md:text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs md:text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500"
               />
             </div>
 
@@ -1011,7 +1011,7 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
                 value={formData.state}
                 maxLength={2}
                 onChange={(e) => setFormData({ ...formData, state: e.target.value.toUpperCase() })}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs md:text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs md:text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500"
               />
             </div>
 
@@ -1025,7 +1025,7 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
                 value={formData.team}
                 onChange={(e) => setFormData({ ...formData, team: e.target.value })}
                 placeholder="Opcional"
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs md:text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs md:text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500"
               />
             </div>
           </div>
@@ -1140,7 +1140,7 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
           ETAPA 3: CONFERIR O VÍNCULO (CATEGORIA LOCAL)
           ========================================================================= */}
       {currentStep === 3 && (
-        <form onSubmit={handleValidateStage3} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
+        <form onSubmit={handleValidateStage3} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6 text-slate-900">
           <div className="border-b border-slate-100 pb-4">
             <div className="text-orange-600 font-bold text-xs uppercase tracking-wider mb-1">
               Etapa 3 de 5
@@ -1216,7 +1216,7 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
             <select
               value={documentTypePresented}
               onChange={(e) => setDocumentTypePresented(e.target.value)}
-              className="w-full max-w-lg px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs md:text-sm font-medium text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="w-full max-w-lg px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs md:text-sm font-semibold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500"
             >
               <option value="Documento de Identidade (RG) com naturalidade">Documento de Identidade (RG) com naturalidade</option>
               <option value="Certidão de Nascimento">Certidão de Nascimento</option>
@@ -1232,7 +1232,7 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
                 value={customDocType}
                 onChange={(e) => setCustomDocType(e.target.value)}
                 placeholder="Especifique o documento apresentado..."
-                className="w-full max-w-lg mt-2 px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full max-w-lg mt-2 px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
               />
             )}
           </div>
@@ -1305,7 +1305,7 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
               value={verificationNotes}
               onChange={(e) => setVerificationNotes(e.target.value)}
               placeholder="Ex: Apresentado RG original emitido pelo ITEP/RN comprovando naturalidade em Lajes Pintadas/RN."
-              className="w-full max-w-xl px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="w-full max-w-xl px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
             <p className="text-[11px] text-slate-400 mt-1">
               Registro auditável: Servidor <strong>{currentUser}</strong> em {formatDateTimeBR(new Date().toISOString())}.
