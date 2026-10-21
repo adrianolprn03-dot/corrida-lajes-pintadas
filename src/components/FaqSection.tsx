@@ -37,7 +37,7 @@ const FAQ_ITEMS: FaqItem[] = [
     id: 'faq-5',
     category: 'kit',
     question: 'O que compõe o kit oficial e posso trocar o tamanho da camisa depois?',
-    answer: 'O kit oficial inclui a Camisa Oficial Laranja de tecido dry-fit tecnológico, chip eletrônico descartável, número de peito personalizado com 4 alfinetes e brindes institucionais. Não será permitida a troca de tamanho no ato da retirada do kit, valendo estritamente a grade selecionada no momento da inscrição.',
+    answer: 'O kit oficial inclui a Camisa Oficial Laranja de tecido tecnológico em poliamida com proteção UV fator FPU 50+, chip eletrônico descartável, número de peito personalizado com 4 alfinetes e brindes institucionais. Não será permitida a troca de tamanho no ato da retirada do kit, valendo estritamente a grade selecionada no momento da inscrição.',
   },
   {
     id: 'faq-6',

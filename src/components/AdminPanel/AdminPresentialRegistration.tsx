@@ -559,7 +559,7 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
               </div>
               <div>
                 <span class="label">Camisa Oficial</span>
-                <span class="value">Tamanho ${athleteShirt} (Laranja Dry-Fit)</span>
+                <span class="value">Tamanho ${athleteShirt} (Laranja Poliamida FPU 50+)</span>
               </div>
               <div>
                 <span class="label">Canal de Inscrição</span>
@@ -1059,7 +1059,7 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
               <label className="block text-xs font-bold text-slate-700 uppercase">
                 Tamanho da Camisa Oficial do Kit (Estoque Compartilhado) <span className="text-red-500">*</span>
               </label>
-              <span className="text-[11px] text-orange-600 font-bold">Cor Única Oficial: Laranja Dry-Fit</span>
+              <span className="text-[11px] text-orange-600 font-bold">Cor Única Oficial: Laranja Poliamida FPU 50+</span>
             </div>
 
             <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
@@ -1728,7 +1728,7 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
               <div>
                 <span className="text-[10px] font-bold text-slate-400 uppercase block">Camisa Oficial</span>
                 <strong className="text-slate-900 block">
-                  Tamanho {createdRegistration?.shirtSize || formData.shirtSize} (Laranja Dry-Fit)
+                  Tamanho {createdRegistration?.shirtSize || formData.shirtSize} (Laranja Poliamida FPU 50+)
                 </strong>
               </div>
 

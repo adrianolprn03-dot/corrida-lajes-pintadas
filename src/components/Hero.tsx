@@ -157,7 +157,7 @@ export const Hero: React.FC<HeroProps> = ({
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-xs font-medium text-slate-700">
               <div className="flex items-center gap-1.5 bg-white/80 backdrop-blur-xs px-2.5 py-1.5 rounded-lg border border-slate-200/80 shadow-2xs">
                 <ShieldCheck className="w-3.5 h-3.5 text-orange-600 shrink-0" />
-                <span>Camisa Dry-Fit</span>
+                <span>Camisa Poliamida FPU 50+</span>
               </div>
               <div className="flex items-center gap-1.5 bg-white/80 backdrop-blur-xs px-2.5 py-1.5 rounded-lg border border-slate-200/80 shadow-2xs">
                 <ShieldCheck className="w-3.5 h-3.5 text-orange-600 shrink-0" />

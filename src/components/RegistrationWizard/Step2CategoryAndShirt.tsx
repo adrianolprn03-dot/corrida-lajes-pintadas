@@ -208,7 +208,7 @@ export const Step2CategoryAndShirt: React.FC<Step2CategoryAndShirtProps> = ({
                 className="w-16 h-16 object-contain rounded-lg bg-white border border-slate-200 shrink-0"
               />
               <div className="text-xs">
-                <span className="font-extrabold text-slate-900 block">Camisa Oficial Dry-Fit 5ª Edição</span>
+                <span className="font-extrabold text-slate-900 block">Camisa Oficial Poliamida FPU 50+ (5ª Edição)</span>
                 <span className="text-slate-500 block mt-0.5">
                   Laranja com silk branco em alto contraste. Escolha o seu tamanho abaixo:
                 </span>

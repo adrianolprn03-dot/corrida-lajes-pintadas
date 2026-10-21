@@ -64,7 +64,7 @@ export const ShirtShowcase: React.FC<ShirtShowcaseProps> = ({
             Camisa Oficial da Prova
           </h2>
           <p className="font-sans text-sm sm:text-base text-[#BBC3CE] mt-3 max-w-2xl leading-relaxed">
-            Tecido tecnológico dry-fit de alto rendimento, respirabilidade máxima sob calor intenso e proteção solar UV 50+. Aprovada para corredores de alta performance e amadores.
+            Tecido tecnológico em poliamida com proteção UV fator FPU 50+, toque frio e alta respirabilidade sob calor intenso. Aprovada para corredores de alta performance e amadores.
           </p>
         </div>
 
@@ -154,20 +154,20 @@ export const ShirtShowcase: React.FC<ShirtShowcaseProps> = ({
               <div className="p-4 border border-white/10 bg-white/[0.03] rounded-[2px]">
                 <Sun className="w-5 h-5 text-[#FF872E] mb-2" />
                 <span className="font-condensed font-bold text-lg uppercase text-white block">
-                  Proteção UV 50+
+                  Conforto Térmico
                 </span>
                 <p className="font-sans text-xs text-[#BBC3CE] mt-0.5">
-                  Bloqueio eficaz contra radiação solar no percurso.
+                  Toque frio, leveza e alta respirabilidade no percurso.
                 </p>
               </div>
 
               <div className="p-4 border border-white/10 bg-white/[0.03] rounded-[2px]">
                 <Wind className="w-5 h-5 text-[#FF872E] mb-2" />
                 <span className="font-condensed font-bold text-lg uppercase text-white block">
-                  Dry-Fit Tech
+                  Poliamida FPU 50+
                 </span>
                 <p className="font-sans text-xs text-[#BBC3CE] mt-0.5">
-                  Microperfurações para transporte rápido do suor.
+                  A poliamida com proteção UV fator FPU 50+.
                 </p>
               </div>
 

@@ -117,7 +117,7 @@ A 5ª Corrida de Emancipação Política de Lajes Pintadas/RN será realizada no
 
 3. DO VALOR E DO KIT
 3.1. A taxa de inscrição é de R$ 60,00 (sessenta reais), acrescida exclusivamente da taxa de serviço de 10% de processamento da plataforma de pagamento oficial.
-3.2. A inscrição confere direito ao Kit Oficial contendo camisa técnica dry-fit oficial laranja, chip de cronometragem eletrônica, número de peito e medalha finisher para os que concluírem o percurso dentro do tempo regulamentar.
+3.2. A inscrição confere direito ao Kit Oficial contendo camisa técnica em poliamida com proteção UV fator FPU 50+ oficial laranja, chip de cronometragem eletrônica, número de peito e medalha finisher para os que concluírem o percurso dentro do tempo regulamentar.
 3.3. Não será permitida troca de tamanho de camisa no ato da retirada do kit, prevalecendo estritamente a grade selecionada no ato da inscrição.
 
 4. REGRAS GERAIS E SEGURANÇA
