@@ -5,10 +5,10 @@
 
 ### 1. Modelo de Cobrança e Regras Financeiras
 - **Valor Base Municipal:** R$ 60,00 (líquido destinado aos cofres municipais / fundo de esportes).
-- **Repasse das Tarifas:** O atleta arca com o acréscimo de processamento do Asaas para pagamento à vista.
+- **Repasse das Tarifas (10%):** O atleta arca com o acréscimo de 10% (R$ 6,00) de taxa de serviço da plataforma.
 - **Formas de Pagamento Permitidas:**
-  - **Pix:** `R$ 60,00 + Tarifa Fixa (R$ 0,99) = R$ 60,99`.
-  - **Cartão de Crédito (1x à vista):** `(R$ 60,00 + Tarifa Fixa R$ 0,49) / (1 - 0,0299) = R$ 62,35`.
+  - **Pix:** `R$ 60,00 + 10% (R$ 6,00) = R$ 66,00`.
+  - **Cartão de Crédito (1x à vista):** `R$ 60,00 + 10% (R$ 6,00) = R$ 66,00`.
   - **Parcelamento:** Estritamente desabilitado (`installmentCount: 1`).
 
 ---
@@ -31,14 +31,14 @@ Content-Type: application/json
   "items": [
     {
       "name": "Inscrição 5ª Corrida de Emancipação Lajes Pintadas (Tam: M)",
-      "value": 60.99,
+      "value": 66.00,
       "quantity": 1
     }
   ],
   "callback": {
-    "successUrl": "https://corrida.lajespintadas.rn.gov.br/#/pagamento-sucesso",
-    "cancelUrl": "https://corrida.lajespintadas.rn.gov.br/#/pagamento-cancelado",
-    "expiredUrl": "https://corrida.lajespintadas.rn.gov.br/#/pagamento-expirado",
+    "successUrl": "https://corrida-lajes-pintadas-rn.vercel.app/#/pagamento-sucesso",
+    "cancelUrl": "https://corrida-lajes-pintadas-rn.vercel.app/#/pagamento-cancelado",
+    "expiredUrl": "https://corrida-lajes-pintadas-rn.vercel.app/#/pagamento-expirado",
     "autoRedirect": true
   }
 }
@@ -53,7 +53,7 @@ Content-Type: application/json
 2. Navegue até: **Minha Conta > Configurações da Conta > Integrações > Webhooks**.
 3. Clique em **"Novo Webhook"** e preencha:
    - **Nome:** Webhook Inscrições - Corrida Lajes Pintadas 2026
-   - **URL de Destino:** `https://seu-dominio.gov.br/api/webhook-asaas` (ou URL da Supabase Edge Function)
+   - **URL de Destino:** `https://corrida-lajes-pintadas-rn.vercel.app/api/webhook-asaas`
    - **Versão da API:** `v3`
    - **Token de Autenticação:** Digite uma chave alfanumérica segura e salve-a também na variável de ambiente `ASAAS_WEBHOOK_SECRET`.
    - **Eventos a Selecionar:**
