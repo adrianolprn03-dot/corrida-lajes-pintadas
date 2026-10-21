@@ -1,8 +1,6 @@
 {
-  "version": 2,
-  "regions": ["gru1"],
   "framework": "vite",
-  "cleanUrls": true,
+  "regions": ["gru1"],
   "headers": [
     {
       "source": "/assets/(.*)",
@@ -86,8 +84,17 @@
       "destination": "/api/admin-registrations"
     },
     {
-      "source": "/(.*)",
+      "source": "/admin",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/admin/:path*",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
   ]
 }
+

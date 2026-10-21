@@ -1,5 +1,31 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+function adminRoutePlugin() {
+  return {
+    name: 'admin-route-plugin',
+    closeBundle() {
+      try {
+        const distDir = path.resolve(__dirname, 'dist');
+        const adminDir = path.resolve(distDir, 'admin');
+        const indexPath = path.resolve(distDir, 'index.html');
+        if (fs.existsSync(indexPath)) {
+          fs.mkdirSync(adminDir, { recursive: true });
+          fs.copyFileSync(indexPath, path.resolve(adminDir, 'index.html'));
+          console.log('[vite-build] Created dist/admin/index.html for guaranteed direct route support');
+        }
+      } catch (err) {
+        console.error('Failed to create admin static index:', err);
+      }
+    },
+  };
+}
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
@@ -8,7 +34,7 @@ export default defineConfig(({ mode }) => {
   const supabaseAnonKey = env.VITE_SUPABASE_ANON_KEY || env.SUPABASE_ANON_KEY || '';
 
   return {
-    plugins: [react()],
+    plugins: [react(), adminRoutePlugin()],
     define: {
       'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(supabaseUrl),
       'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(supabaseAnonKey),
@@ -44,3 +70,4 @@ export default defineConfig(({ mode }) => {
     },
   };
 });
+
