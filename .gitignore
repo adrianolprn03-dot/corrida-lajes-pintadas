@@ -41,3 +41,4 @@ scratch_test_on_white.png
 Thumbs.db
 
 .vercel
+.env*.local

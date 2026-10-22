@@ -8,6 +8,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { AsaasClient } from './lib/asaas.js';
 import { memoryStore } from './lib/state.js';
+import { sendConfirmationEmail } from './lib/email.js';
 
 function normalizeSupabaseUrl(rawUrl?: string): string {
   if (!rawUrl) return '';
@@ -287,6 +288,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             document_checked_at: new Date().toISOString(),
             attendant_name: attendantName || null,
             attendant_id: attendantId || null,
+            kit_notes: `ACCESS_CODE:${reservationResult.access_code}`,
             updated_at: new Date().toISOString(),
           })
           .eq('id', reservationResult.registration_id);
@@ -311,6 +313,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       memReg.documentCheckedAt = new Date().toISOString();
       memReg.attendantName = attendantName;
       memReg.attendantId = attendantId;
+    }
+
+    // Disparo imediato de e-mail institucional oficial com Protocolo e Código de Acesso
+    if (email) {
+      sendConfirmationEmail({
+        athleteName: fullName,
+        athleteEmail: email,
+        athleteCpf: cleanCpf,
+        protocol: reservationResult.protocol,
+        accessCode: reservationResult.access_code,
+        category: reservationResult.category,
+        gender,
+        shirtSize,
+        paymentMethod,
+        originType,
+        status: originType === 'CASA' ? 'CONFIRMED' : 'RESERVED',
+        pixCopyPaste: pixCopy || undefined,
+        invoiceUrl: payment.invoiceUrl || undefined,
+      }).catch((emailErr) => {
+        console.warn('[create-reservation] Aviso ao disparar e-mail de confirmação:', emailErr);
+      });
     }
 
     const durationMs = Date.now() - startTime;

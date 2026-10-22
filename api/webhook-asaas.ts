@@ -111,9 +111,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             athleteEmail: memoryReg.email,
             athleteCpf: memoryReg.cpf || '',
             protocol: memoryReg.protocol,
+            accessCode: memoryReg.accessCode,
             category: memoryReg.category,
             gender: memoryReg.gender,
             shirtSize: memoryReg.shirtSize,
+            status: 'CONFIRMED',
           };
         } else if (supabase) {
           const { data: reg } = await supabase
@@ -123,6 +125,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               category,
               gender,
               shirt_size,
+              kit_notes,
               athletes (
                 full_name,
                 email,
@@ -134,14 +137,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
           if (reg && reg.athletes) {
             const athlete = Array.isArray(reg.athletes) ? reg.athletes[0] : reg.athletes;
+            let accessCode: string | undefined = undefined;
+            if (reg.kit_notes && typeof reg.kit_notes === 'string') {
+              const match = reg.kit_notes.match(/ACCESS_CODE:([A-Za-z0-9]+)/);
+              if (match) accessCode = match[1];
+            }
+            if (!accessCode) {
+              const mem = memoryStore.registrations.get(reg.protocol);
+              if (mem) accessCode = mem.accessCode;
+            }
+
             athleteData = {
               athleteName: athlete?.full_name || 'Atleta',
               athleteEmail: athlete?.email,
               athleteCpf: athlete?.cpf || '',
               protocol: reg.protocol,
+              accessCode,
               category: reg.category,
               gender: reg.gender,
               shirtSize: reg.shirt_size,
+              status: 'CONFIRMED',
             };
           }
         }

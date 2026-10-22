@@ -35,15 +35,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const name = typeof athleteName === 'string' && athleteName.trim() ? athleteName.trim() : 'Atleta de Teste';
   const protocol = `LP5-${Math.floor(100000 + Math.random() * 900000)}`;
 
-  try {
+    const sampleAccessCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+
     const success = await sendConfirmationEmail({
       athleteName: name,
       athleteEmail: cleanEmail,
-      athleteCpf: '***.456.789-**',
+      athleteCpf: '12345678900',
       protocol,
+      accessCode: sampleAccessCode,
       category: 'VISITANTE_MASCULINO',
       gender: 'MASCULINO',
       shirtSize: 'M',
+      status: 'CONFIRMED',
     });
 
     if (success) {

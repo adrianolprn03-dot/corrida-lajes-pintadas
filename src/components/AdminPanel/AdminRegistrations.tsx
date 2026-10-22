@@ -16,7 +16,8 @@ import {
   ExternalLink,
   ShieldAlert,
   UserCheck,
-  Building2
+  Building2,
+  Mail
 } from 'lucide-react';
 import { Registration, RegistrationStatus, Category, ShirtSize, PaymentMethod, CasaProofType, RegistrationChannel, DocumentVerificationStatus } from '../../types';
 import { exportRegistrationsToCSV, exportRegistrationsToExcel } from '../../lib/exportUtils';
@@ -57,6 +58,8 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
   const [isReissuing, setIsReissuing] = useState(false);
   const [reissuedCodeResult, setReissuedCodeResult] = useState<string | null>(null);
   const [codeCopied, setCodeCopied] = useState(false);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [emailSentSuccess, setEmailSentSuccess] = useState(false);
   const [isReconciling, setIsReconciling] = useState(false);
   const [actionMessage, setActionMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -184,6 +187,39 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
       navigator.clipboard.writeText(reissuedCodeResult);
       setCodeCopied(true);
       setTimeout(() => setCodeCopied(false), 2500);
+    }
+  };
+
+  const handleSendEmailCode = async () => {
+    if (!selectedReg || !reissuedCodeResult || !selectedReg.athlete?.email) return;
+    setIsSendingEmail(true);
+    try {
+      const res = await fetch('/api/resend-access-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          athleteName: selectedReg.athlete.fullName,
+          athleteEmail: selectedReg.athlete.email,
+          athleteCpf: selectedReg.athlete.cpf,
+          protocol: selectedReg.protocol,
+          accessCode: reissuedCodeResult,
+          category: selectedReg.category,
+          gender: selectedReg.gender,
+          shirtSize: selectedReg.shirtSize,
+          status: selectedReg.status,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setEmailSentSuccess(true);
+        setTimeout(() => setEmailSentSuccess(false), 4000);
+      } else {
+        alert(data.error || 'Falha ao enviar e-mail.');
+      }
+    } catch (e: any) {
+      alert(e.message || 'Erro ao conectar ao servidor de e-mail.');
+    } finally {
+      setIsSendingEmail(false);
     }
   };
 
@@ -786,13 +822,28 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
                     <div className="text-2xl font-mono font-black text-emerald-700 tracking-widest">
                       {reissuedCodeResult}
                     </div>
-                    <button
-                      onClick={copyReissuedCode}
-                      className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold inline-flex items-center gap-1.5 shadow-sm transition"
-                    >
-                      {codeCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                      <span>{codeCopied ? 'Código Copiado!' : 'Copiar Código para o Atleta'}</span>
-                    </button>
+                    <div className="flex items-center justify-center gap-2 pt-1 flex-wrap">
+                      <button
+                        type="button"
+                        onClick={copyReissuedCode}
+                        className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold inline-flex items-center gap-1.5 shadow-sm transition"
+                      >
+                        {codeCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                        <span>{codeCopied ? 'Código Copiado!' : 'Copiar Código'}</span>
+                      </button>
+
+                      {selectedReg.athlete?.email && (
+                        <button
+                          type="button"
+                          onClick={handleSendEmailCode}
+                          disabled={isSendingEmail}
+                          className="px-3.5 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-bold inline-flex items-center gap-1.5 shadow-sm transition disabled:opacity-50"
+                        >
+                          <Mail className="w-3.5 h-3.5" />
+                          <span>{isSendingEmail ? 'Enviando...' : emailSentSuccess ? 'E-mail Enviado!' : 'Enviar por E-mail ao Atleta'}</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ) : (
                   <form onSubmit={handleReissueSubmit} className="space-y-2">

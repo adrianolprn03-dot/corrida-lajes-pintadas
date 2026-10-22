@@ -13,8 +13,12 @@ export interface RegistrationEmailData {
   category: string;
   gender: string;
   shirtSize: string;
+  accessCode?: string;
+  status?: 'CONFIRMED' | 'RESERVED';
   paymentMethod?: string;
   originType?: string;
+  pixCopyPaste?: string;
+  invoiceUrl?: string;
 }
 
 function getTransporter() {
@@ -69,13 +73,30 @@ export async function sendConfirmationEmail(data: RegistrationEmailData): Promis
     data.category === 'VISITANTE_FEMININO' ? 'Atleta Visitante Geral Feminino (5 km)' :
     data.category;
 
+  const isReserved = data.status === 'RESERVED';
+  const bannerBg = isReserved ? '#fffbeb' : '#f0fdf4';
+  const bannerBorder = isReserved ? '#fef3c7' : '#bbf7d0';
+  const tagBg = isReserved ? '#d97706' : '#16a34a';
+  const tagText = isReserved ? '⏳ Pré-Reserva Realizada (Aguardando Pagamento)' : '✓ Inscrição Confirmada com Sucesso';
+  const bannerMsg = isReserved 
+    ? `Olá, ${data.athleteName}! Sua vaga na prova está pré-reservada por 30 minutos. Conclua o pagamento para garantir sua participação definitiva.`
+    : `Olá, ${data.athleteName}! Sua vaga na prova está 100% garantida.`;
+
+  const subject = isReserved
+    ? `Pré-Reserva #${data.protocol} (Código de Acesso: ${data.accessCode || '---'}) - 5ª Corrida de Emancipação`
+    : `Inscrição Confirmada #${data.protocol} (Código de Acesso: ${data.accessCode || '---'}) - 5ª Corrida de Emancipação`;
+
+  const maskedCpf = data.athleteCpf 
+    ? `${data.athleteCpf.replace(/\D/g, '').slice(0, 3)}.***.***-${data.athleteCpf.replace(/\D/g, '').slice(9)}`
+    : '***.***.***-**';
+
   const html = `
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Inscrição Confirmada - 5ª Corrida de Emancipação</title>
+  <title>${subject}</title>
 </head>
 <body style="margin: 0; padding: 0; background-color: #0b1120; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b;">
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #0b1120; padding: 24px 12px;">
@@ -99,30 +120,72 @@ export async function sendConfirmationEmail(data: RegistrationEmailData): Promis
             </td>
           </tr>
 
-          <!-- Faixa de Confirmação -->
+          <!-- Faixa de Status -->
           <tr>
-            <td style="background-color: #f0fdf4; border-bottom: 2px solid #bbf7d0; padding: 16px 24px; text-align: center;">
-              <span style="display: inline-block; background-color: #16a34a; color: #ffffff; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; padding: 6px 16px; border-radius: 9999px;">
-                ✓ Inscrição Confirmada com Sucesso
+            <td style="background-color: ${bannerBg}; border-bottom: 2px solid ${bannerBorder}; padding: 16px 24px; text-align: center;">
+              <span style="display: inline-block; background-color: ${tagBg}; color: #ffffff; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; padding: 6px 16px; border-radius: 9999px;">
+                ${tagText}
               </span>
-              <p style="margin: 10px 0 0 0; font-size: 13px; color: #166534; font-weight: 700;">
-                Olá, ${data.athleteName}! Sua vaga na prova está 100% garantida.
+              <p style="margin: 10px 0 0 0; font-size: 13px; color: #0f172a; font-weight: 700;">
+                ${bannerMsg}
               </p>
             </td>
           </tr>
 
           <!-- Corpo do Comprovante -->
           <tr>
-            <td style="padding: 28px 24px;">
-              <!-- Protocolo de Destaque -->
-              <div style="background-color: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 14px; padding: 16px; text-align: center; margin-bottom: 24px;">
-                <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: #64748b; display: block; margin-bottom: 4px;">
-                  Número de Protocolo Oficial
-                </span>
-                <span style="font-family: monospace; font-size: 24px; font-weight: 900; color: #ea580c; letter-spacing: 2px;">
-                  ${data.protocol}
-                </span>
+            <td style="padding: 24px 24px;">
+              
+              <!-- Destaque: Protocolo Oficial e Código de Acesso Lado a Lado -->
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom: 20px;">
+                <tr>
+                  <td style="width: 50%; padding-right: 6px; vertical-align: top;">
+                    <div style="background-color: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 14px; padding: 14px 10px; text-align: center;">
+                      <span style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #64748b; display: block; margin-bottom: 6px;">
+                        Número de Protocolo
+                      </span>
+                      <span style="font-family: monospace, Courier New, monospace; font-size: 18px; font-weight: 900; color: #ea580c; letter-spacing: 1.5px; display: inline-block;">
+                        ${data.protocol}
+                      </span>
+                    </div>
+                  </td>
+                  <td style="width: 50%; padding-left: 6px; vertical-align: top;">
+                    <div style="background-color: #0f172a; border: 2px solid #334155; border-radius: 14px; padding: 14px 10px; text-align: center; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);">
+                      <span style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #38bdf8; display: block; margin-bottom: 6px;">
+                        🔑 Código de Acesso
+                      </span>
+                      <span style="font-family: monospace, Courier New, monospace; font-size: 20px; font-weight: 900; color: #ffffff; letter-spacing: 3px; display: inline-block;">
+                        ${data.accessCode || 'Consulte o Admin'}
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Caixa Informativa de Segurança (LGPD) -->
+              <div style="background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 14px 16px; margin-bottom: 24px; font-size: 12px; color: #1e40af; line-height: 1.5;">
+                🔒 <strong>Importante — Guarde este e-mail:</strong> O seu <strong>Número de Protocolo</strong> e o seu <strong>Código de Acesso</strong> acima são as suas credenciais exclusivas para consultar a inscrição, verificar o status e emitir a 2ª via do comprovante no <strong>Portal do Atleta</strong> sem expor seus dados públicos na internet (em total conformidade com a LGPD).
               </div>
+
+              <!-- Informações de Pagamento Pix (se houver Copia e Cola) -->
+              ${data.pixCopyPaste ? `
+              <div style="background-color: #f0fdf4; border: 2px dashed #86efac; border-radius: 14px; padding: 18px; margin-bottom: 24px; text-align: center;">
+                <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #166534; display: block; margin-bottom: 8px;">
+                  Pague com Pix (Copia e Cola)
+                </span>
+                <p style="margin: 0 0 10px 0; font-size: 12px; color: #14532d;">
+                  Copie o código Pix abaixo e cole no aplicativo do seu banco para efetivar o pagamento:
+                </p>
+                <div style="background-color: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; font-family: monospace, Courier New, monospace; font-size: 11px; color: #334155; word-break: break-all; margin-bottom: 12px;">
+                  ${data.pixCopyPaste}
+                </div>
+                ${data.invoiceUrl ? `
+                <a href="${data.invoiceUrl}" target="_blank" style="display: inline-block; background-color: #16a34a; color: #ffffff; text-decoration: none; font-size: 12px; font-weight: 800; padding: 10px 20px; border-radius: 8px;">
+                  Visualizar QR Code Pix no Asaas
+                </a>
+                ` : ''}
+              </div>
+              ` : ''}
 
               <!-- Tabela de Dados do Atleta -->
               <h3 style="margin: 0 0 12px 0; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #0f172a; border-left: 4px solid #ea580c; padding-left: 10px;">
@@ -135,7 +198,7 @@ export async function sendConfirmationEmail(data: RegistrationEmailData): Promis
                 </tr>
                 <tr>
                   <td style="border: 1px solid #e2e8f0; font-size: 12px; font-weight: 700; color: #475569;">CPF Mascarado:</td>
-                  <td style="border: 1px solid #e2e8f0; font-size: 12px; font-weight: 600; color: #0f172a;">${data.athleteCpf}</td>
+                  <td style="border: 1px solid #e2e8f0; font-size: 12px; font-weight: 600; color: #0f172a;">${maskedCpf}</td>
                 </tr>
                 <tr style="background-color: #f8fafc;">
                   <td style="border: 1px solid #e2e8f0; font-size: 12px; font-weight: 700; color: #475569;">Modalidade / Categoria:</td>
@@ -145,6 +208,12 @@ export async function sendConfirmationEmail(data: RegistrationEmailData): Promis
                   <td style="border: 1px solid #e2e8f0; font-size: 12px; font-weight: 700; color: #475569;">Tamanho da Camiseta:</td>
                   <td style="border: 1px solid #e2e8f0; font-size: 12px; font-weight: 800; color: #0f172a;">
                     ${data.shirtSize} (Poliamida UV FPU 50+)
+                  </td>
+                </tr>
+                <tr style="background-color: #f0fdf4;">
+                  <td style="border: 1px solid #e2e8f0; font-size: 12px; font-weight: 700; color: #166534;">Código de Acesso (PIN):</td>
+                  <td style="border: 1px solid #e2e8f0; font-size: 14px; font-weight: 900; font-family: monospace, Courier New, monospace; color: #0284c7; letter-spacing: 2px;">
+                    ${data.accessCode || 'Disponível com a Organização'}
                   </td>
                 </tr>
               </table>
@@ -198,7 +267,7 @@ export async function sendConfirmationEmail(data: RegistrationEmailData): Promis
     const info = await transporter.sendMail({
       from: sender,
       to: data.athleteEmail,
-      subject: `Inscrição Confirmada #${data.protocol} - 5ª Corrida de Emancipação de Lajes Pintadas`,
+      subject,
       html,
     });
 
