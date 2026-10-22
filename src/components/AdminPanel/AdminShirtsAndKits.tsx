@@ -266,10 +266,10 @@ export const AdminShirtsAndKits: React.FC<AdminShirtsAndKitsProps> = ({
             <button
               onClick={handleReconcileStock}
               disabled={isReconciling}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition shadow-sm"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 disabled:opacity-50 text-slate-800 rounded-xl text-xs font-bold transition shadow-2xs"
               title="Auditar inscrições confirmadas e pendentes no banco e sincronizar contadores reais"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${isReconciling ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-3.5 h-3.5 ${isReconciling ? 'animate-spin text-orange-600' : 'text-slate-600'}`} />
               <span>{isReconciling ? 'Sincronizando...' : 'Sincronizar Banco'}</span>
             </button>
 
@@ -745,21 +745,21 @@ export const AdminShirtsAndKits: React.FC<AdminShirtsAndKitsProps> = ({
 
       {/* Batch Stock Edit Modal */}
       {isBatchModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+            <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 text-slate-800 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-orange-600 flex items-center justify-center text-white font-bold">
+                <div className="w-9 h-9 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center text-orange-600 font-bold">
                   <SlidersHorizontal className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-sm">Ajuste Rápido de Estoque em Lote</h3>
-                  <p className="text-[11px] text-slate-400">Configure a grade completa de camisas de uma vez no banco de dados</p>
+                  <h3 className="font-bold text-sm text-slate-900">Ajuste Rápido de Estoque em Lote</h3>
+                  <p className="text-[11px] text-slate-500">Configure a grade completa de camisas de uma vez no banco de dados</p>
                 </div>
               </div>
               <button
                 onClick={() => setIsBatchModalOpen(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg transition"
+                className="text-slate-400 hover:text-slate-700 hover:bg-slate-200 p-1.5 rounded-xl transition"
               >
                 <X className="w-5 h-5" />
               </button>

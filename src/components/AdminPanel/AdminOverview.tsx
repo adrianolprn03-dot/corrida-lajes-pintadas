@@ -99,35 +99,35 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
     <div className="space-y-6 animate-in fade-in duration-200">
       
       {/* SECTION 1: Asaas Gateway Connection Status Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-slate-950 border border-slate-800 rounded-3xl p-5 sm:p-6 text-white shadow-xl relative overflow-hidden">
+      <div className="bg-white border border-slate-200/90 rounded-3xl p-5 sm:p-6 text-slate-800 shadow-sm relative overflow-hidden">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex items-start sm:items-center gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center shrink-0">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center shrink-0">
               <Zap className="w-6 h-6 animate-pulse" />
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <span className="font-bold text-xs uppercase tracking-wider text-slate-400">
+                <span className="font-bold text-xs uppercase tracking-wider text-slate-500">
                   Integração Gateway de Pagamentos
                 </span>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 uppercase">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200 uppercase">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
                   Conectado ao Asaas
                 </span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20 uppercase">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 uppercase">
                   Modo {settings.asaasEnvironment === 'production' ? 'Produção' : 'Homologação'}
                 </span>
               </div>
-              <p className="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
-                Pix dinâmico com reserva de 30 minutos e confirmação instantânea via webhook oficial (<strong>/api/webhook-asaas</strong>).
+              <p className="text-xs text-slate-600 mt-1 max-w-2xl leading-relaxed">
+                Pix dinâmico com reserva de 30 minutos e confirmação instantânea via webhook oficial (<strong className="text-slate-800">/api/webhook-asaas</strong>).
               </p>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
             <div className="text-right hidden sm:block">
-              <div className="text-[11px] text-slate-400 font-medium">Latência de Comunicação</div>
-              <div className="text-sm font-black text-emerald-400 flex items-center justify-end gap-1">
+              <div className="text-[11px] text-slate-500 font-medium">Latência de Comunicação</div>
+              <div className="text-sm font-black text-emerald-600 flex items-center justify-end gap-1">
                 <Activity className="w-3.5 h-3.5" />
                 <span>{asaasResult?.latencyMs || metrics.asaasLatencyMs || 42} ms</span>
               </div>
@@ -136,10 +136,10 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
             <button
               onClick={handleTestAsaas}
               disabled={isTestingAsaas}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 active:bg-slate-900 border border-slate-700 text-white rounded-xl text-xs font-bold transition shadow-sm"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 border border-slate-200 text-slate-800 rounded-xl text-xs font-bold transition shadow-2xs"
               title="Executa um ping de diagnóstico em tempo real no servidor"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${isTestingAsaas ? 'animate-spin text-orange-400' : 'text-slate-400'}`} />
+              <RefreshCw className={`w-3.5 h-3.5 ${isTestingAsaas ? 'animate-spin text-orange-600' : 'text-slate-500'}`} />
               <span>{isTestingAsaas ? 'Diagnosticando...' : 'Testar Conexão Asaas'}</span>
             </button>
           </div>
@@ -147,12 +147,12 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
 
         {/* Diagnostic Output if tested */}
         {asaasResult && (
-          <div className="mt-4 pt-4 border-t border-slate-800/80 flex flex-wrap items-center justify-between text-xs text-slate-300 gap-2 animate-in fade-in">
+          <div className="mt-4 pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between text-xs text-slate-700 gap-2 animate-in fade-in">
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-              <span>{asaasResult.message}</span>
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span className="font-semibold">{asaasResult.message}</span>
             </div>
-            <span className="font-mono text-[11px] text-slate-400">
+            <span className="font-mono text-[11px] text-slate-500">
               Webhook: {asaasResult.webhookUrl}
             </span>
           </div>

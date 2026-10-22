@@ -253,34 +253,34 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
   const visibleTabs = allNavTabs.filter((t) => t.roles.includes(operator.role));
 
   const roleLabels: Record<AdminRole, { label: string; badgeBg: string }> = {
-    ADMIN_GERAL: { label: 'Admin Geral (Acesso Total)', badgeBg: 'bg-red-500/20 text-red-400 border-red-500/30' },
-    ATENDIMENTO: { label: 'Atendimento Prefeitura (Local)', badgeBg: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
-    FINANCEIRO: { label: 'Gestão Financeira & Asaas', badgeBg: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
-    ENTREGA_KIT: { label: 'Entrega de Kits & Camisas', badgeBg: 'bg-amber-500/20 text-amber-400 border-amber-500/30' },
+    ADMIN_GERAL: { label: 'Admin Geral (Acesso Total)', badgeBg: 'bg-red-50 text-red-700 border-red-200' },
+    ATENDIMENTO: { label: 'Atendimento Prefeitura (Local)', badgeBg: 'bg-blue-50 text-blue-700 border-blue-200' },
+    FINANCEIRO: { label: 'Gestão Financeira & Asaas', badgeBg: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+    ENTREGA_KIT: { label: 'Entrega de Kits & Camisas', badgeBg: 'bg-amber-50 text-amber-700 border-amber-200' },
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950 text-slate-100 flex flex-col font-sans">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-[#f8fafc] text-slate-800 flex flex-col font-sans selection:bg-orange-500 selection:text-white">
       {/* Top Admin Navigation Bar */}
-      <header className="bg-slate-900 border-b border-slate-800 text-white shrink-0 sticky top-0 z-30 shadow-xl">
+      <header className="bg-white/95 backdrop-blur-md border-b border-slate-200/90 text-slate-800 shrink-0 sticky top-0 z-30 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
           
           <div className="flex items-center gap-3">
             <img 
               src="/assets/brasao_lajes.webp" 
               alt="Brasão de Lajes Pintadas" 
-              className="h-10 w-auto object-contain drop-shadow" 
+              className="h-10 w-auto object-contain drop-shadow-xs" 
             />
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="font-black text-sm tracking-wide text-white uppercase whitespace-nowrap">
+                <h1 className="font-black text-sm tracking-wide text-slate-900 uppercase whitespace-nowrap">
                   Painel de Gestão da Corrida
                 </h1>
-                <span className="hidden sm:inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-600 text-white">
+                <span className="hidden sm:inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-orange-50 text-orange-700 border border-orange-200">
                   Edição 2026
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 hidden sm:block">
+              <p className="text-[11px] text-slate-500 hidden sm:block">
                 Prefeitura Municipal de Lajes Pintadas / RN
               </p>
             </div>
@@ -288,13 +288,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
 
           <div className="flex items-center gap-3">
             {/* Operator Role Badge */}
-            <div className="flex items-center gap-2 text-xs bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800">
-              <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+            <div className="flex items-center gap-2 text-xs bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 shadow-2xs">
+              <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
               <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
-                <span className="font-bold text-white text-[11px] truncate max-w-[140px] sm:max-w-none">
+                <span className="font-bold text-slate-900 text-[11px] truncate max-w-[140px] sm:max-w-none">
                   {operator.name}
                 </span>
-                <span className={`px-2 py-0.2 rounded-md text-[9px] font-extrabold uppercase border ${roleLabels[operator.role]?.badgeBg || 'bg-slate-800 text-slate-300'}`}>
+                <span className={`px-2 py-0.5 rounded-md text-[9px] font-extrabold uppercase border ${roleLabels[operator.role]?.badgeBg || 'bg-slate-100 text-slate-700 border-slate-200'}`}>
                   {roleLabels[operator.role]?.label || operator.role}
                 </span>
               </div>
@@ -303,7 +303,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
             {/* Logout */}
             <button
               onClick={handleLogout}
-              className="p-2 text-slate-400 hover:text-red-400 hover:bg-slate-800 rounded-xl transition"
+              className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition border border-transparent hover:border-red-100"
               title="Encerrar Sessão"
             >
               <LogOut className="w-4 h-4" />
@@ -312,7 +312,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
             {/* Return to Site Button */}
             <button
               onClick={onClose}
-              className="px-3.5 py-1.5 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-orange-600/20"
+              className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 border border-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-2xs"
               title="Voltar para a página pública da corrida"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
@@ -323,8 +323,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
         </div>
 
         {/* Tab Navigation */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex overflow-x-auto border-t border-slate-800/80 scrollbar-none">
-          <nav className="flex space-x-2 py-2">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex overflow-x-auto border-t border-slate-200/70 scrollbar-none">
+          <nav className="flex space-x-1.5 py-2">
             {visibleTabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -334,8 +334,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
                   onClick={() => setActiveTab(tab.id as any)}
                   className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition ${
                     isActive
-                      ? 'bg-orange-600 text-white shadow-md shadow-orange-600/20'
-                      : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                      ? 'bg-orange-600 text-white shadow-sm shadow-orange-600/20'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-transparent'
                   }`}
                 >
                   <Icon className="w-4 h-4" />
@@ -350,7 +350,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
       {/* Main Admin Content */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
         {isLoading && !metrics ? (
-          <div className="py-24 text-center text-slate-400">
+          <div className="py-24 text-center text-slate-500">
             <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-3 text-orange-500" />
             <p className="text-sm font-semibold">Carregando informações do sistema...</p>
           </div>
@@ -401,17 +401,17 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
             {/* Dedicated Asaas & Financial Diagnostics Tab */}
             {activeTab === 'asaas' && settings && (
               <div className="space-y-6 animate-in fade-in duration-200">
-                <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5 mb-5">
+                <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5 mb-5">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center">
+                      <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center">
                         <Zap className="w-6 h-6 animate-pulse" />
                       </div>
                       <div>
-                        <h2 className="text-xl font-bold text-white uppercase tracking-tight">
+                        <h2 className="text-xl font-bold text-slate-900 uppercase tracking-tight">
                           Gateway Asaas & Conectividade Financeira
                         </h2>
-                        <p className="text-xs text-slate-400">
+                        <p className="text-xs text-slate-500">
                           Monitoramento de transações Pix dinâmicas, conciliação e webhooks automáticos
                         </p>
                       </div>
@@ -429,66 +429,66 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
 
                   {/* Asaas Diagnostics Output */}
                   {asaasDiagnostic && (
-                    <div className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-between text-xs text-emerald-400">
+                    <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between text-xs text-emerald-800">
                       <div className="flex items-center gap-2.5">
-                        <CheckCircle2 className="w-5 h-5 shrink-0" />
-                        <span>{asaasDiagnostic.message}</span>
+                        <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                        <span className="font-semibold">{asaasDiagnostic.message}</span>
                       </div>
-                      <span className="font-mono text-slate-400">
-                        Latência: {asaasDiagnostic.latencyMs} ms
+                      <span className="font-mono text-slate-600">
+                        Latência: <strong>{asaasDiagnostic.latencyMs} ms</strong>
                       </span>
                     </div>
                   )}
 
                   {/* 3 Detail Cards */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">
+                    <div className="p-4 bg-slate-50/70 rounded-2xl border border-slate-200/80 shadow-2xs">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">
                         Status do Gateway
                       </span>
-                      <div className="text-lg font-black text-emerald-400 flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+                      <div className="text-lg font-black text-emerald-600 flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
                         <span>ATIVO & CONECTADO</span>
                       </div>
-                      <p className="text-[11px] text-slate-400 mt-2">
-                        Ambiente: <strong className="text-white uppercase">{settings.asaasEnvironment}</strong>
+                      <p className="text-[11px] text-slate-500 mt-2">
+                        Ambiente: <strong className="text-slate-800 uppercase">{settings.asaasEnvironment}</strong>
                       </p>
                     </div>
 
-                    <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">
+                    <div className="p-4 bg-slate-50/70 rounded-2xl border border-slate-200/80 shadow-2xs">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">
                         Endpoint Webhook Oficial
                       </span>
-                      <div className="text-xs font-mono font-bold text-orange-400 break-all">
+                      <div className="text-xs font-mono font-bold text-orange-600 break-all">
                         /api/webhook-asaas
                       </div>
-                      <p className="text-[11px] text-slate-400 mt-2">
+                      <p className="text-[11px] text-slate-500 mt-2">
                         Eventos: PAYMENT_RECEIVED, PAYMENT_CONFIRMED
                       </p>
                     </div>
 
-                    <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">
+                    <div className="p-4 bg-slate-50/70 rounded-2xl border border-slate-200/80 shadow-2xs">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">
                         Estrutura de Taxas
                       </span>
-                      <div className="text-lg font-black text-white">
+                      <div className="text-lg font-black text-slate-900">
                         10% (R$ 6,00)
                       </div>
-                      <p className="text-[11px] text-emerald-400 mt-2">
+                      <p className="text-[11px] text-emerald-700 mt-2 font-medium">
                         R$ 60,00 líquido municipal preservado integralmente
                       </p>
                     </div>
                   </div>
 
                   {/* Webhook Verification Guide */}
-                  <div className="mt-6 p-4 bg-slate-950/70 border border-slate-800 rounded-2xl text-xs space-y-2">
-                    <div className="font-bold text-white flex items-center gap-2">
-                      <Radio className="w-4 h-4 text-orange-500" />
+                  <div className="mt-6 p-4 bg-orange-50/60 border border-orange-200/80 rounded-2xl text-xs space-y-2">
+                    <div className="font-bold text-orange-900 flex items-center gap-2">
+                      <Radio className="w-4 h-4 text-orange-600" />
                       <span>Instruções de Configuração no Portal Asaas</span>
                     </div>
-                    <p className="text-slate-400 leading-relaxed">
+                    <p className="text-slate-700 leading-relaxed">
                       Para homologação final ou produção, cadastre a URL 
-                      <strong className="text-white font-mono bg-slate-800 px-1.5 py-0.5 rounded mx-1">
+                      <strong className="text-slate-900 font-mono bg-white border border-orange-200 px-1.5 py-0.5 rounded mx-1">
                         https://corrida-lajes-pintadas-rn.vercel.app/api/webhook-asaas
                       </strong>
                       no menu <em>Integrações &rarr; Webhooks para Cobranças</em> do painel Asaas. O sistema atualiza o status dos atletas para CONFIRMED automaticamente no momento em que o Pix é compensado.
