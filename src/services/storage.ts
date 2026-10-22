@@ -18,6 +18,7 @@ import {
   EventStatus,
   AdminOperator,
   AdminRole,
+  CasaProofType,
 } from '../types';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { isValidCPF } from '../lib/cpf';
@@ -395,17 +396,40 @@ class StorageService {
     });
   }
 
-  // Atualizar Estoque Geral (Admin)
+  // Atualizar Estoque Geral (Admin) com persistência no Supabase e API
   async updateShirtStock(size: ShirtSize, newTotalStock: number): Promise<void> {
     const shirts = await this.getShirtInventory();
+    const item = shirts.find((s) => s.size === size);
+    if (item) {
+      const minimumAllowed = (item.reservedCount || 0) + (item.confirmedCount || 0);
+      if (newTotalStock < minimumAllowed) {
+        throw new Error(
+          `Não é permitido reduzir o estoque abaixo de ${minimumAllowed} (já existem ${item.confirmedCount || 0} confirmadas e ${item.reservedCount || 0} reservadas).`
+        );
+      }
+    }
+
+    // 1. Persistir no banco de dados via API Admin
+    try {
+      const res = await fetch('/api/admin-inventory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ size, totalStock: newTotalStock }),
+      });
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || 'Falha ao salvar estoque no banco de dados.');
+      }
+    } catch (apiErr: any) {
+      console.warn('Falha na chamada API de estoque:', apiErr);
+      if (apiErr.message && !apiErr.message.includes('fetch')) {
+        throw apiErr;
+      }
+    }
+
+    // 2. Atualizar cópia em LocalStorage
     const updated = shirts.map((s) => {
       if (s.size === size) {
-        const minimumAllowed = s.reservedCount + s.confirmedCount;
-        if (newTotalStock < minimumAllowed) {
-          throw new Error(
-            `Não é permitido reduzir o estoque abaixo de ${minimumAllowed} (já existem ${s.confirmedCount} confirmadas e ${s.reservedCount} reservadas).`
-          );
-        }
         const localPart = Math.floor(newTotalStock / 2);
         const visitorPart = newTotalStock - localPart;
         return { 
@@ -427,49 +451,88 @@ class StorageService {
   // Atualizar Estoque Exclusivo Local - Lajespintadense (Admin)
   async updateLocalShirtStock(size: ShirtSize, newLocalStock: number): Promise<void> {
     const shirts = await this.getShirtInventory();
-    const updated = shirts.map((s) => {
-      if (s.size === size) {
-        const minimumAllowed = (s.localReservedCount || 0) + (s.localConfirmedCount || 0);
-        if (newLocalStock < minimumAllowed) {
-          throw new Error(`Não é permitido reduzir o estoque local abaixo de ${minimumAllowed} (já existem ${s.localConfirmedCount} confirmadas e ${s.localReservedCount} reservadas).`);
-        }
-        const newTotal = newLocalStock + s.visitorTotalStock;
-        return {
-          ...s,
-          localTotalStock: newLocalStock,
-          localAvailableStock: Math.max(0, newLocalStock - minimumAllowed),
-          totalStock: newTotal,
-          availableStock: Math.max(0, newTotal - (s.reservedCount + s.confirmedCount)),
-        };
-      }
-      return s;
-    });
+    const item = shirts.find((s) => s.size === size);
+    if (!item) return;
 
-    this.setLocal(STORAGE_KEYS.SHIRTS, updated);
+    const minimumAllowed = (item.localReservedCount || 0) + (item.localConfirmedCount || 0);
+    if (newLocalStock < minimumAllowed) {
+      throw new Error(`Não é permitido reduzir o estoque local abaixo de ${minimumAllowed} (já existem ${item.localConfirmedCount} confirmadas e ${item.localReservedCount} reservadas).`);
+    }
+
+    const currentVisitor = item.visitorTotalStock ?? Math.ceil(item.totalStock / 2);
+    const newTotal = newLocalStock + currentVisitor;
+
+    await this.updateShirtStock(size, newTotal);
   }
 
   // Atualizar Estoque Exclusivo Visitante (Admin)
   async updateVisitorShirtStock(size: ShirtSize, newVisitorStock: number): Promise<void> {
     const shirts = await this.getShirtInventory();
+    const item = shirts.find((s) => s.size === size);
+    if (!item) return;
+
+    const minimumAllowed = (item.visitorReservedCount || 0) + (item.visitorConfirmedCount || 0);
+    if (newVisitorStock < minimumAllowed) {
+      throw new Error(`Não é permitido reduzir o estoque de visitantes abaixo de ${minimumAllowed} (já existem ${item.visitorConfirmedCount} confirmadas e ${item.visitorReservedCount} reservadas).`);
+    }
+
+    const currentLocal = item.localTotalStock ?? Math.floor(item.totalStock / 2);
+    const newTotal = currentLocal + newVisitorStock;
+
+    await this.updateShirtStock(size, newTotal);
+  }
+
+  // Atualização em Lote de Estoque de Camisas (Admin)
+  async batchUpdateShirtStock(items: { size: ShirtSize; totalStock: number; isActive?: boolean }[]): Promise<void> {
+    try {
+      const res = await fetch('/api/admin-inventory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items }),
+      });
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || 'Falha ao atualizar lote de estoque.');
+      }
+    } catch (apiErr: any) {
+      console.warn('Falha na chamada API de lote de estoque:', apiErr);
+      if (apiErr.message && !apiErr.message.includes('fetch')) {
+        throw apiErr;
+      }
+    }
+
+    const shirts = await this.getShirtInventory();
     const updated = shirts.map((s) => {
-      if (s.size === size) {
-        const minimumAllowed = (s.visitorReservedCount || 0) + (s.visitorConfirmedCount || 0);
-        if (newVisitorStock < minimumAllowed) {
-          throw new Error(`Não é permitido reduzir o estoque de visitantes abaixo de ${minimumAllowed} (já existem ${s.visitorConfirmedCount} confirmadas e ${s.visitorReservedCount} reservadas).`);
-        }
-        const newTotal = s.localTotalStock + newVisitorStock;
+      const found = items.find((it) => it.size === s.size);
+      if (found) {
         return {
           ...s,
-          visitorTotalStock: newVisitorStock,
-          visitorAvailableStock: Math.max(0, newVisitorStock - minimumAllowed),
-          totalStock: newTotal,
-          availableStock: Math.max(0, newTotal - (s.reservedCount + s.confirmedCount)),
+          totalStock: found.totalStock,
+          isActive: found.isActive !== undefined ? found.isActive : s.isActive,
+          availableStock: Math.max(0, found.totalStock - (s.reservedCount + s.confirmedCount)),
         };
       }
       return s;
     });
-
     this.setLocal(STORAGE_KEYS.SHIRTS, updated);
+  }
+
+  // Reconciliar Estoque com Inscrições Reais do Banco de Dados
+  async reconcileShirtStock(): Promise<{ success: boolean; message: string }> {
+    try {
+      const res = await fetch('/api/admin-inventory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reconcile' }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Erro ao sincronizar estoque real.');
+      }
+      return { success: true, message: data.message || 'Estoque sincronizado com sucesso!' };
+    } catch (err: any) {
+      throw new Error(err.message || 'Erro ao conectar à API de estoque.');
+    }
   }
 
   // Submeter Inscrição (Reserva Atômica e Cálculo de Preço)
@@ -816,68 +879,87 @@ class StorageService {
 
   // Entrega de Kit (Admin)
   async deliverKit(registrationId: string, deliveredBy: string, notes?: string): Promise<Registration> {
-    const all = this.getLocal<Registration[]>(STORAGE_KEYS.REGISTRATIONS, []);
-    const idx = all.findIndex((r) => r.id === registrationId);
-    if (idx === -1) throw new Error('Inscrição não encontrada.');
-
-    const reg = all[idx];
-    if (reg.status !== 'CONFIRMED') {
-      throw new Error(`Não é possível entregar o kit. A inscrição está com situação: ${reg.status}.`);
-    }
-
-    if (reg.kitDelivered) {
-      throw new Error(`Kit já foi entregue anteriormente em ${reg.kitDeliveredAt} por ${reg.kitDeliveredBy}.`);
-    }
-
-    const updated: Registration = {
-      ...reg,
-      kitDelivered: true,
-      kitDeliveredAt: new Date().toISOString(),
-      kitDeliveredBy: deliveredBy,
-      kitNotes: notes || null,
-      updatedAt: new Date().toISOString(),
-    };
-
-    all[idx] = updated;
-    this.setLocal(STORAGE_KEYS.REGISTRATIONS, all);
-    return updated;
-  }
-
-  // Simulação de Conciliação Webhook Asaas (Admin/Dev)
-  async simulateWebhookConfirmation(registrationId: string): Promise<void> {
-    const all = this.getLocal<Registration[]>(STORAGE_KEYS.REGISTRATIONS, []);
-    const idx = all.findIndex((r) => r.id === registrationId);
-    if (idx === -1) throw new Error('Inscrição não encontrada.');
-
-    const reg = all[idx];
-    if (reg.status === 'CONFIRMED') return;
-
-    // Atualizar estoque da camisa (reserva -> confirmada)
-    const shirts = await this.getShirtInventory();
-    const updatedShirts = shirts.map((s) => {
-      if (s.size === reg.shirtSize) {
-        return {
-          ...s,
-          reservedCount: Math.max(0, s.reservedCount - 1),
-          confirmedCount: s.confirmedCount + 1,
-        };
+    try {
+      const res = await fetch('/api/admin-registrations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'deliver-kit',
+          id: registrationId,
+          deliveredBy,
+          notes,
+        }),
+      });
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || 'Falha ao registrar entrega do kit no banco.');
       }
-      return s;
-    });
-    this.setLocal(STORAGE_KEYS.SHIRTS, updatedShirts);
+    } catch (e: any) {
+      console.warn('Falha na chamada API de entrega de kit:', e);
+      if (e.message && !e.message.includes('fetch')) {
+        throw e;
+      }
+    }
 
-    reg.status = 'CONFIRMED';
-    reg.financialStatus = 'CONFIRMED';
-    reg.paidAt = new Date().toISOString();
-    reg.updatedAt = new Date().toISOString();
-
-    all[idx] = reg;
-    this.setLocal(STORAGE_KEYS.REGISTRATIONS, all);
+    const all = this.getLocal<Registration[]>(STORAGE_KEYS.REGISTRATIONS, []);
+    const idx = all.findIndex((r) => r.id === registrationId);
+    if (idx !== -1) {
+      const reg = all[idx];
+      const updated: Registration = {
+        ...reg,
+        kitDelivered: true,
+        kitDeliveredAt: new Date().toISOString(),
+        kitDeliveredBy: deliveredBy,
+        kitNotes: notes || null,
+        updatedAt: new Date().toISOString(),
+      };
+      all[idx] = updated;
+      this.setLocal(STORAGE_KEYS.REGISTRATIONS, all);
+      return updated;
+    }
+    return { id: registrationId, kitDelivered: true } as any;
   }
 
-  // Obter Métricas do Painel Admin
+  // Simulação / Reconciliação Manual do Pagamento (Admin Geral / Financeiro)
+  async simulateWebhookConfirmation(registrationId: string): Promise<void> {
+    try {
+      const res = await fetch('/api/admin-registrations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'manual-confirm',
+          id: registrationId,
+          operator: 'Conciliação Gateway',
+          notes: 'Reconciliação manual no painel admin',
+        }),
+      });
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || 'Falha ao reconciliar pagamento no banco.');
+      }
+    } catch (e: any) {
+      console.warn('Falha na chamada API de conciliação:', e);
+      if (e.message && !e.message.includes('fetch')) {
+        throw e;
+      }
+    }
+
+    const all = this.getLocal<Registration[]>(STORAGE_KEYS.REGISTRATIONS, []);
+    const idx = all.findIndex((r) => r.id === registrationId);
+    if (idx !== -1) {
+      const reg = all[idx];
+      reg.status = 'CONFIRMED';
+      reg.financialStatus = 'CONFIRMED';
+      reg.paidAt = new Date().toISOString();
+      reg.updatedAt = new Date().toISOString();
+      all[idx] = reg;
+      this.setLocal(STORAGE_KEYS.REGISTRATIONS, all);
+    }
+  }
+
+  // Obter Métricas do Painel Admin (Sincronizado com API/Banco)
   async getAdminMetrics(): Promise<AdminMetrics> {
-    const registrations = this.getLocal<Registration[]>(STORAGE_KEYS.REGISTRATIONS, []);
+    const registrations = await this.getAdminRegistrations();
     const shirts = await this.getShirtInventory();
     const settings = await this.getSettings();
 
@@ -1158,6 +1240,112 @@ class StorageService {
     return newRawCode;
   }
 
+  // Edição Completa da Inscrição (Admin Geral)
+  async updateRegistration(
+    id: string,
+    updates: {
+      athlete?: {
+        fullName?: string;
+        cpf?: string;
+        birthDate?: string;
+        email?: string;
+        phone?: string;
+        city?: string;
+        state?: string;
+        team?: string;
+      };
+      registration?: {
+        category?: Category;
+        originType?: string;
+        gender?: 'MASCULINO' | 'FEMININO';
+        shirtSize?: ShirtSize;
+        status?: RegistrationStatus;
+        financialStatus?: string;
+        casaProofType?: CasaProofType;
+        kitDelivered?: boolean;
+        kitNotes?: string;
+      };
+      sendNotificationEmail?: boolean;
+      accessCode?: string;
+      operator?: string;
+    }
+  ): Promise<any> {
+    const res = await fetch('/api/admin-registrations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'update',
+        id,
+        ...updates,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Falha ao atualizar inscrição.');
+    }
+
+    // Atualizar LocalStorage se o registro existir lá
+    const all = this.getLocal<Registration[]>(STORAGE_KEYS.REGISTRATIONS, []);
+    const idx = all.findIndex((r) => r.id === id);
+    if (idx !== -1 && data.item) {
+      all[idx] = {
+        ...all[idx],
+        ...data.item,
+        athlete: data.item.athlete ? {
+          fullName: data.item.athlete.full_name,
+          cpf: data.item.athlete.cpf,
+          birthDate: data.item.athlete.birth_date,
+          email: data.item.athlete.email,
+          phone: data.item.athlete.phone,
+          city: data.item.athlete.city,
+          state: data.item.athlete.state,
+          team: data.item.athlete.team,
+        } : all[idx].athlete,
+      };
+      this.setLocal(STORAGE_KEYS.REGISTRATIONS, all);
+    }
+
+    return data;
+  }
+
+  // Confirmação Manual de Inscrição (Admin Geral / Financeiro)
+  async manualConfirmRegistration(
+    id: string,
+    operator: string,
+    notes?: string,
+    sendEmail: boolean = true,
+    accessCode?: string
+  ): Promise<any> {
+    const res = await fetch('/api/admin-registrations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'manual-confirm',
+        id,
+        operator,
+        notes,
+        sendEmail,
+        accessCode,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Falha ao confirmar inscrição.');
+    }
+
+    const all = this.getLocal<Registration[]>(STORAGE_KEYS.REGISTRATIONS, []);
+    const idx = all.findIndex((r) => r.id === id);
+    if (idx !== -1) {
+      all[idx].status = 'CONFIRMED';
+      all[idx].financialStatus = 'CONFIRMED';
+      all[idx].paidAt = new Date().toISOString();
+      all[idx].updatedAt = new Date().toISOString();
+      this.setLocal(STORAGE_KEYS.REGISTRATIONS, all);
+    }
+
+    return data;
+  }
+
   // Atualizar Situação da Inscrição (Admin)
   async updateRegistrationStatus(
     registrationId: string, 
@@ -1165,6 +1353,21 @@ class StorageService {
     adminUser: string, 
     notes?: string
   ): Promise<Registration> {
+    try {
+      await fetch('/api/admin-registrations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'update',
+          id: registrationId,
+          registration: { status: newStatus },
+          operator: adminUser,
+        }),
+      });
+    } catch (e) {
+      console.warn('Falha ao atualizar status via API:', e);
+    }
+
     const all = this.getLocal<Registration[]>(STORAGE_KEYS.REGISTRATIONS, []);
     const idx = all.findIndex((r) => r.id === registrationId);
     if (idx === -1) throw new Error('Inscrição não encontrada.');

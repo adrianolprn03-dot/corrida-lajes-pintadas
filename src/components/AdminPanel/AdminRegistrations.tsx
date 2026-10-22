@@ -17,14 +17,22 @@ import {
   ShieldAlert,
   UserCheck,
   Building2,
-  Mail
+  Mail,
+  Edit3,
+  Save,
+  CheckCircle2,
+  SlidersHorizontal,
+  Trash2
 } from 'lucide-react';
-import { Registration, RegistrationStatus, Category, ShirtSize, PaymentMethod, CasaProofType, RegistrationChannel, DocumentVerificationStatus } from '../../types';
+import { Registration, RegistrationStatus, Category, ShirtSize, PaymentMethod, CasaProofType, RegistrationChannel, DocumentVerificationStatus, ShirtInventoryItem } from '../../types';
 import { exportRegistrationsToCSV, exportRegistrationsToExcel } from '../../lib/exportUtils';
 import { formatCPF, formatPhone, formatDateTimeBR } from '../../lib/masks';
+import { storageService } from '../../services/storage';
 
 interface AdminRegistrationsProps {
   registrations: Registration[];
+  shirts?: ShirtInventoryItem[];
+  operatorName?: string;
   onRefresh: () => void;
   onUpdateStatus: (id: string, status: RegistrationStatus, notes?: string) => Promise<void>;
   onReconcileAsaas: (id: string) => Promise<void>;
@@ -34,6 +42,8 @@ interface AdminRegistrationsProps {
 
 export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
   registrations,
+  shirts = [],
+  operatorName = 'Administrador Geral',
   onRefresh,
   onUpdateStatus,
   onReconcileAsaas,
@@ -52,6 +62,52 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
   
   // Selected registration for details modal
   const [selectedReg, setSelectedReg] = useState<Registration | null>(null);
+
+  // Edit registration state
+  const [editingReg, setEditingReg] = useState<Registration | null>(null);
+  const [editFormData, setEditFormData] = useState<{
+    fullName: string;
+    cpf: string;
+    birthDate: string;
+    email: string;
+    phone: string;
+    city: string;
+    state: string;
+    team: string;
+    category: Category;
+    gender: 'MASCULINO' | 'FEMININO';
+    shirtSize: ShirtSize;
+    status: RegistrationStatus;
+    financialStatus: string;
+    casaProofType: CasaProofType | '';
+    kitDelivered: boolean;
+    kitNotes: string;
+    documentVerificationStatus: string;
+    documentVerificationNotes: string;
+    sendNotificationEmail: boolean;
+  }>({
+    fullName: '',
+    cpf: '',
+    birthDate: '',
+    email: '',
+    phone: '',
+    city: '',
+    state: 'RN',
+    team: '',
+    category: 'LOCAL_MASCULINO',
+    gender: 'MASCULINO',
+    shirtSize: 'M',
+    status: 'RESERVED',
+    financialStatus: 'PENDING',
+    casaProofType: '',
+    kitDelivered: false,
+    kitNotes: '',
+    documentVerificationStatus: 'PENDENTE',
+    documentVerificationNotes: '',
+    sendNotificationEmail: true,
+  });
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [editModalError, setEditModalError] = useState<string | null>(null);
   
   // Reissue code dialog state
   const [reissueReason, setReissueReason] = useState('');
@@ -221,6 +277,109 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
       alert(e.message || 'Erro ao conectar ao servidor de e-mail.');
     } finally {
       setIsSendingEmail(false);
+    }
+  };
+
+  const handleStartEdit = (reg: Registration) => {
+    setEditingReg(reg);
+    setEditModalError(null);
+    setEditFormData({
+      fullName: reg.athlete?.fullName || '',
+      cpf: reg.athlete?.cpf || '',
+      birthDate: reg.athlete?.birthDate || '',
+      email: reg.athlete?.email || '',
+      phone: reg.athlete?.phone || '',
+      city: reg.athlete?.city || 'Lajes Pintadas',
+      state: reg.athlete?.state || 'RN',
+      team: reg.athlete?.team || '',
+      category: reg.category,
+      gender: reg.gender,
+      shirtSize: reg.shirtSize,
+      status: reg.status,
+      financialStatus: reg.financialStatus,
+      casaProofType: reg.casaProofType || '',
+      kitDelivered: Boolean(reg.kitDelivered),
+      kitNotes: reg.kitNotes || '',
+      documentVerificationStatus: reg.documentVerificationStatus || 'PENDENTE',
+      documentVerificationNotes: reg.documentVerificationNotes || '',
+      sendNotificationEmail: false,
+    });
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingReg) return;
+
+    try {
+      setIsSavingEdit(true);
+      setEditModalError(null);
+
+      const updates = {
+        athlete: {
+          fullName: editFormData.fullName.trim(),
+          cpf: editFormData.cpf.replace(/\D/g, ''),
+          birthDate: editFormData.birthDate,
+          email: editFormData.email.trim().toLowerCase(),
+          phone: editFormData.phone.trim(),
+          city: editFormData.city.trim(),
+          state: editFormData.state.trim().toUpperCase(),
+          team: editFormData.team.trim() || undefined,
+        },
+        registration: {
+          category: editFormData.category,
+          gender: editFormData.gender,
+          shirtSize: editFormData.shirtSize,
+          status: editFormData.status,
+          financialStatus: editFormData.financialStatus,
+          originType: editFormData.category.startsWith('LOCAL') || editFormData.category.startsWith('CASA') ? 'CASA' : 'VISITANTE',
+          casaProofType: editFormData.casaProofType || undefined,
+          kitDelivered: editFormData.kitDelivered,
+          kitNotes: editFormData.kitNotes,
+        },
+        sendNotificationEmail: editFormData.sendNotificationEmail,
+        operator: operatorName,
+      };
+
+      await storageService.updateRegistration(editingReg.id, updates);
+
+      setActionMessage({
+        type: 'success',
+        text: `Inscrição ${editingReg.protocol} (${editFormData.fullName}) atualizada com sucesso no banco de dados!`,
+      });
+      setEditingReg(null);
+      if (selectedReg && selectedReg.id === editingReg.id) {
+        setSelectedReg(null);
+      }
+      onRefresh();
+    } catch (err: any) {
+      setEditModalError(err.message || 'Falha ao salvar alterações da inscrição.');
+    } finally {
+      setIsSavingEdit(false);
+    }
+  };
+
+  const handleQuickManualConfirm = async (reg: Registration) => {
+    if (!window.confirm(`Deseja aprovar e confirmar manualmente a inscrição ${reg.protocol} (${reg.athlete?.fullName})? O estoque será atualizado para confirmado e o atleta será notificado por e-mail.`)) {
+      return;
+    }
+
+    try {
+      await storageService.manualConfirmRegistration(
+        reg.id,
+        operatorName,
+        'Confirmação manual direta no painel admin',
+        true
+      );
+      setActionMessage({
+        type: 'success',
+        text: `Inscrição ${reg.protocol} confirmada com sucesso!`,
+      });
+      onRefresh();
+    } catch (err: any) {
+      setActionMessage({
+        type: 'error',
+        text: err.message || 'Falha ao confirmar inscrição.',
+      });
     }
   };
 
@@ -561,17 +720,40 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
                         )}
                       </td>
                       <td className="py-3 px-4 text-center whitespace-nowrap">
-                        <button
-                          onClick={() => {
-                            setSelectedReg(reg);
-                            setActionMessage(null);
-                            setReissuedCodeResult(null);
-                          }}
-                          className="px-2.5 py-1 bg-slate-100 hover:bg-orange-50 hover:text-orange-700 text-slate-700 rounded-lg border border-slate-200 font-bold transition flex items-center gap-1 mx-auto"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                          <span>Detalhes</span>
-                        </button>
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            onClick={() => {
+                              setSelectedReg(reg);
+                              setActionMessage(null);
+                              setReissuedCodeResult(null);
+                            }}
+                            className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg border border-slate-200 font-bold transition flex items-center gap-1"
+                            title="Ver detalhes da inscrição"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">Detalhes</span>
+                          </button>
+
+                          <button
+                            onClick={() => handleStartEdit(reg)}
+                            className="px-2 py-1 bg-orange-50 hover:bg-orange-100 text-orange-700 rounded-lg border border-orange-200 font-bold transition flex items-center gap-1"
+                            title="Editar dados cadastrais, prova e camisa (Admin Geral)"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">Editar</span>
+                          </button>
+
+                          {reg.status === 'RESERVED' && (
+                            <button
+                              onClick={() => handleQuickManualConfirm(reg)}
+                              className="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg border border-emerald-200 font-bold transition flex items-center gap-1"
+                              title="Aprovar e confirmar pagamento manualmente"
+                            >
+                              <CheckCircle className="w-3.5 h-3.5" />
+                              <span className="hidden sm:inline">Confirmar</span>
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -870,7 +1052,20 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
             </div>
 
             {/* Modal Footer */}
-            <div className="bg-slate-100 px-6 py-3 border-t border-slate-200 flex justify-end">
+            <div className="bg-slate-100 px-6 py-3 border-t border-slate-200 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => {
+                  const target = selectedReg;
+                  setSelectedReg(null);
+                  handleStartEdit(target);
+                }}
+                className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+                <span>Editar Inscrição Completa</span>
+              </button>
+
               <button
                 onClick={() => setSelectedReg(null)}
                 className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition"
@@ -878,6 +1073,356 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
                 Fechar Detalhes
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Complete Edit Registration Modal (Admin Geral) */}
+      {editingReg && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden my-8 animate-in fade-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-orange-950 text-white px-6 py-4 flex items-center justify-between border-b border-orange-500/20">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-orange-600 text-white flex items-center justify-center font-black shadow-md">
+                  <Edit3 className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-mono font-bold text-orange-400 bg-orange-950/60 px-2 py-0.5 rounded border border-orange-800">
+                      {editingReg.protocol}
+                    </span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-white/10 text-slate-300">
+                      Controle Total • Administrador Geral
+                    </span>
+                  </div>
+                  <h3 className="text-base font-bold text-white mt-0.5">
+                    Editar Inscrição: {editingReg.athlete?.fullName}
+                  </h3>
+                </div>
+              </div>
+              <button
+                onClick={() => setEditingReg(null)}
+                className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center transition text-slate-300 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Form */}
+            <form onSubmit={handleSaveEdit}>
+              <div className="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
+                {editModalError && (
+                  <div className="p-3.5 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-xs font-semibold flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 shrink-0" />
+                    <span>{editModalError}</span>
+                  </div>
+                )}
+
+                {/* Section 1: Dados Pessoais do Atleta */}
+                <div className="bg-slate-50/80 rounded-2xl p-4 border border-slate-200 space-y-3">
+                  <div className="flex items-center gap-2 pb-2 border-b border-slate-200">
+                    <UserCheck className="w-4 h-4 text-orange-600" />
+                    <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                      1. Dados Cadastrais do Atleta (Tabela Athletes)
+                    </h4>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                    <div className="sm:col-span-2">
+                      <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">Nome Completo</label>
+                      <input
+                        type="text"
+                        required
+                        value={editFormData.fullName}
+                        onChange={(e) => setEditFormData({ ...editFormData, fullName: e.target.value })}
+                        className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">CPF</label>
+                      <input
+                        type="text"
+                        required
+                        value={formatCPF(editFormData.cpf)}
+                        onChange={(e) => setEditFormData({ ...editFormData, cpf: e.target.value.replace(/\D/g, '') })}
+                        className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">Data de Nascimento</label>
+                      <input
+                        type="date"
+                        required
+                        value={editFormData.birthDate}
+                        onChange={(e) => setEditFormData({ ...editFormData, birthDate: e.target.value })}
+                        className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">Telefone / WhatsApp</label>
+                      <input
+                        type="text"
+                        required
+                        value={editFormData.phone}
+                        onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+                        className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">E-mail</label>
+                      <input
+                        type="email"
+                        required
+                        value={editFormData.email}
+                        onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                        className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">Cidade</label>
+                      <input
+                        type="text"
+                        required
+                        value={editFormData.city}
+                        onChange={(e) => setEditFormData({ ...editFormData, city: e.target.value })}
+                        className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">UF (Estado)</label>
+                      <input
+                        type="text"
+                        maxLength={2}
+                        required
+                        value={editFormData.state}
+                        onChange={(e) => setEditFormData({ ...editFormData, state: e.target.value.toUpperCase() })}
+                        className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">Equipe / Assessoria</label>
+                      <input
+                        type="text"
+                        value={editFormData.team}
+                        onChange={(e) => setEditFormData({ ...editFormData, team: e.target.value })}
+                        placeholder="Ex: Lajes Runners"
+                        className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section 2: Prova, Categoria e Camisa */}
+                <div className="bg-orange-50/50 rounded-2xl p-4 border border-orange-200 space-y-3">
+                  <div className="flex items-center gap-2 pb-2 border-b border-orange-200/60">
+                    <Building2 className="w-4 h-4 text-orange-600" />
+                    <h4 className="text-xs font-bold text-orange-950 uppercase tracking-wider">
+                      2. Modalidade, Categoria & Troca de Camisa
+                    </h4>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">Categoria da Prova</label>
+                      <select
+                        value={editFormData.category}
+                        onChange={(e) => setEditFormData({ ...editFormData, category: e.target.value as Category })}
+                        className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      >
+                        <option value="LOCAL_MASCULINO">Local Masculino (5 km)</option>
+                        <option value="LOCAL_FEMININO">Local Feminino (5 km)</option>
+                        <option value="CASA_MASCULINO">Local Masc. (Vínculo Casa)</option>
+                        <option value="CASA_FEMININO">Local Fem. (Vínculo Casa)</option>
+                        <option value="VISITANTE_MASCULINO">Visitante Masculino (5 km)</option>
+                        <option value="VISITANTE_FEMININO">Visitante Feminino (5 km)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">Gênero</label>
+                      <select
+                        value={editFormData.gender}
+                        onChange={(e) => setEditFormData({ ...editFormData, gender: e.target.value as any })}
+                        className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      >
+                        <option value="MASCULINO">Masculino</option>
+                        <option value="FEMININO">Feminino</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">
+                        Tamanho da Camisa Oficial
+                      </label>
+                      <select
+                        value={editFormData.shirtSize}
+                        onChange={(e) => setEditFormData({ ...editFormData, shirtSize: e.target.value as ShirtSize })}
+                        className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-black text-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      >
+                        {(['PP', 'P', 'M', 'G', 'GG', 'XG'] as ShirtSize[]).map((sz) => {
+                          const stockItem = shirts.find((s) => s.size === sz);
+                          const avail = stockItem ? stockItem.availableStock : '-';
+                          return (
+                            <option key={sz} value={sz}>
+                              Tamanho {sz} (Disponível: {avail})
+                            </option>
+                          );
+                        })}
+                      </select>
+                      <span className="text-[10px] text-slate-500 mt-1 block">
+                        O estoque entre tamanhos é reajustado atomicamente no Supabase.
+                      </span>
+                    </div>
+
+                    {(editFormData.category.includes('LOCAL') || editFormData.category.includes('CASA')) && (
+                      <div className="sm:col-span-3">
+                        <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">Tipo de Comprovação Local</label>
+                        <select
+                          value={editFormData.casaProofType}
+                          onChange={(e) => setEditFormData({ ...editFormData, casaProofType: e.target.value as any })}
+                          className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        >
+                          <option value="">Não especificado</option>
+                          <option value="NATURAL">Natural de Lajes Pintadas/RN (Certidão / RG)</option>
+                          <option value="RESIDENTE">Residente / Morador Atual (Comprovante Residência / Título)</option>
+                          <option value="NATURAL_E_RESIDENTE">Natural e Residente Atual</option>
+                        </select>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Section 3: Status da Inscrição & Financeiro */}
+                <div className="bg-slate-50/80 rounded-2xl p-4 border border-slate-200 space-y-3">
+                  <div className="flex items-center gap-2 pb-2 border-b border-slate-200">
+                    <CheckCircle className="w-4 h-4 text-emerald-600" />
+                    <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                      3. Situação da Inscrição, Pagamento & Kit
+                    </h4>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">Situação da Inscrição</label>
+                      <select
+                        value={editFormData.status}
+                        onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value as RegistrationStatus })}
+                        className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      >
+                        <option value="CONFIRMED">CONFIRMED (Confirmada / Paga)</option>
+                        <option value="RESERVED">RESERVED (Pendente de Pagamento)</option>
+                        <option value="IN_REVIEW">IN_REVIEW (Em Auditoria)</option>
+                        <option value="CANCELLED">CANCELLED (Cancelada / Vaga Devolvida)</option>
+                        <option value="REFUNDED">REFUNDED (Reembolsada)</option>
+                        <option value="EXPIRED">EXPIRED (Expirada)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">Status Financeiro</label>
+                      <select
+                        value={editFormData.financialStatus}
+                        onChange={(e) => setEditFormData({ ...editFormData, financialStatus: e.target.value })}
+                        className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      >
+                        <option value="CONFIRMED">CONFIRMED (Compensado)</option>
+                        <option value="RECEIVED">RECEIVED (Recebido)</option>
+                        <option value="PENDING">PENDING (Aguardando)</option>
+                        <option value="FAILED">FAILED (Falhou)</option>
+                        <option value="REFUNDED">REFUNDED (Estornado)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">Conferência Documento</label>
+                      <select
+                        value={editFormData.documentVerificationStatus}
+                        onChange={(e) => setEditFormData({ ...editFormData, documentVerificationStatus: e.target.value })}
+                        className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      >
+                        <option value="APROVADO">APROVADO</option>
+                        <option value="PENDENTE">PENDENTE</option>
+                        <option value="PENDENTE_COMPLEMENTACAO">PENDENTE DE COMPLEMENTAÇÃO</option>
+                        <option value="REJEITADO">REJEITADO</option>
+                      </select>
+                    </div>
+
+                    <div className="sm:col-span-3 flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-xl">
+                      <input
+                        type="checkbox"
+                        id="kitDeliveredCheck"
+                        checked={editFormData.kitDelivered}
+                        onChange={(e) => setEditFormData({ ...editFormData, kitDelivered: e.target.checked })}
+                        className="w-4 h-4 text-orange-600 rounded border-slate-300 focus:ring-orange-500"
+                      />
+                      <label htmlFor="kitDeliveredCheck" className="text-xs font-bold text-slate-800 cursor-pointer">
+                        Kit Oficial do Atleta já foi entregue (Camisa + Número de Peito + Chip)
+                      </label>
+                    </div>
+
+                    <div className="sm:col-span-3">
+                      <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">Anotações / Observações Administrativas</label>
+                      <input
+                        type="text"
+                        value={editFormData.kitNotes}
+                        onChange={(e) => setEditFormData({ ...editFormData, kitNotes: e.target.value })}
+                        placeholder="Ex: Atleta solicitou alteração de tamanho; comprovante verificado por operador."
+                        className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section 4: Notificação por E-mail */}
+                <div className="p-4 bg-sky-50 border border-sky-200 rounded-2xl flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Mail className="w-5 h-5 text-sky-600 shrink-0" />
+                    <div>
+                      <div className="font-bold text-xs text-sky-950">
+                        Notificar atleta por e-mail automaticamente
+                      </div>
+                      <div className="text-[11px] text-sky-700">
+                        Dispara e-mail com protocolo, código de acesso e detalhes atualizados da inscrição para <strong>{editFormData.email || 'o atleta'}</strong>.
+                      </div>
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={editFormData.sendNotificationEmail}
+                    onChange={(e) => setEditFormData({ ...editFormData, sendNotificationEmail: e.target.checked })}
+                    className="w-5 h-5 text-sky-600 rounded border-sky-300 focus:ring-sky-500"
+                  />
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="bg-slate-100 px-6 py-4 border-t border-slate-200 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setEditingReg(null)}
+                  disabled={isSavingEdit}
+                  className="px-4 py-2 border border-slate-300 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingEdit}
+                  className="px-6 py-2.5 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center gap-2 disabled:opacity-50"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{isSavingEdit ? 'Salvando no Banco...' : 'Salvar Alterações'}</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

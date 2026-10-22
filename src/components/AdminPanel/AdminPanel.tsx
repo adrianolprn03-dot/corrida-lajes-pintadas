@@ -368,6 +368,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
             {activeTab === 'registrations' && (
               <AdminRegistrations
                 registrations={registrations}
+                shirts={shirts}
+                operatorName={operator.name}
                 onRefresh={loadData}
                 onUpdateStatus={handleUpdateStatus}
                 onReconcileAsaas={handleReconcileAsaas}

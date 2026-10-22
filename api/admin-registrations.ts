@@ -76,6 +76,297 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
+    // 1.1 Atualização / Edição Completa da Inscrição (Admin Geral)
+    if (req.method === 'POST' && req.body?.action === 'update') {
+      const { id, registrationId, athlete, registration, sendNotificationEmail, accessCode, operator } = req.body;
+      const regId = id || registrationId;
+
+      if (!regId) {
+        return res.status(400).json({ error: 'ID da inscrição é obrigatório.' });
+      }
+
+      if (supabase) {
+        // Buscar dados atuais para cálculo de troca de tamanho de camisa e status
+        const { data: currentReg, error: fetchErr } = await supabase
+          .from('registrations')
+          .select('*, athlete:athletes(*)')
+          .eq('id', regId)
+          .single();
+
+        if (fetchErr || !currentReg) {
+          return res.status(404).json({ error: 'Inscrição não encontrada no banco.' });
+        }
+
+        const athleteId = currentReg.athlete_id;
+        const oldSize = currentReg.shirt_size;
+        const newSize = registration?.shirtSize || oldSize;
+        const oldStatus = currentReg.status;
+        const newStatus = registration?.status || oldStatus;
+
+        // 1. Atualizar dados do atleta se fornecidos
+        if (athlete && athleteId) {
+          const athleteUpdate: any = {
+            updated_at: new Date().toISOString(),
+          };
+          if (athlete.fullName) athleteUpdate.full_name = athlete.fullName.trim();
+          if (athlete.cpf) athleteUpdate.cpf = athlete.cpf.replace(/\D/g, '');
+          if (athlete.birthDate) athleteUpdate.birth_date = athlete.birthDate;
+          if (athlete.email) athleteUpdate.email = athlete.email.trim().toLowerCase();
+          if (athlete.phone) athleteUpdate.phone = athlete.phone.trim();
+          if (athlete.city) athleteUpdate.city = athlete.city.trim();
+          if (athlete.state) athleteUpdate.state = athlete.state.trim().toUpperCase();
+          if (athlete.team !== undefined) athleteUpdate.team = athlete.team ? athlete.team.trim() : null;
+
+          const { error: athErr } = await supabase
+            .from('athletes')
+            .update(athleteUpdate)
+            .eq('id', athleteId);
+
+          if (athErr) throw athErr;
+        }
+
+        // 2. Troca de tamanho de camisa (shirt inventory swap)
+        if (oldSize !== newSize) {
+          if (oldStatus === 'CONFIRMED') {
+            const { data: oldStock } = await supabase.from('shirt_inventory').select('confirmed_count').eq('size', oldSize).single();
+            const { data: newStock } = await supabase.from('shirt_inventory').select('confirmed_count').eq('size', newSize).single();
+            if (oldStock) {
+              await supabase.from('shirt_inventory').update({
+                confirmed_count: Math.max(0, oldStock.confirmed_count - 1),
+                updated_at: new Date().toISOString(),
+              }).eq('size', oldSize);
+            }
+            if (newStock) {
+              await supabase.from('shirt_inventory').update({
+                confirmed_count: (newStock.confirmed_count || 0) + 1,
+                updated_at: new Date().toISOString(),
+              }).eq('size', newSize);
+            }
+          } else if (oldStatus === 'RESERVED') {
+            const { data: oldStock } = await supabase.from('shirt_inventory').select('reserved_count').eq('size', oldSize).single();
+            const { data: newStock } = await supabase.from('shirt_inventory').select('reserved_count').eq('size', newSize).single();
+            if (oldStock) {
+              await supabase.from('shirt_inventory').update({
+                reserved_count: Math.max(0, oldStock.reserved_count - 1),
+                updated_at: new Date().toISOString(),
+              }).eq('size', oldSize);
+            }
+            if (newStock) {
+              await supabase.from('shirt_inventory').update({
+                reserved_count: (newStock.reserved_count || 0) + 1,
+                updated_at: new Date().toISOString(),
+              }).eq('size', newSize);
+            }
+          }
+        }
+
+        // 3. Mudança de status da inscrição
+        if (oldStatus !== newStatus) {
+          const effectiveSize = newSize;
+          if (newStatus === 'CONFIRMED' && oldStatus !== 'CONFIRMED') {
+            const { data: stock } = await supabase.from('shirt_inventory').select('reserved_count, confirmed_count').eq('size', effectiveSize).single();
+            if (stock) {
+              await supabase.from('shirt_inventory').update({
+                reserved_count: Math.max(0, stock.reserved_count - 1),
+                confirmed_count: (stock.confirmed_count || 0) + 1,
+                updated_at: new Date().toISOString(),
+              }).eq('size', effectiveSize);
+            }
+          } else if (['CANCELLED', 'REFUNDED', 'EXPIRED'].includes(newStatus)) {
+            const { data: stock } = await supabase.from('shirt_inventory').select('reserved_count, confirmed_count').eq('size', effectiveSize).single();
+            if (stock) {
+              if (oldStatus === 'CONFIRMED') {
+                await supabase.from('shirt_inventory').update({
+                  confirmed_count: Math.max(0, stock.confirmed_count - 1),
+                  updated_at: new Date().toISOString(),
+                }).eq('size', effectiveSize);
+              } else if (oldStatus === 'RESERVED') {
+                await supabase.from('shirt_inventory').update({
+                  reserved_count: Math.max(0, stock.reserved_count - 1),
+                  updated_at: new Date().toISOString(),
+                }).eq('size', effectiveSize);
+              }
+            }
+          }
+        }
+
+        // 4. Atualizar registro da inscrição
+        const regUpdate: any = {
+          updated_at: new Date().toISOString(),
+        };
+        if (registration?.category) regUpdate.category = registration.category;
+        if (registration?.originType) regUpdate.origin_type = registration.originType;
+        if (registration?.gender) regUpdate.gender = registration.gender;
+        if (registration?.shirtSize) regUpdate.shirt_size = registration.shirtSize;
+        if (registration?.casaProofType !== undefined) regUpdate.casa_proof_type = registration.casaProofType || null;
+        if (registration?.status) regUpdate.status = registration.status;
+        if (registration?.financialStatus) regUpdate.financial_status = registration.financialStatus;
+        if (registration?.kitDelivered !== undefined) {
+          regUpdate.kit_delivered = Boolean(registration.kitDelivered);
+          if (registration.kitDelivered && !currentReg.kit_delivered_at) {
+            regUpdate.kit_delivered_at = new Date().toISOString();
+            regUpdate.kit_delivered_by = operator || 'Administrador Geral';
+          }
+        }
+        if (registration?.kitNotes !== undefined) regUpdate.kit_notes = registration.kitNotes;
+        if (newStatus === 'CONFIRMED' && !currentReg.paid_at) {
+          regUpdate.paid_at = new Date().toISOString();
+          regUpdate.financial_status = 'CONFIRMED';
+        }
+
+        const { error: regUpErr } = await supabase
+          .from('registrations')
+          .update(regUpdate)
+          .eq('id', regId);
+
+        if (regUpErr) throw regUpErr;
+
+        // 5. Envio opcional de e-mail informativo ao atleta
+        if (sendNotificationEmail && isEmailConfigured()) {
+          const finalAthlete = athlete || currentReg.athlete;
+          const targetEmail = (finalAthlete?.email || currentReg.athlete?.email || '').trim().toLowerCase();
+          if (targetEmail) {
+            await sendConfirmationEmail({
+              athleteName: finalAthlete?.fullName || currentReg.athlete?.full_name || 'Atleta',
+              athleteEmail: targetEmail,
+              athleteCpf: finalAthlete?.cpf || currentReg.athlete?.cpf || '',
+              protocol: currentReg.protocol,
+              accessCode: accessCode || 'CONSULTE NO PAINEL',
+              category: registration?.category || currentReg.category,
+              gender: registration?.gender || currentReg.gender,
+              shirtSize: registration?.shirtSize || currentReg.shirt_size,
+              status: newStatus === 'RESERVED' ? 'RESERVED' : 'CONFIRMED',
+            }).catch(console.error);
+          }
+        }
+
+        // Buscar registro consolidado atualizado
+        const { data: updatedReg } = await supabase
+          .from('registrations')
+          .select('*, athlete:athletes(*)')
+          .eq('id', regId)
+          .single();
+
+        return res.status(200).json({
+          success: true,
+          message: 'Inscrição e dados do atleta atualizados com sucesso!',
+          item: updatedReg,
+        });
+      }
+
+      return res.status(200).json({ success: true, localOnly: true });
+    }
+
+    // 1.2 Confirmação Manual Rápida (Admin Geral / Financeiro)
+    if (req.method === 'POST' && req.body?.action === 'manual-confirm') {
+      const { id, registrationId, operator, notes, sendEmail = true, accessCode } = req.body;
+      const regId = id || registrationId;
+
+      if (!regId) {
+        return res.status(400).json({ error: 'ID da inscrição é obrigatório.' });
+      }
+
+      if (supabase) {
+        const { data: currentReg, error: fetchErr } = await supabase
+          .from('registrations')
+          .select('*, athlete:athletes(*)')
+          .eq('id', regId)
+          .single();
+
+        if (fetchErr || !currentReg) {
+          return res.status(404).json({ error: 'Inscrição não encontrada.' });
+        }
+
+        if (currentReg.status !== 'CONFIRMED') {
+          const sz = currentReg.shirt_size || 'M';
+          const { data: stock } = await supabase
+            .from('shirt_inventory')
+            .select('reserved_count, confirmed_count')
+            .eq('size', sz)
+            .single();
+
+          if (stock) {
+            await supabase
+              .from('shirt_inventory')
+              .update({
+                reserved_count: Math.max(0, stock.reserved_count - 1),
+                confirmed_count: (stock.confirmed_count || 0) + 1,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('size', sz);
+          }
+        }
+
+        const now = new Date().toISOString();
+        const { error: upErr } = await supabase
+          .from('registrations')
+          .update({
+            status: 'CONFIRMED',
+            financial_status: 'CONFIRMED',
+            paid_at: currentReg.paid_at || now,
+            kit_notes: notes ? `${currentReg.kit_notes ? currentReg.kit_notes + ' | ' : ''}Confirmação Manual: ${notes} (por ${operator || 'Admin'})` : currentReg.kit_notes,
+            updated_at: now,
+          })
+          .eq('id', regId);
+
+        if (upErr) throw upErr;
+
+        if (sendEmail && isEmailConfigured() && currentReg.athlete?.email) {
+          await sendConfirmationEmail({
+            athleteName: currentReg.athlete.full_name,
+            athleteEmail: currentReg.athlete.email.trim().toLowerCase(),
+            athleteCpf: currentReg.athlete.cpf || '',
+            protocol: currentReg.protocol,
+            accessCode: accessCode || 'CONFIRMADO',
+            category: currentReg.category,
+            gender: currentReg.gender,
+            shirtSize: currentReg.shirt_size,
+            status: 'CONFIRMED',
+          }).catch(console.error);
+        }
+
+        return res.status(200).json({
+          success: true,
+          message: `Inscrição ${currentReg.protocol} confirmada com sucesso!`,
+        });
+      }
+
+      return res.status(200).json({ success: true, localOnly: true });
+    }
+
+    // 1.3 Entrega de Kit Oficial com baixa no Supabase
+    if (req.method === 'POST' && req.body?.action === 'deliver-kit') {
+      const { id, registrationId, deliveredBy, notes } = req.body;
+      const regId = id || registrationId;
+
+      if (!regId) {
+        return res.status(400).json({ error: 'ID da inscrição é obrigatório.' });
+      }
+
+      if (supabase) {
+        const now = new Date().toISOString();
+        const { error: kitErr } = await supabase
+          .from('registrations')
+          .update({
+            kit_delivered: true,
+            kit_delivered_at: now,
+            kit_delivered_by: deliveredBy || 'Mesa Oficial',
+            kit_notes: notes || null,
+            updated_at: now,
+          })
+          .eq('id', regId);
+
+        if (kitErr) throw kitErr;
+
+        return res.status(200).json({
+          success: true,
+          message: 'Baixa de kit registrada no banco com sucesso!',
+        });
+      }
+
+      return res.status(200).json({ success: true, localOnly: true });
+    }
+
     // 1. DELETE: Excluir ou cancelar inscrição específica ou limpar testes
     if (req.method === 'DELETE' || (req.method === 'POST' && req.body?.action === 'delete')) {
       const id = (req.query.id as string) || req.body?.id;

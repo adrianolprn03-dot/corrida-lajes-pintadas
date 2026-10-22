@@ -14,7 +14,11 @@ import {
   Check,
   Building2,
   Globe,
-  Layers
+  Layers,
+  RefreshCw,
+  SlidersHorizontal,
+  Sparkles,
+  RotateCcw
 } from 'lucide-react';
 import { ShirtInventoryItem, ShirtSize, Registration } from '../../types';
 import { formatCPF } from '../../lib/masks';
@@ -36,13 +40,22 @@ export const AdminShirtsAndKits: React.FC<AdminShirtsAndKitsProps> = ({
   onRefresh,
 }) => {
   // Active Stock Tab: 'local' | 'visitor' | 'total'
-  const [stockView, setStockView] = useState<'local' | 'visitor' | 'total'>('local');
+  const [stockView, setStockView] = useState<'local' | 'visitor' | 'total'>('total');
 
   // Stock edit state
   const [editingSize, setEditingSize] = useState<ShirtSize | null>(null);
   const [newStockValue, setNewStockValue] = useState<number>(0);
   const [stockError, setStockError] = useState<string | null>(null);
+  const [stockSuccess, setStockSuccess] = useState<string | null>(null);
   const [isUpdatingStock, setIsUpdatingStock] = useState(false);
+
+  // Reconcile real stock state
+  const [isReconciling, setIsReconciling] = useState(false);
+
+  // Batch stock edit state
+  const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
+  const [batchStocks, setBatchStocks] = useState<Record<string, number>>({});
+  const [isSavingBatch, setIsSavingBatch] = useState(false);
 
   // Kit delivery station state
   const [kitSearch, setKitSearch] = useState('');
@@ -76,6 +89,7 @@ export const AdminShirtsAndKits: React.FC<AdminShirtsAndKitsProps> = ({
       setNewStockValue(item.totalStock);
     }
     setStockError(null);
+    setStockSuccess(null);
   };
 
   const handleSaveStock = async (size: ShirtSize) => {
@@ -84,6 +98,9 @@ export const AdminShirtsAndKits: React.FC<AdminShirtsAndKitsProps> = ({
 
     try {
       setIsUpdatingStock(true);
+      setStockError(null);
+      setStockSuccess(null);
+
       if (stockView === 'local') {
         const minAllowed = (item.localReservedCount ?? 0) + (item.localConfirmedCount ?? 0);
         if (newStockValue < minAllowed) {
@@ -104,16 +121,74 @@ export const AdminShirtsAndKits: React.FC<AdminShirtsAndKitsProps> = ({
           setStockError(`O estoque Total não pode ser menor que ${minAllowed} (já existem ${item.confirmedCount} confirmadas e ${item.reservedCount} reservadas).`);
           return;
         }
-        await onUpdateStock(size, newStockValue);
+        await storageService.updateShirtStock(size, newStockValue);
       }
 
       setEditingSize(null);
-      setStockError(null);
+      setStockSuccess(`Estoque do tamanho ${size} atualizado e salvo com sucesso no banco de dados!`);
+      setTimeout(() => setStockSuccess(null), 5000);
       onRefresh();
     } catch (e: any) {
       setStockError(e.message || 'Erro ao atualizar estoque.');
     } finally {
       setIsUpdatingStock(false);
+    }
+  };
+
+  const handleReconcileStock = async () => {
+    try {
+      setIsReconciling(true);
+      setStockError(null);
+      const res = await storageService.reconcileShirtStock();
+      setStockSuccess(res.message);
+      setTimeout(() => setStockSuccess(null), 6000);
+      onRefresh();
+    } catch (err: any) {
+      setStockError(err.message || 'Falha ao sincronizar estoque real.');
+    } finally {
+      setIsReconciling(false);
+    }
+  };
+
+  const handleOpenBatchModal = () => {
+    const initial: Record<string, number> = {};
+    shirts.forEach((s) => {
+      initial[s.size] = s.totalStock;
+    });
+    setBatchStocks(initial);
+    setIsBatchModalOpen(true);
+    setStockError(null);
+  };
+
+  const handleSaveBatchModal = async () => {
+    try {
+      setIsSavingBatch(true);
+      setStockError(null);
+      const items = shirts.map((s) => ({
+        size: s.size,
+        totalStock: Number(batchStocks[s.size] !== undefined ? batchStocks[s.size] : s.totalStock),
+      }));
+
+      // Validar mínimos
+      for (const item of items) {
+        const cur = shirts.find((s) => s.size === item.size);
+        if (cur) {
+          const min = (cur.reservedCount || 0) + (cur.confirmedCount || 0);
+          if (item.totalStock < min) {
+            throw new Error(`Tamanho ${item.size}: estoque total (${item.totalStock}) não pode ser menor que o já comprometido (${min}).`);
+          }
+        }
+      }
+
+      await storageService.batchUpdateShirtStock(items);
+      setIsBatchModalOpen(false);
+      setStockSuccess('Grade de estoque completa atualizada no banco de dados com sucesso!');
+      setTimeout(() => setStockSuccess(null), 6000);
+      onRefresh();
+    } catch (err: any) {
+      setStockError(err.message || 'Erro ao salvar estoque em lote.');
+    } finally {
+      setIsSavingBatch(false);
     }
   };
 
@@ -186,45 +261,120 @@ export const AdminShirtsAndKits: React.FC<AdminShirtsAndKitsProps> = ({
             </div>
           </div>
 
-          {/* Sub-Tabs: Local vs Visitante vs Consolidado */}
-          <div className="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200 shrink-0">
+          {/* Sub-Tabs and Actions Toolbar */}
+          <div className="flex flex-wrap items-center gap-2">
             <button
-              onClick={() => { setStockView('local'); setEditingSize(null); }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${
-                stockView === 'local'
-                  ? 'bg-orange-600 text-white shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
+              onClick={handleReconcileStock}
+              disabled={isReconciling}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition shadow-sm"
+              title="Auditar inscrições confirmadas e pendentes no banco e sincronizar contadores reais"
             >
-              <Building2 className="w-3.5 h-3.5" />
-              <span>Estoque Local</span>
+              <RefreshCw className={`w-3.5 h-3.5 ${isReconciling ? 'animate-spin' : ''}`} />
+              <span>{isReconciling ? 'Sincronizando...' : 'Sincronizar Banco'}</span>
             </button>
 
             <button
-              onClick={() => { setStockView('visitor'); setEditingSize(null); }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${
-                stockView === 'visitor'
-                  ? 'bg-orange-600 text-white shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
+              onClick={handleOpenBatchModal}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold transition shadow-sm"
+              title="Ajustar todas as cotas da grade de uma só vez"
             >
-              <Globe className="w-3.5 h-3.5" />
-              <span>Estoque Visitantes</span>
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+              <span>Ajuste em Lote</span>
             </button>
 
-            <button
-              onClick={() => { setStockView('total'); setEditingSize(null); }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${
-                stockView === 'total'
-                  ? 'bg-orange-600 text-white shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <Layers className="w-3.5 h-3.5" />
-              <span>Consolidado</span>
-            </button>
+            {/* Sub-Tabs: Local vs Visitante vs Consolidado */}
+            <div className="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200 shrink-0">
+              <button
+                onClick={() => { setStockView('local'); setEditingSize(null); }}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                  stockView === 'local'
+                    ? 'bg-orange-600 text-white shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Building2 className="w-3.5 h-3.5" />
+                <span>Estoque Local</span>
+              </button>
+
+              <button
+                onClick={() => { setStockView('visitor'); setEditingSize(null); }}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                  stockView === 'visitor'
+                    ? 'bg-orange-600 text-white shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Globe className="w-3.5 h-3.5" />
+                <span>Estoque Visitantes</span>
+              </button>
+
+              <button
+                onClick={() => { setStockView('total'); setEditingSize(null); }}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                  stockView === 'total'
+                    ? 'bg-orange-600 text-white shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Layers className="w-3.5 h-3.5" />
+                <span>Consolidado</span>
+              </button>
+            </div>
           </div>
         </div>
+
+        {/* Global Stock Metric Summary Cards */}
+        {(() => {
+          const sumTotal = shirts.reduce((acc, s) => acc + (
+            stockView === 'local' ? (s.localTotalStock ?? Math.round(s.totalStock / 2)) :
+            stockView === 'visitor' ? (s.visitorTotalStock ?? Math.round(s.totalStock / 2)) :
+            s.totalStock
+          ), 0);
+          const sumConfirmed = shirts.reduce((acc, s) => acc + (
+            stockView === 'local' ? (s.localConfirmedCount || 0) :
+            stockView === 'visitor' ? (s.visitorConfirmedCount || 0) :
+            s.confirmedCount
+          ), 0);
+          const sumReserved = shirts.reduce((acc, s) => acc + (
+            stockView === 'local' ? (s.localReservedCount || 0) :
+            stockView === 'visitor' ? (s.visitorReservedCount || 0) :
+            s.reservedCount
+          ), 0);
+          const sumAvailable = Math.max(0, sumTotal - (sumConfirmed + sumReserved));
+
+          return (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                  {stockView === 'local' ? 'Cota Local Total' : stockView === 'visitor' ? 'Cota Visitante Total' : 'Estoque Total do Evento'}
+                </span>
+                <span className="text-xl font-black text-slate-900">{sumTotal}</span>
+                <span className="text-[10px] text-slate-400 block">camisas configuradas</span>
+              </div>
+              <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-2xl">
+                <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider block">
+                  Confirmadas (Pagas)
+                </span>
+                <span className="text-xl font-black text-emerald-700">{sumConfirmed}</span>
+                <span className="text-[10px] text-emerald-600 block">kits assegurados</span>
+              </div>
+              <div className="p-3 bg-amber-50/70 border border-amber-200 rounded-2xl">
+                <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wider block">
+                  Reservadas (Aguard. Pix)
+                </span>
+                <span className="text-xl font-black text-amber-700">{sumReserved}</span>
+                <span className="text-[10px] text-amber-600 block">em janela de reserva</span>
+              </div>
+              <div className="p-3 bg-orange-50/70 border border-orange-200 rounded-2xl">
+                <span className="text-[10px] font-bold text-orange-700 uppercase tracking-wider block">
+                  Disponíveis para Inscrição
+                </span>
+                <span className="text-xl font-black text-orange-600">{sumAvailable}</span>
+                <span className="text-[10px] text-orange-500 block">vagas restantes</span>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* View Description Callout */}
         <div className={`p-3 rounded-2xl border text-xs font-medium flex items-center justify-between ${
@@ -245,19 +395,36 @@ export const AdminShirtsAndKits: React.FC<AdminShirtsAndKitsProps> = ({
             <span>
               {stockView === 'local' && 'Visualizando cota exclusiva para moradores de Lajes Pintadas (inscrição presencial na Prefeitura).'}
               {stockView === 'visitor' && 'Visualizando cota pública para atletas visitantes de outros municípios (inscrição online via site).'}
-              {stockView === 'total' && 'Visualizando capacidade somada do evento (Locais + Visitantes).'}
+              {stockView === 'total' && 'Visualizando capacidade somada do evento (Locais + Visitantes). Alterações persistem diretamente no banco Supabase.'}
             </span>
           </div>
 
-          <span className="text-[11px] font-bold">
-            Clique em "Editar Cota" para ajustar o estoque
+          <span className="text-[11px] font-bold hidden sm:inline">
+            Clique em "Editar Cota" para ajustar individualmente
           </span>
         </div>
 
+        {stockSuccess && (
+          <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs font-semibold flex items-center justify-between animate-in fade-in">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>{stockSuccess}</span>
+            </div>
+            <button onClick={() => setStockSuccess(null)} className="text-emerald-600 hover:text-emerald-800">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
         {stockError && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs font-semibold flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 shrink-0" />
-            <span>{stockError}</span>
+          <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs font-semibold flex items-center justify-between animate-in fade-in">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+              <span>{stockError}</span>
+            </div>
+            <button onClick={() => setStockError(null)} className="text-red-600 hover:text-red-800">
+              <X className="w-3.5 h-3.5" />
+            </button>
           </div>
         )}
 
@@ -575,6 +742,94 @@ export const AdminShirtsAndKits: React.FC<AdminShirtsAndKitsProps> = ({
           </div>
         )}
       </div>
+
+      {/* Batch Stock Edit Modal */}
+      {isBatchModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-orange-600 flex items-center justify-center text-white font-bold">
+                  <SlidersHorizontal className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm">Ajuste Rápido de Estoque em Lote</h3>
+                  <p className="text-[11px] text-slate-400">Configure a grade completa de camisas de uma vez no banco de dados</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsBatchModalOpen(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-2xl text-xs text-blue-800">
+                Os novos valores digitados serão o novo <strong>Estoque Total</strong> de cada tamanho salvo diretamente no Supabase. O sistema respeita automaticamente o mínimo já reservado e confirmado.
+              </div>
+
+              <div className="space-y-3">
+                {shirts.map((s) => {
+                  const min = (s.reservedCount || 0) + (s.confirmedCount || 0);
+                  const currentVal = batchStocks[s.size] !== undefined ? batchStocks[s.size] : s.totalStock;
+
+                  return (
+                    <div key={s.size} className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-2xl">
+                      <div className="flex items-center gap-3">
+                        <span className="w-10 h-10 rounded-xl bg-orange-600 text-white font-black flex items-center justify-center shadow-sm">
+                          {s.size}
+                        </span>
+                        <div>
+                          <div className="font-bold text-slate-800 text-xs">Tamanho {s.size}</div>
+                          <div className="text-[10px] text-slate-500">
+                            Confirmadas: <strong className="text-emerald-600">{s.confirmedCount}</strong> • Reservadas: <strong className="text-amber-600">{s.reservedCount}</strong> (Mínimo: {min})
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <label className="text-[11px] font-bold text-slate-500">Total:</label>
+                        <input
+                          type="number"
+                          min={min}
+                          value={currentVal}
+                          onChange={(e) => {
+                            const val = Math.max(0, parseInt(e.target.value) || 0);
+                            setBatchStocks((prev) => ({ ...prev, [s.size]: val }));
+                          }}
+                          className="w-24 px-3 py-1.5 bg-white border border-slate-300 rounded-xl font-bold text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsBatchModalOpen(false)}
+                  disabled={isSavingBatch}
+                  className="px-4 py-2 border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveBatchModal}
+                  disabled={isSavingBatch}
+                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center gap-2"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{isSavingBatch ? 'Gravando no Banco...' : 'Salvar Grade Completa'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
