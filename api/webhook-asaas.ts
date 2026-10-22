@@ -101,16 +101,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       try {
         let athleteData: any = null;
 
-        if (memResult.registration) {
-          const reg = memResult.registration;
+        // Buscar dados da inscrição na memória ou no Supabase
+        const targetProtocol = payment.externalReference;
+        const memoryReg = targetProtocol ? memoryStore.registrations.get(targetProtocol) : null;
+
+        if (memoryReg) {
           athleteData = {
-            athleteName: reg.athlete?.fullName || 'Atleta',
-            athleteEmail: reg.athlete?.email,
-            athleteCpf: reg.athlete?.cpf || '',
-            protocol: reg.protocol,
-            category: reg.category,
-            gender: reg.gender,
-            shirtSize: reg.shirtSize,
+            athleteName: memoryReg.fullName || 'Atleta',
+            athleteEmail: memoryReg.email,
+            athleteCpf: memoryReg.cpf || '',
+            protocol: memoryReg.protocol,
+            category: memoryReg.category,
+            gender: memoryReg.gender,
+            shirtSize: memoryReg.shirtSize,
           };
         } else if (supabase) {
           const { data: reg } = await supabase
