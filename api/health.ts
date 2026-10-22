@@ -39,6 +39,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const asaasKey = (process.env.ASAAS_API_KEY || '').trim().replace(/^["']|["']$/g, '');
   const asaasEnv = (process.env.ASAAS_ENVIRONMENT || '').trim().replace(/^["']|["']$/g, '').toLowerCase() || 'sandbox';
+  const smtpUser = (process.env.SMTP_USER || '').trim().replace(/^["']|["']$/g, '');
+  const smtpHost = (process.env.SMTP_HOST || '').trim().replace(/^["']|["']$/g, '');
 
   return res.status(200).json({
     status: 'healthy',
@@ -53,6 +55,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       environment: asaasEnv,
       keyPrefix: asaasKey ? asaasKey.slice(0, 7) + '...' : null,
       keyLength: asaasKey.length,
+    },
+    email: {
+      isConfigured: Boolean(smtpHost && smtpUser && process.env.SMTP_PASS),
+      provider: 'HostGator SMTP',
+      host: smtpHost || null,
+      user: smtpUser || null,
     },
     memory: {
       rssMb: Math.round(memUsage.rss / 1024 / 1024),

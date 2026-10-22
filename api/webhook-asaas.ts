@@ -7,6 +7,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { memoryStore } from './lib/state.js';
+import { sendConfirmationEmail } from './lib/email.js';
 
 function normalizeSupabaseUrl(rawUrl?: string): string {
   if (!rawUrl) return '';
@@ -93,6 +94,63 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         p_net_value_cents: netValueCents,
         p_payload: payload,
       });
+    }
+
+    // 4. Disparar e-mail institucional oficial de confirmação se o pagamento foi concluído
+    if (['PAYMENT_CONFIRMED', 'PAYMENT_RECEIVED', 'CHECKOUT_PAID'].includes(eventType)) {
+      try {
+        let athleteData: any = null;
+
+        if (memResult.registration) {
+          const reg = memResult.registration;
+          athleteData = {
+            athleteName: reg.athlete?.fullName || 'Atleta',
+            athleteEmail: reg.athlete?.email,
+            athleteCpf: reg.athlete?.cpf || '',
+            protocol: reg.protocol,
+            category: reg.category,
+            gender: reg.gender,
+            shirtSize: reg.shirtSize,
+          };
+        } else if (supabase) {
+          const { data: reg } = await supabase
+            .from('registrations')
+            .select(`
+              protocol,
+              category,
+              gender,
+              shirt_size,
+              athletes (
+                full_name,
+                email,
+                cpf
+              )
+            `)
+            .eq('asaas_payment_id', payment.id)
+            .maybeSingle();
+
+          if (reg && reg.athletes) {
+            const athlete = Array.isArray(reg.athletes) ? reg.athletes[0] : reg.athletes;
+            athleteData = {
+              athleteName: athlete?.full_name || 'Atleta',
+              athleteEmail: athlete?.email,
+              athleteCpf: athlete?.cpf || '',
+              protocol: reg.protocol,
+              category: reg.category,
+              gender: reg.gender,
+              shirtSize: reg.shirt_size,
+            };
+          }
+        }
+
+        if (athleteData && athleteData.athleteEmail) {
+          sendConfirmationEmail(athleteData).catch((e) =>
+            console.error('[Webhook] Falha no disparo de e-mail institucional:', e)
+          );
+        }
+      } catch (emailErr) {
+        console.warn('[Webhook] Falha ao coletar dados para envio de e-mail:', emailErr);
+      }
     }
 
     const durationMs = Date.now() - startTime;
