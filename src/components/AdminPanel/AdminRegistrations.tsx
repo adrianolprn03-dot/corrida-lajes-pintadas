@@ -194,10 +194,11 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
     if (!selectedReg || !reissuedCodeResult || !selectedReg.athlete?.email) return;
     setIsSendingEmail(true);
     try {
-      const res = await fetch('/api/resend-access-email', {
+      const res = await fetch('/api/admin-registrations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          action: 'resend-email',
           athleteName: selectedReg.athlete.fullName,
           athleteEmail: selectedReg.athlete.email,
           athleteCpf: selectedReg.athlete.cpf,

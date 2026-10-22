@@ -6,6 +6,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { memoryStore } from './lib/state.js';
+import { sendConfirmationEmail, isEmailConfigured } from './lib/email.js';
 
 function normalizeSupabaseUrl(rawUrl?: string): string {
   if (!rawUrl) return '';
@@ -45,6 +46,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const supabase = getSupabase();
 
   try {
+    // 1.0 Reenvio de e-mail com protocolo e código de acesso
+    if (req.method === 'POST' && req.body?.action === 'resend-email') {
+      if (!isEmailConfigured()) {
+        return res.status(503).json({ error: 'Servidor de e-mail SMTP não está configurado.' });
+      }
+
+      const { athleteName, athleteEmail, athleteCpf, protocol, accessCode, category, gender, shirtSize, status } = req.body;
+      if (!athleteEmail || !protocol || !accessCode) {
+        return res.status(400).json({ error: 'E-mail, protocolo e código de acesso são obrigatórios.' });
+      }
+
+      const success = await sendConfirmationEmail({
+        athleteName: athleteName || 'Atleta',
+        athleteEmail: athleteEmail.trim().toLowerCase(),
+        athleteCpf: athleteCpf || '',
+        protocol: protocol.trim().toUpperCase(),
+        accessCode: accessCode.trim().toUpperCase(),
+        category: category || 'GERAL',
+        gender: gender || 'MASCULINO',
+        shirtSize: shirtSize || 'M',
+        status: status === 'RESERVED' ? 'RESERVED' : 'CONFIRMED',
+      });
+
+      if (success) {
+        return res.status(200).json({ success: true, message: `E-mail enviado com sucesso para ${athleteEmail}!` });
+      } else {
+        return res.status(500).json({ error: 'Falha ao disparar e-mail pelo servidor SMTP.' });
+      }
+    }
+
     // 1. DELETE: Excluir ou cancelar inscrição específica ou limpar testes
     if (req.method === 'DELETE' || (req.method === 'POST' && req.body?.action === 'delete')) {
       const id = (req.query.id as string) || req.body?.id;
