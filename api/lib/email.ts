@@ -18,7 +18,7 @@ export interface RegistrationEmailData {
 }
 
 function getTransporter() {
-  const host = (process.env.SMTP_HOST || '').trim().replace(/^["']|["']$/g, '');
+  const host = (process.env.SMTP_HOST || '').trim().replace(/^["']|["']$/g, '').replace(/\.+$/, '');
   const port = parseInt(process.env.SMTP_PORT || '465', 10);
   const user = (process.env.SMTP_USER || '').trim().replace(/^["']|["']$/g, '');
   const pass = (process.env.SMTP_PASS || '').trim().replace(/^["']|["']$/g, '');
