@@ -35,6 +35,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const name = typeof athleteName === 'string' && athleteName.trim() ? athleteName.trim() : 'Atleta de Teste';
   const protocol = `LP5-${Math.floor(100000 + Math.random() * 900000)}`;
 
+  try {
     const sampleAccessCode = Math.random().toString(36).substring(2, 8).toUpperCase();
 
     const success = await sendConfirmationEmail({
