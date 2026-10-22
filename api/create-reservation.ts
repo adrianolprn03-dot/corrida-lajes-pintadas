@@ -142,13 +142,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // 3. Inicializar AsaasClient com tratamento de rate-limit (429), conciliação e backoff
     const asaasApiKey = normalizeKey(process.env.ASAAS_API_KEY || '');
     const asaasEnvRaw = normalizeKey(process.env.ASAAS_ENVIRONMENT || '').toLowerCase();
-    const asaasEnv = asaasEnvRaw === 'production' || asaasEnvRaw === 'prod' 
+    const isProd = asaasEnvRaw === 'production' || asaasEnvRaw === 'prod';
+    const isSandboxKey = asaasApiKey && !asaasApiKey.startsWith('$aact_prod_');
+    const asaasEnv = isProd 
       ? 'production' 
-      : (process.env.NODE_ENV === 'test' ? 'mock' : 'sandbox');
+      : (isSandboxKey ? 'sandbox' : 'mock');
 
     const asaasClient = new AsaasClient({
-      apiKey: asaasApiKey,
-      environment: asaasApiKey ? asaasEnv : 'mock',
+      apiKey: isProd || isSandboxKey ? asaasApiKey : '',
+      environment: asaasEnv,
       maxRetries: 3,
       baseDelayMs: 300,
     });
