@@ -12,7 +12,12 @@ import {
   Lock,
   Mail,
   Send,
-  Loader2
+  Loader2,
+  Users,
+  Building2,
+  Globe,
+  SlidersHorizontal,
+  ArrowLeftRight
 } from 'lucide-react';
 import { EventSettings, EventStatus, ShirtInventoryItem } from '../../types';
 
@@ -71,7 +76,13 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({
     const errors: string[] = [];
 
     if (!data.maxCapacity || data.maxCapacity <= 0) {
-      errors.push('Capacidade máxima do evento deve ser definida e maior que zero.');
+      errors.push('Capacidade máxima geral do evento deve ser definida e maior que zero.');
+    }
+    if (data.localMaxCapacity !== undefined && data.localMaxCapacity !== null && data.localMaxCapacity <= 0) {
+      errors.push('A cota de vagas para a categoria Local (Lajespintadense) deve ser maior que zero.');
+    }
+    if (data.visitorMaxCapacity !== undefined && data.visitorMaxCapacity !== null && data.visitorMaxCapacity <= 0) {
+      errors.push('A cota de vagas para a categoria Visitante deve ser maior que zero.');
     }
     if (!data.minAge || data.minAge <= 0) {
       errors.push('Idade mínima permitida para a prova de 5 km deve ser definida.');
@@ -261,27 +272,247 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({
         </div>
       </div>
 
+      {/* SECTION: Divisão de Vagas por Categoria (Cotas Oficiais) */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+          <div>
+            <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+              <Users className="w-4 h-4 text-orange-600" />
+              Divisão de Inscrições: Cota Local (Lajespintadense) vs Cota Visitante
+            </h4>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Defina a quantidade de vagas exclusivas para atletas locais e vagas para atletas de outros municípios.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                const total = formData.maxCapacity || 700;
+                const half = Math.floor(total / 2);
+                setFormData({
+                  ...formData,
+                  localMaxCapacity: half,
+                  visitorMaxCapacity: total - half,
+                });
+              }}
+              className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold rounded-lg transition flex items-center gap-1.5"
+              title="Dividir vagas igualmente (50% local / 50% visitante)"
+            >
+              <ArrowLeftRight className="w-3.5 h-3.5 text-slate-500" />
+              <span>Dividir 50% / 50%</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                const local = formData.localMaxCapacity || 0;
+                const visitor = formData.visitorMaxCapacity || 0;
+                setFormData({
+                  ...formData,
+                  maxCapacity: local + visitor,
+                });
+              }}
+              className="px-3 py-1.5 bg-orange-50 hover:bg-orange-100 text-orange-700 text-[11px] font-bold rounded-lg border border-orange-200 transition flex items-center gap-1.5"
+              title="Ajustar capacidade geral para a soma exata das duas cotas"
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5 text-orange-600" />
+              <span>Sincronizar Total Geral</span>
+            </button>
+          </div>
+        </div>
+
+        {/* 2-Column Quota Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Card Cota Local */}
+          <div className="p-4 bg-orange-50/40 border border-orange-200/80 rounded-2xl space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center">
+                  <Building2 className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-orange-950 uppercase tracking-wide block">
+                    Cota Categoria Local (Lajespintadense)
+                  </span>
+                  <span className="text-[10px] font-semibold text-orange-600">
+                    Atendimento Presencial na Prefeitura
+                  </span>
+                </div>
+              </div>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-orange-100 text-orange-700 border border-orange-200">
+                LOCAL
+              </span>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">
+                Limite Máximo de Vagas Locais
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  min={1}
+                  value={formData.localMaxCapacity !== undefined && formData.localMaxCapacity !== null ? formData.localMaxCapacity : ''}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value) || 0;
+                    setFormData({ ...formData, localMaxCapacity: val > 0 ? val : null });
+                  }}
+                  placeholder="Ex: 350"
+                  className="w-full px-3 py-2.5 bg-white border border-orange-200 rounded-xl text-sm font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500 shadow-2xs"
+                />
+                <span className="absolute right-3 top-2.5 text-xs font-bold text-slate-400">vagas</span>
+              </div>
+              <p className="text-[11px] text-slate-500 mt-1.5 leading-snug">
+                Privativo para quem nasceu em Lajes Pintadas/RN ou reside atualmente no município.
+              </p>
+            </div>
+
+            {/* Presets rápidos */}
+            <div className="flex items-center gap-1.5 pt-1">
+              <span className="text-[10px] font-bold text-slate-400 uppercase">Sugestões:</span>
+              {[150, 200, 250, 300, 350, 400].map((val) => (
+                <button
+                  key={val}
+                  type="button"
+                  onClick={() => setFormData({ ...formData, localMaxCapacity: val })}
+                  className={`px-2 py-0.5 text-[10px] font-bold rounded-md transition ${
+                    formData.localMaxCapacity === val
+                      ? 'bg-orange-600 text-white'
+                      : 'bg-white hover:bg-orange-100 text-slate-600 border border-orange-200/60'
+                  }`}
+                >
+                  {val}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Card Cota Visitante */}
+          <div className="p-4 bg-blue-50/40 border border-blue-200/80 rounded-2xl space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
+                  <Globe className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-blue-950 uppercase tracking-wide block">
+                    Cota Categoria Visitante (Geral)
+                  </span>
+                  <span className="text-[10px] font-semibold text-blue-600">
+                    Inscrições Online no Site Oficial
+                  </span>
+                </div>
+              </div>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-blue-100 text-blue-700 border border-blue-200">
+                VISITANTE
+              </span>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">
+                Limite Máximo de Vagas para Visitantes
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  min={1}
+                  value={formData.visitorMaxCapacity !== undefined && formData.visitorMaxCapacity !== null ? formData.visitorMaxCapacity : ''}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value) || 0;
+                    setFormData({ ...formData, visitorMaxCapacity: val > 0 ? val : null });
+                  }}
+                  placeholder="Ex: 350"
+                  className="w-full px-3 py-2.5 bg-white border border-blue-200 rounded-xl text-sm font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs"
+                />
+                <span className="absolute right-3 top-2.5 text-xs font-bold text-slate-400">vagas</span>
+              </div>
+              <p className="text-[11px] text-slate-500 mt-1.5 leading-snug">
+                Destinado para participantes de outros municípios cadastrados via checkout online.
+              </p>
+            </div>
+
+            {/* Presets rápidos */}
+            <div className="flex items-center gap-1.5 pt-1">
+              <span className="text-[10px] font-bold text-slate-400 uppercase">Sugestões:</span>
+              {[150, 200, 250, 300, 350, 400].map((val) => (
+                <button
+                  key={val}
+                  type="button"
+                  onClick={() => setFormData({ ...formData, visitorMaxCapacity: val })}
+                  className={`px-2 py-0.5 text-[10px] font-bold rounded-md transition ${
+                    formData.visitorMaxCapacity === val
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white hover:bg-blue-100 text-slate-600 border border-blue-200/60'
+                  }`}
+                >
+                  {val}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Visual Balance Bar */}
+        <div className="p-4 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-2.5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs gap-2">
+            <div className="flex items-center gap-4 font-bold">
+              <span className="text-orange-600 flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-orange-500 inline-block" />
+                Cota Local: {formData.localMaxCapacity || 0} vagas ({Math.round(((formData.localMaxCapacity || 0) / ((formData.localMaxCapacity || 0) + (formData.visitorMaxCapacity || 0) || 1)) * 100)}%)
+              </span>
+              <span className="text-blue-600 flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block" />
+                Cota Visitante: {formData.visitorMaxCapacity || 0} vagas ({Math.round(((formData.visitorMaxCapacity || 0) / ((formData.localMaxCapacity || 0) + (formData.visitorMaxCapacity || 0) || 1)) * 100)}%)
+              </span>
+            </div>
+
+            <div className="text-slate-600 text-[11px] font-medium">
+              Soma das Cotas: <strong className="text-slate-900 font-black">{(formData.localMaxCapacity || 0) + (formData.visitorMaxCapacity || 0)}</strong> vagas | Teto Geral Atual: <strong className="text-slate-900 font-black">{formData.maxCapacity || 'Não definido'}</strong>
+            </div>
+          </div>
+
+          <div className="w-full bg-slate-200 rounded-full h-3 overflow-hidden flex">
+            <div
+              style={{
+                width: `${Math.round(((formData.localMaxCapacity || 0) / ((formData.localMaxCapacity || 0) + (formData.visitorMaxCapacity || 0) || 1)) * 100)}%`,
+              }}
+              className="bg-orange-500 h-full transition-all duration-300"
+              title={`Local: ${formData.localMaxCapacity || 0}`}
+            />
+            <div
+              style={{
+                width: `${Math.round(((formData.visitorMaxCapacity || 0) / ((formData.localMaxCapacity || 0) + (formData.visitorMaxCapacity || 0) || 1)) * 100)}%`,
+              }}
+              className="bg-blue-500 h-full transition-all duration-300"
+              title={`Visitante: ${formData.visitorMaxCapacity || 0}`}
+            />
+          </div>
+        </div>
+      </div>
+
       {/* Main Parameters */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
         <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-3">
           <Calendar className="w-4 h-4 text-orange-600" />
-          Datas, Vagas e Horários Oficiais
+          Datas, Horários e Capacidade Geral
         </h4>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">
-              Capacidade Máxima de Atletas
+              Capacidade Máxima Geral do Evento
             </label>
             <input
               type="number"
               min={1}
               value={formData.maxCapacity || ''}
               onChange={(e) => setFormData({ ...formData, maxCapacity: parseInt(e.target.value) || null })}
-              placeholder="Ex: 350"
+              placeholder="Ex: 700"
               className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
-            <p className="text-[10px] text-slate-400 mt-1">Limite total de inscrições confirmadas + reservadas</p>
+            <p className="text-[10px] text-slate-400 mt-1">Teto total máximo de atletas (confirmados + reservados)</p>
           </div>
 
           <div>

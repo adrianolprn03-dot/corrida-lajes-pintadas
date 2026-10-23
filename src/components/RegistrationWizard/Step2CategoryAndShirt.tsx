@@ -70,7 +70,8 @@ export const Step2CategoryAndShirt: React.FC<Step2CategoryAndShirtProps> = ({
 
     // Validação da Camisa
     const selectedShirt = inventory.find((s) => s.size === data.shirtSize);
-    if (!selectedShirt || selectedShirt.availableStock <= 0) {
+    const stockCount = selectedShirt?.visitorAvailableStock !== undefined ? selectedShirt.visitorAvailableStock : selectedShirt?.availableStock;
+    if (!selectedShirt || (stockCount !== undefined && stockCount <= 0)) {
       setError(`O tamanho de camisa ${data.shirtSize} está esgotado no momento. Escolha outro tamanho disponível.`);
       return;
     }
@@ -218,7 +219,8 @@ export const Step2CategoryAndShirt: React.FC<Step2CategoryAndShirtProps> = ({
             {/* Grade de Tamanhos */}
             <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
               {inventory.map((item) => {
-                const isAvailable = item.availableStock > 0;
+                const stockCount = item.visitorAvailableStock !== undefined ? item.visitorAvailableStock : item.availableStock;
+                const isAvailable = stockCount > 0;
                 const isSelected = data.shirtSize === item.size;
 
                 return (
@@ -237,7 +239,7 @@ export const Step2CategoryAndShirt: React.FC<Step2CategoryAndShirtProps> = ({
                   >
                     <div className="font-display text-base uppercase">{item.size}</div>
                     <div className={`text-[10px] mt-0.5 ${isSelected ? 'text-white' : isAvailable ? 'text-emerald-600' : 'text-red-500'}`}>
-                      {isAvailable ? 'Disponível' : 'Esgotado'}
+                      {isAvailable ? `${stockCount} disp.` : 'Esgotado'}
                     </div>
                   </button>
                 );

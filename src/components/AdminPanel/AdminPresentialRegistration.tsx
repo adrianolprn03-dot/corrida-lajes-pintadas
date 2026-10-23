@@ -206,8 +206,9 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
     }
 
     const selectedShirt = inventory.find((s) => s.size === formData.shirtSize);
-    if (!selectedShirt || selectedShirt.availableStock <= 0) {
-      errors.shirtSize = `Camisa ${formData.shirtSize} sem estoque no momento. Escolha outro tamanho.`;
+    const stockCount = selectedShirt?.localAvailableStock !== undefined ? selectedShirt.localAvailableStock : selectedShirt?.availableStock;
+    if (!selectedShirt || (stockCount !== undefined && stockCount <= 0)) {
+      errors.shirtSize = `Camisa ${formData.shirtSize} sem estoque na cota local no momento. Escolha outro tamanho.`;
     }
 
     if (!formData.athleteConsentGiven) {
@@ -1057,14 +1058,15 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="block text-xs font-bold text-slate-700 uppercase">
-                Tamanho da Camisa Oficial do Kit (Estoque Compartilhado) <span className="text-red-500">*</span>
+                Tamanho da Camisa Oficial (Cota Local) <span className="text-red-500">*</span>
               </label>
-              <span className="text-[11px] text-orange-600 font-bold">Cor Única Oficial: Laranja Poliamida FPU 50+</span>
+              <span className="text-[11px] text-orange-600 font-bold">Laranja Poliamida FPU 50+</span>
             </div>
 
             <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
               {inventory.map((item) => {
-                const isAvailable = item.availableStock > 0;
+                const stockCount = item.localAvailableStock !== undefined ? item.localAvailableStock : item.availableStock;
+                const isAvailable = stockCount > 0;
                 const isSelected = formData.shirtSize === item.size;
 
                 return (
@@ -1083,7 +1085,7 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
                   >
                     <div className="font-display text-base uppercase">{item.size}</div>
                     <div className={`text-[10px] mt-0.5 ${isSelected ? 'text-white' : isAvailable ? 'text-emerald-600 font-bold' : 'text-red-500'}`}>
-                      {isAvailable ? `${item.availableStock} disp.` : 'Esgotado'}
+                      {isAvailable ? `${stockCount} disp.` : 'Esgotado'}
                     </div>
                   </button>
                 );

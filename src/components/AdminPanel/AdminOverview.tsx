@@ -60,6 +60,25 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
 
   const localTotal = metrics.localCount || 0;
   const visitorTotal = metrics.visitorCount || 0;
+  const localReserved = metrics.localReservedCount || 0;
+  const visitorReserved = metrics.visitorReservedCount || 0;
+  const localActive = localTotal + localReserved;
+  const visitorActive = visitorTotal + visitorReserved;
+
+  const localCapacity = metrics.localMaxCapacity ?? (settings.localMaxCapacity ?? (settings.maxCapacity ? Math.floor(settings.maxCapacity / 2) : 350));
+  const visitorCapacity = metrics.visitorMaxCapacity ?? (settings.visitorMaxCapacity ?? (settings.maxCapacity ? Math.ceil(settings.maxCapacity / 2) : 350));
+
+  const localRemaining = metrics.localAvailableCapacity !== undefined && metrics.localAvailableCapacity !== null
+    ? metrics.localAvailableCapacity
+    : (localCapacity ? Math.max(0, localCapacity - localActive) : null);
+
+  const visitorRemaining = metrics.visitorAvailableCapacity !== undefined && metrics.visitorAvailableCapacity !== null
+    ? metrics.visitorAvailableCapacity
+    : (visitorCapacity ? Math.max(0, visitorCapacity - visitorActive) : null);
+
+  const localOccupancyPct = localCapacity ? Math.min(100, Math.round((localActive / localCapacity) * 100)) : 0;
+  const visitorOccupancyPct = visitorCapacity ? Math.min(100, Math.round((visitorActive / visitorCapacity) * 100)) : 0;
+
   const totalLocalVisitor = localTotal + visitorTotal;
   const localPct = totalLocalVisitor > 0 ? Math.round((localTotal / totalLocalVisitor) * 100) : 50;
   const visitorPct = totalLocalVisitor > 0 ? Math.round((visitorTotal / totalLocalVisitor) * 100) : 50;
@@ -243,7 +262,7 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
 
       {/* SECTION 3: Local vs Visitor & Presential vs Online Indicators */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Local vs Visitante Card */}
+        {/* Local vs Visitante Card com Cotas Dedicadas */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2">
@@ -252,45 +271,111 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
               </div>
               <div>
                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">
-                  Distribuição: Local vs Visitante
+                  Cotas Oficiais: Local vs Visitante
                 </h4>
                 <span className="text-[11px] text-slate-500">
-                  Lajespintadenses vs Atletas de Outros Municípios
+                  Gestão e ocupação de vagas por categoria
                 </span>
               </div>
             </div>
-            <span className="text-xs font-black text-slate-900">
-              {totalRegistered} Cadastrados
-            </span>
+            <button
+              onClick={() => onNavigateTab('settings')}
+              className="text-[11px] font-bold text-orange-600 hover:text-orange-700 bg-orange-50 hover:bg-orange-100 px-2.5 py-1 rounded-lg border border-orange-200 transition"
+              title="Ajustar limites de vagas no painel de configurações"
+            >
+              Configurar Cotas
+            </button>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="p-3 bg-orange-50/60 border border-orange-200/80 rounded-xl">
-              <div className="text-[11px] font-bold text-orange-800 uppercase flex items-center gap-1.5">
-                <Building2 className="w-3.5 h-3.5 text-orange-600" />
-                <span>Local (Lajespintadense)</span>
+            {/* Cota Local */}
+            <div className="p-3.5 bg-orange-50/50 border border-orange-200/80 rounded-xl space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="text-[11px] font-bold text-orange-800 uppercase flex items-center gap-1.5">
+                  <Building2 className="w-3.5 h-3.5 text-orange-600" />
+                  <span>Cota Local</span>
+                </div>
+                <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${
+                  localRemaining !== null && localRemaining <= 0
+                    ? 'bg-red-100 text-red-700'
+                    : 'bg-emerald-100 text-emerald-700'
+                }`}>
+                  {localRemaining !== null && localRemaining <= 0 ? 'ESGOTADA' : `${localRemaining ?? '-'} livres`}
+                </span>
               </div>
-              <div className="text-2xl font-black text-orange-700 mt-1">
-                {localTotal} <span className="text-xs font-semibold text-orange-600">({localPct}%)</span>
+
+              <div>
+                <div className="text-2xl font-black text-orange-700">
+                  {localTotal} <span className="text-xs font-bold text-slate-500 font-normal">/ {localCapacity}</span>
+                </div>
+                {localReserved > 0 && (
+                  <div className="text-[10px] text-amber-600 font-semibold">
+                    +{localReserved} em reserva
+                  </div>
+                )}
               </div>
-              <span className="text-[10px] text-orange-600">Presencial na Prefeitura</span>
+
+              {/* Progress bar Local */}
+              <div>
+                <div className="w-full bg-orange-200/60 rounded-full h-2 overflow-hidden">
+                  <div
+                    style={{ width: `${localOccupancyPct}%` }}
+                    className="bg-orange-600 h-full rounded-full transition-all duration-300"
+                  />
+                </div>
+                <div className="flex justify-between items-center text-[10px] text-slate-500 mt-1 font-semibold">
+                  <span>Ocupação: {localOccupancyPct}%</span>
+                  <span className="text-orange-700">Presencial</span>
+                </div>
+              </div>
             </div>
 
-            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
-              <div className="text-[11px] font-bold text-slate-700 uppercase flex items-center gap-1.5">
-                <Globe className="w-3.5 h-3.5 text-blue-600" />
-                <span>Visitante</span>
+            {/* Cota Visitante */}
+            <div className="p-3.5 bg-blue-50/50 border border-blue-200/80 rounded-xl space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="text-[11px] font-bold text-blue-800 uppercase flex items-center gap-1.5">
+                  <Globe className="w-3.5 h-3.5 text-blue-600" />
+                  <span>Cota Visitante</span>
+                </div>
+                <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${
+                  visitorRemaining !== null && visitorRemaining <= 0
+                    ? 'bg-red-100 text-red-700'
+                    : 'bg-emerald-100 text-emerald-700'
+                }`}>
+                  {visitorRemaining !== null && visitorRemaining <= 0 ? 'ESGOTADA' : `${visitorRemaining ?? '-'} livres`}
+                </span>
               </div>
-              <div className="text-2xl font-black text-slate-800 mt-1">
-                {visitorTotal} <span className="text-xs font-semibold text-slate-500">({visitorPct}%)</span>
+
+              <div>
+                <div className="text-2xl font-black text-blue-700">
+                  {visitorTotal} <span className="text-xs font-bold text-slate-500 font-normal">/ {visitorCapacity}</span>
+                </div>
+                {visitorReserved > 0 && (
+                  <div className="text-[10px] text-amber-600 font-semibold">
+                    +{visitorReserved} em reserva
+                  </div>
+                )}
               </div>
-              <span className="text-[10px] text-slate-500">Demais cidades / Online</span>
+
+              {/* Progress bar Visitante */}
+              <div>
+                <div className="w-full bg-blue-200/60 rounded-full h-2 overflow-hidden">
+                  <div
+                    style={{ width: `${visitorOccupancyPct}%` }}
+                    className="bg-blue-600 h-full rounded-full transition-all duration-300"
+                  />
+                </div>
+                <div className="flex justify-between items-center text-[10px] text-slate-500 mt-1 font-semibold">
+                  <span>Ocupação: {visitorOccupancyPct}%</span>
+                  <span className="text-blue-700">Online</span>
+                </div>
+              </div>
             </div>
           </div>
 
           {/* Ratio Bar */}
           <div>
-            <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden flex">
+            <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden flex">
               <div 
                 style={{ width: `${localPct}%` }}
                 className="bg-orange-500 h-full"
@@ -302,9 +387,9 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
                 title={`Visitante: ${visitorTotal}`}
               />
             </div>
-            <div className="flex justify-between items-center text-[10px] text-slate-500 mt-1 font-semibold">
-              <span className="text-orange-600">● Cota Local ({localPct}%)</span>
-              <span className="text-blue-600">● Cota Visitante ({visitorPct}%)</span>
+            <div className="flex justify-between items-center text-[10px] text-slate-500 mt-1.5 font-semibold">
+              <span className="text-orange-600">● Cota Local ({localCapacity} vagas)</span>
+              <span className="text-blue-600">● Cota Visitante ({visitorCapacity} vagas)</span>
             </div>
           </div>
         </div>
@@ -410,9 +495,11 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
           <div className="text-2xl font-black text-slate-800">
             {metrics.availableCapacity !== null ? metrics.availableCapacity : 'Ilimitado'}
           </div>
-          <p className="text-[11px] text-slate-400 mt-1">
-            Capacidade total: {settings.maxCapacity || 'Não definida'}
-          </p>
+          <div className="mt-1 flex items-center gap-1.5 text-[10px] font-bold">
+            <span className="text-orange-600">Local: {localRemaining !== null ? localRemaining : '-'}</span>
+            <span className="text-slate-300">|</span>
+            <span className="text-blue-600">Visitante: {visitorRemaining !== null ? visitorRemaining : '-'}</span>
+          </div>
         </div>
 
         {/* Kits Delivered */}

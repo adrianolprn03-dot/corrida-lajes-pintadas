@@ -78,6 +78,8 @@ export interface EventSettings {
   basePriceCents: number; // 6000
   status: EventStatus;
   maxCapacity: number | null;
+  localMaxCapacity?: number | null; // Cota de Vagas Categoria Local (Lajespintadense)
+  visitorMaxCapacity?: number | null; // Cota de Vagas Categoria Visitante (Demais Cidades)
   minAge: number | null;
   minorRules: string;
   startTime: string;
@@ -257,6 +259,14 @@ export interface AdminMetrics {
   // Indicadores Especiais Locais vs Visitantes e Asaas
   localCount?: number;
   visitorCount?: number;
+  localMaxCapacity?: number | null;
+  visitorMaxCapacity?: number | null;
+  localAvailableCapacity?: number | null;
+  visitorAvailableCapacity?: number | null;
+  localReservedCount?: number;
+  visitorReservedCount?: number;
+  localConfirmedCount?: number;
+  visitorConfirmedCount?: number;
   presentialCount?: number;
   onlineCount?: number;
   asaasStatus?: 'CONNECTED' | 'SANDBOX' | 'OFFLINE';

@@ -83,8 +83,10 @@ export const INITIAL_SETTINGS: EventSettings = {
   distanceKm: 5.0,
   basePriceCents: 6000, // R$ 60,00
   status: 'OPEN', // Inscrições abertas para testes e produção
-  maxCapacity: null, // A definir no painel
-  minAge: null, // A definir no painel
+  maxCapacity: 700, // Capacidade geral
+  localMaxCapacity: 350, // Cota Local (Lajespintadense)
+  visitorMaxCapacity: 350, // Cota Visitante (Demais Cidades)
+  minAge: 14, // A definir no painel
   minorRules: 'Participantes menores de 18 anos devem apresentar autorização formal por escrito assinada pelos responsáveis legais no ato da entrega do kit.',
   startTime: '06:00',
   startLocation: 'Praça Monsenhor Freitas, Centro, Lajes Pintadas/RN',
@@ -182,6 +184,8 @@ class StorageService {
             basePriceCents: d.base_price_cents,
             status,
             maxCapacity: d.max_capacity,
+            localMaxCapacity: d.local_max_capacity !== undefined ? d.local_max_capacity : (d.max_capacity ? Math.floor(d.max_capacity / 2) : 350),
+            visitorMaxCapacity: d.visitor_max_capacity !== undefined ? d.visitor_max_capacity : (d.max_capacity ? Math.ceil(d.max_capacity / 2) : 350),
             minAge: d.min_age,
             minorRules: d.minor_rules,
             startTime: d.start_time,
@@ -222,6 +226,8 @@ class StorageService {
             basePriceCents: data.base_price_cents,
             status,
             maxCapacity: data.max_capacity,
+            localMaxCapacity: data.local_max_capacity !== undefined ? data.local_max_capacity : (data.max_capacity ? Math.floor(data.max_capacity / 2) : 350),
+            visitorMaxCapacity: data.visitor_max_capacity !== undefined ? data.visitor_max_capacity : (data.max_capacity ? Math.ceil(data.max_capacity / 2) : 350),
             minAge: data.min_age,
             minorRules: data.minor_rules,
             startTime: data.start_time,
@@ -397,7 +403,12 @@ class StorageService {
   }
 
   // Atualizar Estoque Geral (Admin) com persistência no Supabase e API
-  async updateShirtStock(size: ShirtSize, newTotalStock: number): Promise<void> {
+  async updateShirtStock(
+    size: ShirtSize, 
+    newTotalStock: number, 
+    explicitLocalStock?: number, 
+    explicitVisitorStock?: number
+  ): Promise<void> {
     const shirts = await this.getShirtInventory();
     const item = shirts.find((s) => s.size === size);
     if (item) {
@@ -430,16 +441,34 @@ class StorageService {
     // 2. Atualizar cópia em LocalStorage
     const updated = shirts.map((s) => {
       if (s.size === size) {
-        const localPart = Math.floor(newTotalStock / 2);
-        const visitorPart = newTotalStock - localPart;
+        let localPart: number;
+        let visitorPart: number;
+
+        if (explicitLocalStock !== undefined && explicitVisitorStock !== undefined) {
+          localPart = explicitLocalStock;
+          visitorPart = explicitVisitorStock;
+        } else if (explicitLocalStock !== undefined) {
+          localPart = explicitLocalStock;
+          visitorPart = Math.max(0, newTotalStock - localPart);
+        } else if (explicitVisitorStock !== undefined) {
+          visitorPart = explicitVisitorStock;
+          localPart = Math.max(0, newTotalStock - visitorPart);
+        } else {
+          // Preservar proporção existente ou dividir metade
+          const currLocal = s.localTotalStock ?? Math.floor(s.totalStock / 2);
+          const ratio = s.totalStock > 0 ? (currLocal / s.totalStock) : 0.5;
+          localPart = Math.round(newTotalStock * ratio);
+          visitorPart = newTotalStock - localPart;
+        }
+
         return { 
           ...s, 
           totalStock: newTotalStock,
           availableStock: Math.max(0, newTotalStock - (s.reservedCount + s.confirmedCount)),
           localTotalStock: localPart,
-          localAvailableStock: Math.max(0, localPart - (s.localReservedCount + s.localConfirmedCount)),
+          localAvailableStock: Math.max(0, localPart - ((s.localReservedCount || 0) + (s.localConfirmedCount || 0))),
           visitorTotalStock: visitorPart,
-          visitorAvailableStock: Math.max(0, visitorPart - (s.visitorReservedCount + s.visitorConfirmedCount)),
+          visitorAvailableStock: Math.max(0, visitorPart - ((s.visitorReservedCount || 0) + (s.visitorConfirmedCount || 0))),
         };
       }
       return s;
@@ -462,7 +491,7 @@ class StorageService {
     const currentVisitor = item.visitorTotalStock ?? Math.ceil(item.totalStock / 2);
     const newTotal = newLocalStock + currentVisitor;
 
-    await this.updateShirtStock(size, newTotal);
+    await this.updateShirtStock(size, newTotal, newLocalStock, currentVisitor);
   }
 
   // Atualizar Estoque Exclusivo Visitante (Admin)
@@ -479,7 +508,7 @@ class StorageService {
     const currentLocal = item.localTotalStock ?? Math.floor(item.totalStock / 2);
     const newTotal = currentLocal + newVisitorStock;
 
-    await this.updateShirtStock(size, newTotal);
+    await this.updateShirtStock(size, newTotal, currentLocal, newVisitorStock);
   }
 
   // Atualização em Lote de Estoque de Camisas (Admin)
@@ -595,6 +624,18 @@ class StorageService {
       category = submission.gender === 'MASCULINO' ? 'LOCAL_MASCULINO' : 'LOCAL_FEMININO';
     } else {
       category = submission.gender === 'MASCULINO' ? 'VISITANTE_MASCULINO' : 'VISITANTE_FEMININO';
+    }
+
+    // 4.1 Verificar cota da categoria (Local vs Visitante)
+    const currentMetrics = await this.getAdminMetrics();
+    if (isLocal) {
+      if (currentMetrics.localAvailableCapacity !== null && currentMetrics.localAvailableCapacity !== undefined && currentMetrics.localAvailableCapacity <= 0) {
+        throw new Error('A cota de vagas para a categoria Local (Lajespintadense) está esgotada.');
+      }
+    } else {
+      if (currentMetrics.visitorAvailableCapacity !== null && currentMetrics.visitorAvailableCapacity !== undefined && currentMetrics.visitorAvailableCapacity <= 0) {
+        throw new Error('A cota de vagas para a categoria Visitante está esgotada.');
+      }
     }
 
     // 5. Verificar duplicidade de CPF ativo
@@ -979,8 +1020,10 @@ class StorageService {
 
     let grossRevenueCents = 0;
     let processingFeesCents = 0;
-    let localCount = 0;
-    let visitorCount = 0;
+    let localConfirmed = 0;
+    let localReserved = 0;
+    let visitorConfirmed = 0;
+    let visitorReserved = 0;
     let presentialCount = 0;
     let onlineCount = 0;
 
@@ -988,15 +1031,25 @@ class StorageService {
       categories[r.category] = (categories[r.category] || 0) + 1;
       grossRevenueCents += r.totalAmountCents;
       processingFeesCents += r.processingFeeCents;
-      if (r.originType === 'LOCAL' || r.originType === 'CASA' || r.category.includes('CASA') || r.category.includes('LOCAL')) {
-        localCount++;
+      const isLocal = r.originType === 'LOCAL' || r.originType === 'CASA' || r.category.includes('CASA') || r.category.includes('LOCAL');
+      if (isLocal) {
+        localConfirmed++;
       } else {
-        visitorCount++;
+        visitorConfirmed++;
       }
       if (r.channel === 'PRESENCIAL_PREFEITURA') {
         presentialCount++;
       } else {
         onlineCount++;
+      }
+    });
+
+    reserved.forEach((r) => {
+      const isLocal = r.originType === 'LOCAL' || r.originType === 'CASA' || r.category.includes('CASA') || r.category.includes('LOCAL');
+      if (isLocal) {
+        localReserved++;
+      } else {
+        visitorReserved++;
       }
     });
 
@@ -1022,14 +1075,35 @@ class StorageService {
 
     const kitsDelivered = confirmed.filter((r) => r.kitDelivered).length;
 
+    const localActive = localConfirmed + localReserved;
+    const visitorActive = visitorConfirmed + visitorReserved;
     const totalActive = confirmed.length + reserved.length;
+
+    const localMax = settings.localMaxCapacity !== undefined && settings.localMaxCapacity !== null
+      ? settings.localMaxCapacity
+      : (settings.maxCapacity ? Math.floor(settings.maxCapacity / 2) : 350);
+
+    const visitorMax = settings.visitorMaxCapacity !== undefined && settings.visitorMaxCapacity !== null
+      ? settings.visitorMaxCapacity
+      : (settings.maxCapacity ? Math.ceil(settings.maxCapacity / 2) : 350);
+
     const availableCapacity = settings.maxCapacity ? Math.max(0, settings.maxCapacity - totalActive) : null;
+    const localAvailableCapacity = localMax !== null ? Math.max(0, localMax - localActive) : null;
+    const visitorAvailableCapacity = visitorMax !== null ? Math.max(0, visitorMax - visitorActive) : null;
 
     return {
       confirmedCount: confirmed.length,
       reservedCount: reserved.length,
       availableCapacity,
       totalCapacity: settings.maxCapacity,
+      localMaxCapacity: localMax,
+      visitorMaxCapacity: visitorMax,
+      localAvailableCapacity,
+      visitorAvailableCapacity,
+      localReservedCount: localReserved,
+      visitorReservedCount: visitorReserved,
+      localConfirmedCount: localConfirmed,
+      visitorConfirmedCount: visitorConfirmed,
       categories,
       grossRevenueCents,
       processingFeesCents,
@@ -1038,8 +1112,8 @@ class StorageService {
       inReviewCount: inReview.length,
       shirts: shirtMetrics,
       kitsDeliveredCount: kitsDelivered,
-      localCount,
-      visitorCount,
+      localCount: localConfirmed,
+      visitorCount: visitorConfirmed,
       presentialCount,
       onlineCount,
       asaasStatus: settings.asaasEnvironment === 'production' ? 'CONNECTED' : 'SANDBOX',

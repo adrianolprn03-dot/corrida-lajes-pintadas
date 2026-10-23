@@ -160,6 +160,69 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const supabase = getSupabase();
 
     if (supabase) {
+      // 4.0 Validação estrita de cota por categoria (Local vs Visitante)
+      try {
+        let localMax: number | null = null;
+        let visitorMax: number | null = null;
+
+        const { data: setRow } = await supabase
+          .from('event_settings')
+          .select('*')
+          .limit(1)
+          .single();
+
+        if (setRow) {
+          if (setRow.local_max_capacity !== undefined && setRow.local_max_capacity !== null) {
+            localMax = setRow.local_max_capacity;
+            visitorMax = setRow.visitor_max_capacity;
+          } else {
+            const { data: quotaLogs } = await supabase
+              .from('audit_logs')
+              .select('details')
+              .eq('resource_type', 'CATEGORY_QUOTAS')
+              .order('created_at', { ascending: false })
+              .limit(1);
+            if (quotaLogs && quotaLogs.length > 0 && quotaLogs[0].details) {
+              localMax = quotaLogs[0].details.localMaxCapacity;
+              visitorMax = quotaLogs[0].details.visitorMaxCapacity;
+            } else if (setRow.max_capacity) {
+              localMax = Math.floor(setRow.max_capacity / 2);
+              visitorMax = Math.ceil(setRow.max_capacity / 2);
+            }
+          }
+        }
+
+        const isLocalAthlete = originType === 'CASA' || originType === 'LOCAL';
+
+        if (isLocalAthlete && localMax !== null && localMax > 0) {
+          const { count } = await supabase
+            .from('registrations')
+            .select('id', { count: 'exact', head: true })
+            .in('origin_type', ['CASA', 'LOCAL'])
+            .in('status', ['CONFIRMED', 'RESERVED', 'IN_REVIEW']);
+
+          if ((count || 0) >= localMax) {
+            return res.status(400).json({
+              error: `Cota de vagas esgotada para a Categoria Local (Lajespintadense). Vagas preenchidas: ${count} de ${localMax}.`,
+            });
+          }
+        } else if (!isLocalAthlete && visitorMax !== null && visitorMax > 0) {
+          const { count } = await supabase
+            .from('registrations')
+            .select('id', { count: 'exact', head: true })
+            .eq('origin_type', 'VISITANTE')
+            .in('status', ['CONFIRMED', 'RESERVED', 'IN_REVIEW']);
+
+          if ((count || 0) >= visitorMax) {
+            return res.status(400).json({
+              error: `Cota de vagas esgotada para a Categoria Visitante. Vagas preenchidas: ${count} de ${visitorMax}.`,
+            });
+          }
+        }
+      } catch (quotaErr) {
+        console.warn('Verificação de cota falhou, prosseguindo com rpc:', quotaErr);
+      }
+
       // 4.1 Via Supabase RPC com SELECT FOR UPDATE no PostgreSQL
       const { data, error } = await supabase.rpc('create_registration_reservation', {
         p_full_name: fullName,

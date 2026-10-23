@@ -65,6 +65,8 @@ class MemoryStore {
   ]);
 
   public maxCapacity = 1500;
+  public localMaxCapacity = 750;
+  public visitorMaxCapacity = 750;
   public registrations: Map<string, StoredRegistration> = new Map(); // protocol -> reg
   public registrationsByCpf: Map<string, string> = new Map(); // cleanCpf -> protocol
   public idempotencyCache: Map<string, { result: any; expiresAt: number }> = new Map();
@@ -165,18 +167,36 @@ class MemoryStore {
         }
       }
 
-      // 1.2 Verificar Capacidade Geral do Evento
+      // 1.2 Verificar Capacidade Geral do Evento e Cotas por Categoria
       let activeCount = 0;
+      let localActiveCount = 0;
+      let visitorActiveCount = 0;
       const now = new Date();
       for (const reg of this.registrations.values()) {
-        if (reg.status === 'CONFIRMED' || (reg.status === 'RESERVED' && new Date(reg.reservationExpiresAt) > now)) {
+        const isActive = reg.status === 'CONFIRMED' || (reg.status === 'RESERVED' && new Date(reg.reservationExpiresAt) > now);
+        if (isActive) {
           activeCount++;
+          if (reg.originType === 'CASA') {
+            localActiveCount++;
+          } else {
+            visitorActiveCount++;
+          }
         }
       }
 
       if (activeCount >= this.maxCapacity) {
         this.metrics.rejectedOvercapacity++;
         throw new Error('Capacidade máxima do evento atingida. Inscrições encerradas.');
+      }
+
+      if (params.originType === 'CASA' && this.localMaxCapacity !== null && localActiveCount >= this.localMaxCapacity) {
+        this.metrics.rejectedOvercapacity++;
+        throw new Error(`Cota de vagas esgotada para a Categoria Local (Lajespintadense). Limite: ${this.localMaxCapacity} vagas.`);
+      }
+
+      if (params.originType === 'VISITANTE' && this.visitorMaxCapacity !== null && visitorActiveCount >= this.visitorMaxCapacity) {
+        this.metrics.rejectedOvercapacity++;
+        throw new Error(`Cota de vagas esgotada para a Categoria Visitante. Limite: ${this.visitorMaxCapacity} vagas.`);
       }
 
       // 1.3 Verificar Estoque da Camisa com Bloqueio Estrito

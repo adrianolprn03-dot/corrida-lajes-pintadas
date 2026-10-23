@@ -70,6 +70,8 @@ CREATE TABLE IF NOT EXISTS event_settings (
     
     -- Itens configuráveis pelo Administrador
     max_capacity INTEGER DEFAULT NULL,
+    local_max_capacity INTEGER DEFAULT NULL, -- Cota de vagas categoria Local (Lajespintadense)
+    visitor_max_capacity INTEGER DEFAULT NULL, -- Cota de vagas categoria Visitante
     min_age INTEGER DEFAULT NULL,
     minor_rules TEXT DEFAULT 'Participantes menores de 18 anos devem apresentar autorização formal por escrito assinada por pai, mãe ou responsável legal com cópia de documento de identidade na retirada do kit.',
     start_time TEXT DEFAULT '06:00',
@@ -379,6 +381,7 @@ DECLARE
     v_pricing RECORD;
     v_available_shirts INTEGER;
     v_total_active_regs INTEGER;
+    v_category_active_regs INTEGER;
     v_clean_cpf VARCHAR(11);
     v_athlete_age INTEGER;
 BEGIN
@@ -463,6 +466,25 @@ BEGIN
             -- Atualizar status do evento para SOLD_OUT
             UPDATE event_settings SET status = 'SOLD_OUT', updated_at = NOW();
             RAISE EXCEPTION 'Vagas esgotadas para a 5ª Corrida de Emancipação.';
+        END IF;
+    END IF;
+
+    -- 6.1 Verificar Cota Específica da Categoria (Local vs Visitante)
+    IF p_origin_type = 'CASA' AND v_settings.local_max_capacity IS NOT NULL THEN
+        SELECT COUNT(*) INTO v_category_active_regs
+        FROM registrations
+        WHERE origin_type = 'CASA'
+          AND (status IN ('CONFIRMED', 'IN_REVIEW') OR (status = 'RESERVED' AND reservation_expires_at > NOW()));
+        IF v_category_active_regs >= v_settings.local_max_capacity THEN
+            RAISE EXCEPTION 'Vagas esgotadas para a categoria Local (Lajespintadense).';
+        END IF;
+    ELSIF p_origin_type = 'VISITANTE' AND v_settings.visitor_max_capacity IS NOT NULL THEN
+        SELECT COUNT(*) INTO v_category_active_regs
+        FROM registrations
+        WHERE origin_type = 'VISITANTE'
+          AND (status IN ('CONFIRMED', 'IN_REVIEW') OR (status = 'RESERVED' AND reservation_expires_at > NOW()));
+        IF v_category_active_regs >= v_settings.visitor_max_capacity THEN
+            RAISE EXCEPTION 'Vagas esgotadas para a categoria Visitante.';
         END IF;
     END IF;
 
