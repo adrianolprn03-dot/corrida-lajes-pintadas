@@ -592,7 +592,7 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({
         </h4>
 
         <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-900 leading-relaxed">
-          <strong>Regra Regimental Estrita:</strong> O valor base municipal da inscrição é <strong>R$ 60,00</strong> com taxa de serviço de <strong>10% (R$ 6,00)</strong>, garantindo a liquidez municipal líquida de R$ 60,00 integral por atleta.
+          <strong>Regra Regimental Estrita:</strong> O valor base municipal da inscrição é <strong>R$ 50,00</strong> com taxa de serviço de <strong>10% (R$ 5,00)</strong>, garantindo a liquidez municipal líquida de R$ 50,00 integral por atleta.
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">

@@ -81,7 +81,7 @@ export const INITIAL_SETTINGS: EventSettings = {
   edition: '5ª Edição',
   eventDate: '2026-12-26',
   distanceKm: 5.0,
-  basePriceCents: 6000, // R$ 60,00
+  basePriceCents: 5000, // R$ 50,00
   status: 'OPEN', // Inscrições abertas para testes e produção
   maxCapacity: 700, // Capacidade geral
   localMaxCapacity: 350, // Cota Local (Lajespintadense)
@@ -98,8 +98,8 @@ export const INITIAL_SETTINGS: EventSettings = {
   organizerContact: 'esportes@lajespintadas.rn.gov.br | WhatsApp: (84) 98800-0000',
   revenueResponsible: 'Tesouraria do Fundo Municipal de Esportes',
   asaasEnvironment: 'sandbox',
-  asaasPixFixedFeeCents: 600, // R$ 6,00 (10%)
-  asaasCreditFixedFeeCents: 600, // R$ 6,00 (10%)
+  asaasPixFixedFeeCents: 500, // R$ 5,00 (10%)
+  asaasCreditFixedFeeCents: 500, // R$ 5,00 (10%)
   asaasCreditPercentFee: 0.10, // 10%
   termsVersion: 'v1.0-2026',
   privacyVersion: 'v1.0-2026',
@@ -119,7 +119,7 @@ A 5ª Corrida de Emancipação Política de Lajes Pintadas/RN será realizada no
 2.4. A declaração do vínculo para a categoria Local realizada na inscrição é uma autodeclaração prévia. A homologação definitiva do resultado e premiação dependerá da comprovação documental cabal (Certidão de Nascimento, Título Eleitoral do Município ou Comprovante de Residência idôneo).
 
 3. DO VALOR E DO KIT
-3.1. A taxa de inscrição é de R$ 60,00 (sessenta reais), acrescida exclusivamente da taxa de serviço de 10% de processamento da plataforma de pagamento oficial.
+3.1. A taxa de inscrição é de R$ 50,00 (cinquenta reais), acrescida exclusivamente da taxa de serviço de 10% de processamento da plataforma de pagamento oficial.
 3.2. A inscrição confere direito ao Kit Oficial contendo camisa técnica em poliamida com proteção UV fator FPU 50+ oficial laranja, chip de cronometragem eletrônica, número de peito e medalha finisher para os que concluírem o percurso dentro do tempo regulamentar.
 3.3. Não será permitida troca de tamanho de camisa no ato da retirada do kit, prevalecendo estritamente a grade selecionada no ato da inscrição.
 
@@ -714,7 +714,7 @@ class StorageService {
           paymentMethod: submission.paymentMethod,
           baseAmountCents: pricing.baseAmountCents,
           processingFeeCents: pricing.feeCents,
-          totalAmountCents: pricing.totalAmountCents, // Sempre R$ 66,00 (R$ 60,00 base + 10% de taxa)
+          totalAmountCents: pricing.totalAmountCents, // Sempre R$ 55,00 (R$ 50,00 base + 10% de taxa)
           asaasPaymentId: data.asaas_payment_id,
           asaasInvoiceUrl: data.invoice_url,
           asaasPixQrCode: data.pix_qr_code,
@@ -1520,10 +1520,10 @@ class StorageService {
         status: 'CONFIRMED',
         financialStatus: 'CONFIRMED',
         paymentMethod: 'PIX',
-        baseAmountCents: 6000,
-        processingFeeCents: 600,
-        totalAmountCents: 6600,
-        netReceivedCents: 6000,
+        baseAmountCents: 5000,
+        processingFeeCents: 500,
+        totalAmountCents: 5500,
+        netReceivedCents: 5000,
         asaasPaymentId: 'pay_demo_001',
         asaasInvoiceUrl: 'https://asaas.com/i/pay_demo_001',
         reservationExpiresAt: new Date(Date.now() + 86400000).toISOString(),
@@ -1564,10 +1564,10 @@ class StorageService {
         status: 'CONFIRMED',
         financialStatus: 'CONFIRMED',
         paymentMethod: 'CREDIT_CARD',
-        baseAmountCents: 6000,
-        processingFeeCents: 600,
-        totalAmountCents: 6600,
-        netReceivedCents: 6000,
+        baseAmountCents: 5000,
+        processingFeeCents: 500,
+        totalAmountCents: 5500,
+        netReceivedCents: 5000,
         asaasPaymentId: 'pay_demo_002',
         asaasInvoiceUrl: 'https://asaas.com/i/pay_demo_002',
         reservationExpiresAt: new Date(Date.now() + 86400000).toISOString(),
@@ -1605,10 +1605,10 @@ class StorageService {
         status: 'CONFIRMED',
         financialStatus: 'CONFIRMED',
         paymentMethod: 'PIX',
-        baseAmountCents: 6000,
-        processingFeeCents: 600,
-        totalAmountCents: 6600,
-        netReceivedCents: 6000,
+        baseAmountCents: 5000,
+        processingFeeCents: 500,
+        totalAmountCents: 5500,
+        netReceivedCents: 5000,
         asaasPaymentId: 'pay_demo_003',
         asaasInvoiceUrl: 'https://asaas.com/i/pay_demo_003',
         reservationExpiresAt: new Date(Date.now() + 86400000).toISOString(),
@@ -1640,12 +1640,12 @@ class StorageService {
         status: 'RESERVED',
         financialStatus: 'PENDING',
         paymentMethod: 'PIX',
-        baseAmountCents: 6000,
-        processingFeeCents: 600,
-        totalAmountCents: 6600,
+        baseAmountCents: 5000,
+        processingFeeCents: 500,
+        totalAmountCents: 5500,
         asaasPaymentId: 'pay_demo_004',
         asaasInvoiceUrl: 'https://asaas.com/i/pay_demo_004',
-        asaasPixCopyPaste: '00020101021226830014br.gov.bcb.pix2561asaas.com/pix/pay_demo_00452040000530398654066.005802BR5925PREF MUNIC LAJES PINTADAS6014LAJES PINTADAS62070503***6304',
+        asaasPixCopyPaste: '00020101021226830014br.gov.bcb.pix2561asaas.com/pix/pay_demo_00452040000530398654055.005802BR5925PREF MUNIC LAJES PINTADAS6014LAJES PINTADAS62070503***6304',
         reservationExpiresAt: new Date(Date.now() + 25 * 60 * 1000).toISOString(),
         kitDelivered: false,
         createdAt: new Date().toISOString(),
@@ -1673,10 +1673,10 @@ class StorageService {
         status: 'CONFIRMED',
         financialStatus: 'CONFIRMED',
         paymentMethod: 'PIX',
-        baseAmountCents: 6000,
-        processingFeeCents: 99,
-        totalAmountCents: 6099,
-        netReceivedCents: 6000,
+        baseAmountCents: 5000,
+        processingFeeCents: 500,
+        totalAmountCents: 5500,
+        netReceivedCents: 5000,
         asaasPaymentId: 'pay_demo_005',
         asaasInvoiceUrl: 'https://asaas.com/i/pay_demo_005',
         reservationExpiresAt: new Date(Date.now() + 86400000).toISOString(),

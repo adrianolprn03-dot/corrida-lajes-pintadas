@@ -4,11 +4,11 @@
 ---
 
 ### 1. Modelo de Cobrança e Regras Financeiras
-- **Valor Base Municipal:** R$ 60,00 (líquido destinado aos cofres municipais / fundo de esportes).
-- **Repasse das Tarifas (10%):** O atleta arca com o acréscimo de 10% (R$ 6,00) de taxa de serviço da plataforma.
+- **Valor Base Municipal:** R$ 50,00 (líquido destinado aos cofres municipais / fundo de esportes).
+- **Repasse das Tarifas (10%):** O atleta arca com o acréscimo de 10% (R$ 5,00) de taxa de serviço da plataforma.
 - **Formas de Pagamento Permitidas:**
-  - **Pix:** `R$ 60,00 + 10% (R$ 6,00) = R$ 66,00`.
-  - **Cartão de Crédito (1x à vista):** `R$ 60,00 + 10% (R$ 6,00) = R$ 66,00`.
+  - **Pix:** `R$ 50,00 + 10% (R$ 5,00) = R$ 55,00`.
+  - **Cartão de Crédito (1x à vista):** `R$ 50,00 + 10% (R$ 5,00) = R$ 55,00`.
   - **Parcelamento:** Estritamente desabilitado (`installmentCount: 1`).
 
 ---

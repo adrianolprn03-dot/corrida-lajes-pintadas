@@ -218,7 +218,7 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
           </div>
           <div className="mt-2 flex items-center gap-1.5 text-xs text-emerald-700 font-medium">
             <ShieldCheck className="w-3.5 h-3.5" />
-            <span>R$ 60,00 integral por atleta confirmado</span>
+            <span>R$ 50,00 integral por atleta confirmado</span>
           </div>
           <div className="absolute -bottom-6 -right-6 w-20 h-20 bg-emerald-50 rounded-full opacity-50 pointer-events-none" />
         </div>
@@ -237,7 +237,7 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
             {formatCurrency(metrics.grossRevenueCents)}
           </div>
           <div className="mt-2 text-xs text-slate-500">
-            Total transacionado via Pix / Asaas (R$ 66,00 por atleta)
+            Total transacionado via Pix / Asaas (R$ 55,00 por atleta)
           </div>
         </div>
 

@@ -2,14 +2,14 @@
 // CÁLCULO DE PREÇO E TAXA DE SERVIÇO (10%)
 // ==============================================================================
 // Regra do Evento:
-// Valor base de inscrição de R$ 60,00 acrescido de taxa de serviço de 10% (R$ 6,00),
-// totalizando R$ 66,00 para o atleta.
+// Valor base de inscrição de R$ 50,00 acrescido de taxa de serviço de 10% (R$ 5,00),
+// totalizando R$ 55,00 para o atleta.
 // ==============================================================================
 
 import { PaymentMethod, PricingBreakdown } from '../types';
 
 export interface FeeConfig {
-  basePriceCents: number; // 6000 (R$ 60,00)
+  basePriceCents: number; // 5000 (R$ 50,00)
   feePercent?: number; // 0.10 (10%)
   pixFixedFeeCents?: number;
   creditFixedFeeCents?: number;
@@ -17,10 +17,10 @@ export interface FeeConfig {
 }
 
 export const DEFAULT_FEE_CONFIG: FeeConfig = {
-  basePriceCents: 6000, // R$ 60,00
+  basePriceCents: 5000, // R$ 50,00
   feePercent: 0.10, // 10%
-  pixFixedFeeCents: 600, // R$ 6,00 (10%)
-  creditFixedFeeCents: 600, // R$ 6,00 (10%)
+  pixFixedFeeCents: 500, // R$ 5,00 (10%)
+  creditFixedFeeCents: 500, // R$ 5,00 (10%)
   creditPercentFee: 0.10, // 10%
 };
 
@@ -28,13 +28,13 @@ export function calculatePricing(
   paymentMethod: PaymentMethod,
   config: FeeConfig = DEFAULT_FEE_CONFIG
 ): PricingBreakdown {
-  const baseCents = config.basePriceCents || 6000;
+  const baseCents = config.basePriceCents || 5000;
   // Garantir que a taxa percentual padrão seja rigorosamente 10% (0.10)
   const feePercent = (config.feePercent && config.feePercent > 0) ? config.feePercent : 0.10;
   const feeCents = config.pixFixedFeeCents && config.pixFixedFeeCents > 0 && config.pixFixedFeeCents !== 99 && config.pixFixedFeeCents !== 49
     ? config.pixFixedFeeCents
-    : Math.round(baseCents * feePercent); // R$ 6,00 para R$ 60,00
-  const totalCents = baseCents + feeCents; // R$ 66,00
+    : Math.round(baseCents * feePercent); // R$ 5,00 para R$ 50,00
+  const totalCents = baseCents + feeCents; // R$ 55,00
 
   const paymentLabel = paymentMethod === 'PIX' ? 'Pix' : 'Cartão';
 
@@ -48,7 +48,7 @@ export function calculatePricing(
 }
 
 export function formatCentsToBRL(cents: number): string {
-  const val = Number.isFinite(cents) && cents > 0 ? cents : 6600;
+  const val = Number.isFinite(cents) && cents > 0 ? cents : 5000;
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
     currency: 'BRL',

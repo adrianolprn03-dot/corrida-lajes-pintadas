@@ -927,7 +927,9 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
                   <div>
                     <span className="text-slate-400 block text-[11px]">Valor Base:</span>
-                    <span className="font-semibold text-slate-800">R$ 60,00</span>
+                    <span className="font-semibold text-slate-800">
+                      {((selectedReg.baseAmountCents || 5000) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    </span>
                   </div>
                   <div>
                     <span className="text-slate-400 block text-[11px]">Taxa de Serviço:</span>

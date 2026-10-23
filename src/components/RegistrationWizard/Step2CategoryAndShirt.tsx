@@ -201,17 +201,24 @@ export const Step2CategoryAndShirt: React.FC<Step2CategoryAndShirtProps> = ({
               <span className="text-xs text-orange-600 font-semibold">Cor única oficial: Laranja</span>
             </div>
 
-            {/* Mini Preview da Camisa */}
-            <div className="flex items-center gap-4 p-3 rounded-xl bg-slate-50 border border-slate-200 mb-3">
-              <img
-                src="/assets/camisa_laranja_oficial.jpg"
-                alt="Camisa Oficial Laranja"
-                className="w-16 h-16 object-contain rounded-lg bg-white border border-slate-200 shrink-0"
-              />
+            {/* Mini Preview do Kit Oficial: Camisa + Fita/Medalha 68 Anos */}
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200 mb-3">
+              <div className="flex items-center gap-1.5 shrink-0">
+                <img
+                  src="/assets/camisa_laranja_oficial.jpg"
+                  alt="Camisa Oficial Laranja"
+                  className="w-14 h-14 object-contain rounded-lg bg-white border border-slate-200"
+                />
+                <img
+                  src="/assets/fita_laranja_oficial.png"
+                  alt="Fita e Medalha Finisher 68 Anos"
+                  className="w-14 h-14 object-contain rounded-lg bg-white border border-slate-200"
+                />
+              </div>
               <div className="text-xs">
-                <span className="font-extrabold text-slate-900 block">Camisa Oficial Poliamida FPU 50+ (5ª Edição)</span>
+                <span className="font-extrabold text-slate-900 block">Kit Oficial do Atleta • Edição 68 Anos</span>
                 <span className="text-slate-500 block mt-0.5">
-                  Laranja com silk branco em alto contraste. Escolha o seu tamanho abaixo:
+                  Camisa Poliamida FPU 50+ Laranja + Medalha Finisher com Fita Sublimada 68 Anos.
                 </span>
               </div>
             </div>
@@ -281,7 +288,7 @@ export const Step2CategoryAndShirt: React.FC<Step2CategoryAndShirtProps> = ({
                     {formatCentsToBRL(pixPricing.totalAmountCents)}
                   </div>
                   <p className="text-[11px] text-slate-500 mt-0.5">
-                    R$ 60,00 + {formatCentsToBRL(pixPricing.feeCents)} (taxa de serviço 10%)
+                    R$ 50,00 + {formatCentsToBRL(pixPricing.feeCents)} (taxa de serviço 10%)
                   </p>
                 </div>
               </button>
@@ -314,7 +321,7 @@ export const Step2CategoryAndShirt: React.FC<Step2CategoryAndShirtProps> = ({
                     {formatCentsToBRL(cardPricing.totalAmountCents)}
                   </div>
                   <p className="text-[11px] text-slate-500 mt-0.5">
-                    R$ 60,00 + {formatCentsToBRL(cardPricing.feeCents)} (taxa de serviço 10%)
+                    R$ 50,00 + {formatCentsToBRL(cardPricing.feeCents)} (taxa de serviço 10%)
                   </p>
                 </div>
               </button>

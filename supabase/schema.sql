@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS event_settings (
     edition TEXT NOT NULL DEFAULT '5ª Edição',
     event_date DATE NOT NULL DEFAULT '2026-12-26',
     distance_km NUMERIC(4,1) NOT NULL DEFAULT 5.0,
-    base_price_cents INTEGER NOT NULL DEFAULT 6000, -- R$ 60,00
+    base_price_cents INTEGER NOT NULL DEFAULT 5000, -- R$ 50,00
     status event_status_enum NOT NULL DEFAULT 'PREPARATION',
     
     -- Itens configuráveis pelo Administrador
@@ -175,7 +175,7 @@ CREATE TABLE IF NOT EXISTS registrations (
     payment_method payment_method_enum NOT NULL,
     
     -- Valores calculados no servidor (em centavos inteiros)
-    base_amount_cents INTEGER NOT NULL DEFAULT 6000, -- R$ 60,00
+    base_amount_cents INTEGER NOT NULL DEFAULT 5000, -- R$ 50,00
     processing_fee_cents INTEGER NOT NULL,
     total_amount_cents INTEGER NOT NULL,
     net_received_cents INTEGER DEFAULT NULL,
@@ -324,21 +324,20 @@ BEGIN
     LIMIT 1;
 
     IF v_base_price IS NULL THEN
-        v_base_price := 6000;
-        v_pix_fee := 99;
-        v_card_fee := 49;
-        v_card_percent := 0.0299;
+        v_base_price := 5000;
+        v_pix_fee := 500;
+        v_card_fee := 500;
+        v_card_percent := 0.10;
     END IF;
 
     IF p_payment_method = 'PIX' THEN
-        -- Pix com tarifa fixa: total = 60,00 + tarifa
+        -- Pix com taxa de serviço 10%: total = 50,00 + tarifa
         v_total_cents := v_base_price + v_pix_fee;
         v_fee_cents := v_pix_fee;
     ELSE
-        -- Cartão de crédito: total = (60,00 + tarifa fixa) ÷ (1 − percentual)
-        -- Cálculo em centavos com arredondamento explícito para cima (CEIL) para preservar exatamente os R$ 60,00 líquidos
-        v_total_cents := CEIL((v_base_price + v_card_fee) / (1.0 - v_card_percent));
-        v_fee_cents := v_total_cents - v_base_price;
+        -- Cartão de crédito: total = 50,00 + tarifa
+        v_total_cents := v_base_price + v_card_fee;
+        v_fee_cents := v_card_fee;
     END IF;
 
     RETURN QUERY SELECT v_base_price, v_fee_cents, v_total_cents;

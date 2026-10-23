@@ -472,10 +472,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
                         Estrutura de Taxas
                       </span>
                       <div className="text-lg font-black text-slate-900">
-                        10% (R$ 6,00)
+                        10% (R$ 5,00)
                       </div>
                       <p className="text-[11px] text-emerald-700 mt-2 font-medium">
-                        R$ 60,00 líquido municipal preservado integralmente
+                        R$ 50,00 líquido municipal preservado integralmente
                       </p>
                     </div>
                   </div>

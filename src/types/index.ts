@@ -75,7 +75,7 @@ export interface EventSettings {
   edition: string;
   eventDate: string; // '2026-12-26'
   distanceKm: number; // 5.0
-  basePriceCents: number; // 6000
+  basePriceCents: number; // 5000 (R$ 50,00)
   status: EventStatus;
   maxCapacity: number | null;
   localMaxCapacity?: number | null; // Cota de Vagas Categoria Local (Lajespintadense)

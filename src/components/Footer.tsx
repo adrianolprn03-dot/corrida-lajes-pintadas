@@ -78,7 +78,7 @@ export const Footer: React.FC<FooterProps> = ({
               </div>
 
               <p className="font-sans text-xs text-white/70 leading-relaxed max-w-sm">
-                Evento esportivo oficial em comemoração aos 63 anos de emancipação política de Lajes Pintadas/RN. Prova de 5 km pelas ruas da cidade, promovendo saúde, integração e valorização do atletismo regional.
+                Evento esportivo oficial em comemoração aos 68 anos de emancipação política de Lajes Pintadas/RN. Prova de 5 km pelas ruas da cidade, promovendo saúde, integração e valorização do atletismo regional.
               </p>
 
               <div className="pt-2 flex flex-wrap items-center gap-4 text-xs font-sans text-white/60">
@@ -182,7 +182,7 @@ export const Footer: React.FC<FooterProps> = ({
           <div className="max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-12 flex flex-col sm:flex-row items-center justify-between gap-2 text-center sm:text-left">
             <p>© 2026 Prefeitura Municipal de Lajes Pintadas/RN. Todos os direitos reservados.</p>
             <p className="text-white/80 font-medium">
-              Inscrição: R$ 60,00 (+ 10% taxa) • 5 KM • 26/12/2026
+              Inscrição: R$ 50,00 (+ 10% taxa) • 5 KM • 26/12/2026
             </p>
           </div>
         </div>

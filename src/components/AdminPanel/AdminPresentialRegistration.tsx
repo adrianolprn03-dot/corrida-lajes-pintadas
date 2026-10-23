@@ -98,10 +98,10 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
   const [isCheckingPayment, setIsCheckingPayment] = useState(false);
   const [paymentCheckMessage, setPaymentCheckMessage] = useState<string | null>(null);
 
-  // Pricing calculations: base R$ 60,00 + 10% de taxa de serviço (R$ 6,00) = R$ 66,00
-  const baseCents = settings?.basePriceCents || 6000;
-  const feeCents = Math.round(baseCents * 0.10); // R$ 6,00
-  const totalCents = baseCents + feeCents; // R$ 66,00
+  // Pricing calculations: base R$ 50,00 + 10% de taxa de serviço (R$ 5,00) = R$ 55,00
+  const baseCents = settings?.basePriceCents || 5000;
+  const feeCents = Math.round(baseCents * 0.10); // R$ 5,00
+  const totalCents = baseCents + feeCents; // R$ 55,00
 
   const pixPricing = calculatePricing('PIX', {
     basePriceCents: baseCents,
@@ -593,15 +593,15 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
             <table style="width: 100%; border-collapse: collapse;">
               <tr>
                 <td style="font-size: 10px; font-weight: bold; text-transform: uppercase; color: #475569; padding: 2px 0;">Valor Base da Inscrição:</td>
-                <td style="text-align: right; font-weight: bold; font-size: 11px;">R$ 60,00</td>
+                <td style="text-align: right; font-weight: bold; font-size: 11px;">R$ 50,00</td>
               </tr>
               <tr>
                 <td style="font-size: 10px; font-weight: bold; text-transform: uppercase; color: #475569; padding: 2px 0;">Taxa de Processamento de Serviço (10%):</td>
-                <td style="text-align: right; font-weight: bold; font-size: 11px;">R$ 6,00</td>
+                <td style="text-align: right; font-weight: bold; font-size: 11px;">R$ 5,00</td>
               </tr>
               <tr style="border-top: 1px solid #cbd5e1;">
                 <td style="font-size: 12px; font-weight: 900; text-transform: uppercase; color: #0f172a; padding: 4px 0 0 0;">Total da Inscrição:</td>
-                <td style="text-align: right; font-size: 13px; font-weight: 900; color: #ea580c; padding: 4px 0 0 0;">R$ 66,00</td>
+                <td style="text-align: right; font-size: 13px; font-weight: 900; color: #ea580c; padding: 4px 0 0 0;">R$ 55,00</td>
               </tr>
             </table>
 
@@ -1362,7 +1362,7 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
             <div className="space-y-1.5 text-xs text-slate-600">
               <div className="flex justify-between">
                 <span>Inscrição Oficial 5ª Edição:</span>
-                <span className="font-bold text-slate-800">R$ 60,00</span>
+                <span className="font-bold text-slate-800">R$ 50,00</span>
               </div>
               <div className="flex justify-between">
                 <span>Taxa de processamento de serviço (10%):</span>
@@ -1775,11 +1775,11 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
             <div className="p-4 rounded-xl border-2 border-slate-300 space-y-2.5 text-xs">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-slate-600 font-bold uppercase">Inscrição Oficial 5ª Edição:</span>
-                <span className="font-bold text-slate-800 text-xs">R$ 60,00</span>
+                <span className="font-bold text-slate-800 text-xs">R$ 50,00</span>
               </div>
               <div className="flex items-center justify-between text-xs">
                 <span className="text-slate-600 font-bold uppercase">Taxa de Processamento de Serviço (10%):</span>
-                <span className="font-bold text-slate-800 text-xs">R$ 6,00</span>
+                <span className="font-bold text-slate-800 text-xs">R$ 5,00</span>
               </div>
               <div className="flex items-center justify-between pt-1.5 border-t border-slate-200">
                 <span className="text-slate-900 font-black uppercase text-xs">Total da Inscrição:</span>

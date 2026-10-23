@@ -24,8 +24,8 @@ const FAQ_ITEMS: FaqItem[] = [
   {
     id: 'faq-3',
     category: 'pagamento',
-    question: 'Por que há uma taxa de processamento além dos R$ 60,00 da inscrição?',
-    answer: 'O regulamento da prova fixa a inscrição no valor base de R$ 60,00 com direito à camisa oficial e medalha finisher. O acréscimo de 10% (R$ 6,00) corresponde à taxa de processamento e serviço da plataforma, garantindo a reserva garantida da sua vaga por 30 minutos e a confirmação automática do pagamento.',
+    question: 'Por que há uma taxa de processamento além dos R$ 50,00 da inscrição?',
+    answer: 'O regulamento da prova fixa a inscrição no valor base de R$ 50,00 com direito à camisa oficial e medalha finisher. O acréscimo de 10% (R$ 5,00) corresponde à taxa de processamento e serviço da plataforma, garantindo a reserva garantida da sua vaga por 30 minutos e a confirmação automática do pagamento.',
   },
   {
     id: 'faq-4',

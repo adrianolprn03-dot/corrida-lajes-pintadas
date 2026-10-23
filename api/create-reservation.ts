@@ -61,9 +61,9 @@ function isValidCPF(cpf: string): boolean {
 }
 
 function calculatePricing(paymentMethod: 'PIX' | 'CREDIT_CARD') {
-  const basePriceCents = 6000; // R$ 60,00
-  const feeCents = Math.round(basePriceCents * 0.10); // R$ 6,00 (10% de taxa de serviço)
-  const totalAmountCents = basePriceCents + feeCents; // R$ 66,00
+  const basePriceCents = 5000; // R$ 50,00
+  const feeCents = Math.round(basePriceCents * 0.10); // R$ 5,00 (10% de taxa de serviço)
+  const totalAmountCents = basePriceCents + feeCents; // R$ 55,00
   return {
     baseAmountCents: basePriceCents,
     feeCents,
@@ -280,13 +280,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       };
     }
 
-    // Garantir que os valores oficiais (R$ 60,00 base + 10% taxa = R$ 66,00 total) prevaleçam
+    // Garantir que os valores oficiais (R$ 50,00 base + 10% taxa = R$ 55,00 total) prevaleçam
     reservationResult.base_amount_cents = pricing.baseAmountCents;
     reservationResult.fee_cents = pricing.feeCents;
     reservationResult.total_amount_cents = pricing.totalAmountCents;
 
     // 5. Integração com Gateway Asaas (com conciliação prévia por CPF e por Protocolo)
-    const totalFloat = pricing.totalAmountCents / 100; // Rigorosamente R$ 66,00
+    const totalFloat = pricing.totalAmountCents / 100; // Rigorosamente R$ 55,00
     
     // 5.1 Conciliar / obter cliente Asaas sem duplicar
     const customer = await asaasClient.getOrCreateCustomer({

@@ -71,7 +71,7 @@ export const Hero: React.FC<HeroProps> = ({
       <div className="relative z-10 w-full max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* TOP ROW: Two-column hero layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
           
           {/* LEFT COLUMN (7 cols): Main Typography, Pricing, CTAs & Countdown */}
           <div className="lg:col-span-7 space-y-6">
@@ -98,7 +98,7 @@ export const Hero: React.FC<HeroProps> = ({
               </h1>
               
               <p className="mt-4 font-sans text-base sm:text-lg text-slate-600 max-w-xl leading-relaxed">
-                A tradicional prova pedestre de 5 km em celebração aos 63 anos de emancipação política de Lajes Pintadas. Percurso 100% asfaltado e sinalizado, cronometragem eletrônica oficial e premiação com troféus para atletas locais e visitantes.
+                A tradicional prova pedestre de 5 km em celebração aos 68 anos de emancipação política de Lajes Pintadas. Percurso 100% asfaltado e sinalizado, cronometragem eletrônica oficial e premiação com troféus para atletas locais e visitantes.
               </p>
             </div>
 
@@ -217,57 +217,57 @@ export const Hero: React.FC<HeroProps> = ({
 
           </div>
 
-          {/* RIGHT COLUMN (5 cols): Destaque Fotográfico Oficial da Prova */}
-          <div className="lg:col-span-5 flex justify-center">
-            <div className="relative w-full max-w-[460px] rounded-3xl overflow-hidden border border-slate-200/90 shadow-2xl shadow-slate-300/60 bg-slate-900 group">
+          {/* RIGHT COLUMN (5 cols): Destaque Fotográfico Oficial da Prova - Posicionamento elevado */}
+          <div className="lg:col-span-5 flex justify-center lg:justify-end lg:-mt-2">
+            <div className="relative w-full max-w-[420px] rounded-3xl overflow-hidden border border-slate-200/90 shadow-2xl shadow-slate-300/60 bg-slate-900 group">
               
-              {/* Foto Real da Corrida em Alta Definição */}
-              <div className="relative aspect-[4/5] sm:aspect-[4/5] w-full overflow-hidden">
+              {/* Foto Real da Corrida com enquadramento elevado no pórtico e atletas */}
+              <div className="relative aspect-[4/4.3] w-full overflow-hidden">
                 <img
                   src="/assets/corrida_2025.webp"
                   alt="Atletas na linha de chegada da Corrida de Emancipação de Lajes Pintadas"
-                  className="w-full h-full object-cover object-[center_28%] filter contrast-[1.05] brightness-[1.02] transform group-hover:scale-105 transition duration-700 ease-out"
+                  className="w-full h-full object-cover object-[center_10%] filter contrast-[1.05] brightness-[1.02] transform group-hover:scale-105 transition duration-700 ease-out"
                   loading="eager"
                   decoding="async"
                 />
 
                 {/* Suave degradê fotográfico interno para valorizar o pórtico e os corredores */}
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-slate-950/40" />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-950/25 to-slate-950/30" />
 
                 {/* Badge Superior: Foto Oficial da Prova */}
-                <div className="absolute top-4 left-4 right-4 flex items-center justify-between pointer-events-none">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/90 backdrop-blur-md text-slate-900 text-[11px] font-bold uppercase tracking-wider shadow-sm">
+                <div className="absolute top-3.5 left-3.5 right-3.5 flex items-center justify-between pointer-events-none">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/95 backdrop-blur-md text-slate-900 text-[11px] font-bold uppercase tracking-wider shadow-sm">
                     <Award className="w-3.5 h-3.5 text-orange-600" />
                     <span>Registro Oficial • 2025</span>
                   </span>
-                  <span className="px-2.5 py-1 rounded-full bg-orange-600/90 backdrop-blur-md text-white text-[10px] font-bold uppercase tracking-wider shadow-sm">
+                  <span className="px-2.5 py-1 rounded-full bg-orange-600/95 backdrop-blur-md text-white text-[10px] font-bold uppercase tracking-wider shadow-sm">
                     Lajes Pintadas/RN
                   </span>
                 </div>
 
-                {/* Legenda Esportiva Inferior */}
-                <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-6 text-white space-y-2 pointer-events-none">
-                  <div className="flex items-center gap-2 text-xs font-bold text-orange-400 uppercase tracking-wider">
+                {/* Legenda Esportiva Inferior Compacta e Elegante */}
+                <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-5 text-white space-y-1.5 pointer-events-none">
+                  <div className="flex items-center gap-2 text-[11px] font-bold text-orange-400 uppercase tracking-wider">
                     <span>Pórtico Oficial de Chegada</span>
                     <span>•</span>
                     <span>Rua Principal</span>
                   </div>
-                  <p className="font-condensed font-extrabold text-xl sm:text-2xl uppercase leading-tight text-white drop-shadow-sm">
+                  <p className="font-condensed font-extrabold text-lg sm:text-xl uppercase leading-tight text-white drop-shadow-sm">
                     A energia contagiante de quem supera limites
                   </p>
-                  <p className="font-sans text-xs text-slate-300 leading-relaxed">
-                    Mais de 300 atletas celebrando o esporte, a saúde e a história da nossa cidade.
+                  <p className="font-sans text-[11px] text-slate-300 leading-snug line-clamp-2">
+                    Mais de 300 atletas celebrando o esporte, a saúde e os 68 anos de emancipação da nossa cidade.
                   </p>
                 </div>
               </div>
 
               {/* Barra de Status na base do card fotográfico */}
-              <div className="bg-slate-950 px-5 py-3 border-t border-white/10 flex items-center justify-between text-xs text-slate-400">
+              <div className="bg-slate-950 px-4 py-2.5 border-t border-white/10 flex items-center justify-between text-xs text-slate-400">
                 <span className="flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                  <span className="font-medium text-slate-300">Circuito Homologado</span>
+                  <span className="font-medium text-slate-300 text-[11px]">Circuito Homologado</span>
                 </span>
-                <span className="font-semibold text-orange-400">
+                <span className="font-semibold text-orange-400 text-[11px]">
                   Edição Histórica 2026
                 </span>
               </div>
