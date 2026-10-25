@@ -539,10 +539,10 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({
               type="text"
               value={formData.startTime}
               onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
-              placeholder="06:00"
+              placeholder="17:00"
               className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
-            <p className="text-[10px] text-slate-400 mt-1">Largada pontual às 06:00h</p>
+            <p className="text-[10px] text-slate-400 mt-1">Largada pontual às 17:00h</p>
           </div>
 
           <div className="sm:col-span-2">
@@ -553,7 +553,7 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({
               type="text"
               value={formData.startLocation}
               onChange={(e) => setFormData({ ...formData, startLocation: e.target.value })}
-              placeholder="Praça Monsenhor Freitas, Centro, Lajes Pintadas/RN"
+              placeholder="Feira Livre Coberta, Centro, Lajes Pintadas/RN"
               className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
           </div>
@@ -620,7 +620,7 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({
               onChange={(e) => setFormData({ ...formData, asaasPixFixedFeeCents: parseInt(e.target.value) || 0 })}
               className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
-            <p className="text-[10px] text-slate-400 mt-1">Padrão: 600 (R$ 6,00 - 10%)</p>
+            <p className="text-[10px] text-slate-400 mt-1">Padrão: 500 (R$ 5,00 - 10%)</p>
           </div>
 
           <div>
@@ -633,7 +633,7 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({
               onChange={(e) => setFormData({ ...formData, asaasCreditFixedFeeCents: parseInt(e.target.value) || 0 })}
               className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
-            <p className="text-[10px] text-slate-400 mt-1">Padrão: 600 (R$ 6,00 - 10%)</p>
+            <p className="text-[10px] text-slate-400 mt-1">Padrão: 500 (R$ 5,00 - 10%)</p>
           </div>
 
           <div>

@@ -74,8 +74,8 @@ CREATE TABLE IF NOT EXISTS event_settings (
     visitor_max_capacity INTEGER DEFAULT NULL, -- Cota de vagas categoria Visitante
     min_age INTEGER DEFAULT NULL,
     minor_rules TEXT DEFAULT 'Participantes menores de 18 anos devem apresentar autorização formal por escrito assinada por pai, mãe ou responsável legal com cópia de documento de identidade na retirada do kit.',
-    start_time TEXT DEFAULT '06:00',
-    start_location TEXT DEFAULT 'Praça Monsenhor Freitas (Centro), Lajes Pintadas/RN',
+    start_time TEXT DEFAULT '17:00',
+    start_location TEXT DEFAULT 'Feira Livre Coberta, Centro, Lajes Pintadas/RN',
     registration_start_date TIMESTAMPTZ DEFAULT NULL,
     registration_end_date TIMESTAMPTZ DEFAULT NULL,
     kit_pickup_info TEXT DEFAULT 'A retirada dos kits ocorrerá no Centro de Convivência dos Idosos, mediante apresentação de documento oficial com foto e comprovante de inscrição. Categoria Casa deverá apresentar comprovação de vínculo conforme regulamento.',

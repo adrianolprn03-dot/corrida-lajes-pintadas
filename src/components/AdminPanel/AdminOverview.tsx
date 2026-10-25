@@ -255,7 +255,7 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
             {formatCurrency(metrics.processingFeesCents)}
           </div>
           <div className="mt-2 text-xs text-slate-500">
-            Custeadas pelo participante (R$ 6,00 por atleta)
+            Custeadas pelo participante (R$ 5,00 por atleta)
           </div>
         </div>
       </div>

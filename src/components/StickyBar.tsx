@@ -49,7 +49,7 @@ export const StickyBar: React.FC<StickyBarProps> = ({
                 5ª Corrida de Emancipação
               </span>
               <span className="hidden md:inline font-sans text-xs text-orange-600 font-semibold">
-                • 5 KM • 26/12 • 06:00h
+                • 5 KM • 26/12 • 17:00h
               </span>
             </div>
             <p className="font-sans text-[11px] text-slate-500 hidden xs:block mt-0.5">

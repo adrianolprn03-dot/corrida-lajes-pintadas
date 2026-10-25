@@ -225,8 +225,8 @@ export async function sendConfirmationEmail(data: RegistrationEmailData): Promis
                 </h4>
                 <ul style="margin: 0; padding-left: 18px; font-size: 12px; line-height: 1.6; color: #7c2d12;">
                   <li><strong>Data da Prova:</strong> Sábado, 26 de Dezembro de 2026.</li>
-                  <li><strong>Horário da Largada:</strong> 16h00 (Concentração a partir das 15h00).</li>
-                  <li><strong>Local:</strong> Praça Monsenhor Freitas, Centro, Lajes Pintadas / RN.</li>
+                  <li><strong>Horário da Largada:</strong> 17h00 (Concentração na Feira Livre Coberta a partir das 16h00).</li>
+                  <li><strong>Local da Concentração & Largada:</strong> Feira Livre Coberta, Centro, Lajes Pintadas / RN.</li>
                   <li><strong>Retirada do Kit:</strong> Apresentar documento oficial com foto e este comprovante impresso ou no celular.</li>
                 </ul>
               </div>

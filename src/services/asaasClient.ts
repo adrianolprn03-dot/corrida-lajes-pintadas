@@ -13,7 +13,7 @@ export interface AsaasCheckoutItem {
   name: string;
   description: string;
   quantity: number;
-  value: number; // Float (ex: 60.99)
+  value: number; // Float (ex: 55.00)
   imageBase64?: string;
   externalReference?: string;
 }

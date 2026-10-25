@@ -88,8 +88,8 @@ export const INITIAL_SETTINGS: EventSettings = {
   visitorMaxCapacity: 350, // Cota Visitante (Demais Cidades)
   minAge: 14, // A definir no painel
   minorRules: 'Participantes menores de 18 anos devem apresentar autorização formal por escrito assinada pelos responsáveis legais no ato da entrega do kit.',
-  startTime: '06:00',
-  startLocation: 'Praça Monsenhor Freitas, Centro, Lajes Pintadas/RN',
+  startTime: '17:00',
+  startLocation: 'Feira Livre Coberta, Centro, Lajes Pintadas/RN',
   registrationStartDate: null,
   registrationEndDate: null,
   kitPickupInfo: 'A entrega dos kits (camisa oficial laranja, chip e número de peito) ocorrerá no Centro de Convivência dos Idosos, mediante apresentação de documento com foto e comprovante de inscrição. Para categoria Local (Lajespintadense), é obrigatória a comprovação documental do vínculo declarado.',
@@ -256,8 +256,24 @@ class StorageService {
     }
 
     const localSettings = this.getLocal<EventSettings>(STORAGE_KEYS.SETTINGS, INITIAL_SETTINGS);
+    let changed = false;
     if (localSettings.status === 'PREPARATION') {
       localSettings.status = 'OPEN';
+      changed = true;
+    }
+    if (localSettings.startTime === '06:00') {
+      localSettings.startTime = '17:00';
+      changed = true;
+    }
+    if (!localSettings.startLocation || localSettings.startLocation.includes('Praça Monsenhor')) {
+      localSettings.startLocation = 'Feira Livre Coberta, Centro, Lajes Pintadas/RN';
+      changed = true;
+    }
+    if (localSettings.basePriceCents === 6000) {
+      localSettings.basePriceCents = 5000;
+      changed = true;
+    }
+    if (changed) {
       this.setLocal(STORAGE_KEYS.SETTINGS, localSettings);
     }
     return localSettings;

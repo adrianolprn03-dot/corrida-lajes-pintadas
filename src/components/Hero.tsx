@@ -19,7 +19,7 @@ export const Hero: React.FC<HeroProps> = ({
 }) => {
   const formattedBasePrice = formatCentsToBRL(settings.basePriceCents);
 
-  // Live countdown to 2026-12-26 06:00:00 (Local time Lajes Pintadas / America/Fortaleza -03:00)
+  // Live countdown to 2026-12-26 17:00:00 (Local time Lajes Pintadas / America/Fortaleza -03:00)
   const [timeLeft, setTimeLeft] = useState<{
     days: number;
     hours: number;
@@ -28,7 +28,7 @@ export const Hero: React.FC<HeroProps> = ({
   }>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
   useEffect(() => {
-    const targetDate = new Date('2026-12-26T06:00:00-03:00').getTime();
+    const targetDate = new Date('2026-12-26T17:00:00-03:00').getTime();
 
     const updateTimer = () => {
       const now = new Date().getTime();
@@ -80,7 +80,7 @@ export const Hero: React.FC<HeroProps> = ({
             <div className="inline-flex flex-wrap items-center gap-2 px-3.5 py-1.5 rounded-full bg-orange-50 border border-orange-200/80 shadow-xs">
               <span className="flex h-2 w-2 rounded-full bg-orange-600 animate-pulse" />
               <span className="font-sans text-xs font-bold uppercase tracking-wider text-orange-800">
-                26 de Dezembro de 2026 • 06:00h
+                26 de Dezembro de 2026 • 17:00h
               </span>
               <span className="text-orange-300">•</span>
               <span className="font-sans text-xs font-semibold text-slate-600">
@@ -177,7 +177,7 @@ export const Hero: React.FC<HeroProps> = ({
             <div className="pt-2">
               <span className="font-sans text-[11px] font-bold uppercase tracking-widest text-slate-500 block mb-2 flex items-center gap-1.5">
                 <Clock className="w-3.5 h-3.5 text-orange-600" />
-                <span>Contagem Regressiva para a Largada (26/12 às 06:00h)</span>
+                <span>Contagem Regressiva para a Largada (26/12 às 17:00h)</span>
               </span>
               <div className="grid grid-cols-4 gap-2 sm:gap-3 max-w-sm">
                 <div className="p-2.5 bg-white border border-slate-200 rounded-xl text-center shadow-xs">
@@ -296,10 +296,10 @@ export const Hero: React.FC<HeroProps> = ({
               Largada Pontual
             </span>
             <span className="font-condensed font-extrabold text-2xl sm:text-3xl text-slate-950 block mt-0.5">
-              06:00h Manhã
+              17:00h
             </span>
             <span className="font-sans text-[11px] text-slate-500 block mt-0.5">
-              Clima fresco no amanhecer
+              Largada pontual às 17h
             </span>
           </div>
 
@@ -308,7 +308,7 @@ export const Hero: React.FC<HeroProps> = ({
               Concentração
             </span>
             <span className="font-condensed font-extrabold text-xl sm:text-2xl text-slate-950 truncate block mt-0.5">
-              Praça Monsenhor Freitas
+              Feira Livre Coberta
             </span>
             <span className="font-sans text-[11px] text-slate-500 block mt-0.5">
               Centro de Lajes Pintadas/RN

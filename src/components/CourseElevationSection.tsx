@@ -41,7 +41,7 @@ export const CourseElevationSection: React.FC<CourseElevationSectionProps> = ({ 
     {
       km: '0.0 km',
       title: 'Pórtico de Largada',
-      desc: 'Praça Monsenhor Freitas. Tapete de cronometragem eletrônica inicial.',
+      desc: 'Feira Livre Coberta. Tapete de cronometragem eletrônica inicial.',
       alt: '320m',
       type: 'start',
     },
@@ -69,7 +69,7 @@ export const CourseElevationSection: React.FC<CourseElevationSectionProps> = ({ 
     {
       km: '5.0 km',
       title: 'Pórtico de Chegada & Finisher',
-      desc: 'Praça Monsenhor Freitas. Medalha de metal, isotônico e frutas frescas.',
+      desc: 'Feira Livre Coberta. Medalha de metal, isotônico e frutas frescas.',
       alt: '320m',
       type: 'finish',
     },
@@ -88,7 +88,7 @@ export const CourseElevationSection: React.FC<CourseElevationSectionProps> = ({ 
             Percurso & Altimetria
           </h2>
           <p className="font-sans text-sm sm:text-base text-[#5D6672] mt-3 max-w-2xl leading-relaxed">
-            Circuito em vias pavimentadas no coração de Lajes Pintadas/RN, com largada e chegada na Praça Monsenhor Freitas. Ganho de elevação gradual de +45m e retorno oficial aos 2,5 km.
+            Circuito em vias pavimentadas no coração de Lajes Pintadas/RN, com concentração, largada e chegada na Feira Livre Coberta. Ganho de elevação gradual de +45m e retorno oficial aos 2,5 km.
           </p>
         </div>
 

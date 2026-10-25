@@ -1,5 +1,5 @@
-import React from 'react';
-import { Home, Globe, Shirt, CreditCard, QrCode, AlertTriangle, Check, ArrowLeft, ArrowRight, Building2, Info } from 'lucide-react';
+import React, { useState } from 'react';
+import { Home, Globe, Shirt, CreditCard, QrCode, AlertTriangle, Check, ArrowLeft, ArrowRight, Building2, Info, Ruler, ChevronDown, ChevronUp } from 'lucide-react';
 import {
   OriginType,
   AthleteGender,
@@ -10,6 +10,15 @@ import {
   EventSettings,
 } from '../../types';
 import { calculatePricing, formatCentsToBRL } from '../../lib/pricing';
+
+const SHIRT_MEASUREMENTS: Record<ShirtSize, { backHeight: string; width: string; frontHeight: string }> = {
+  PP: { backHeight: '69,5 cm', width: '49 cm', frontHeight: '65 cm' },
+  P:  { backHeight: '72 cm',   width: '51,5 cm', frontHeight: '67,5 cm' },
+  M:  { backHeight: '75 cm',   width: '54,5 cm', frontHeight: '71 cm' },
+  G:  { backHeight: '78,5 cm', width: '58 cm', frontHeight: '74 cm' },
+  GG: { backHeight: '81,5 cm', width: '60,5 cm', frontHeight: '78 cm' },
+  XG: { backHeight: '85 cm',   width: '63 cm', frontHeight: '81 cm' },
+};
 
 export interface Step2Data {
   originType: OriginType;
@@ -40,7 +49,8 @@ export const Step2CategoryAndShirt: React.FC<Step2CategoryAndShirtProps> = ({
   onBack,
   onNext,
 }) => {
-  const [error, setError] = React.useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [showMeasurements, setShowMeasurements] = useState(false);
 
   const pixPricing = calculatePricing('PIX', {
     basePriceCents: settings.basePriceCents,
@@ -201,12 +211,12 @@ export const Step2CategoryAndShirt: React.FC<Step2CategoryAndShirtProps> = ({
               <span className="text-xs text-orange-600 font-semibold">Cor única oficial: Laranja</span>
             </div>
 
-            {/* Mini Preview do Kit Oficial: Camisa + Fita/Medalha 68 Anos */}
+            {/* Mini Preview do Kit Oficial: Camiseta + Fita/Medalha 68 Anos */}
             <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200 mb-3">
               <div className="flex items-center gap-1.5 shrink-0">
                 <img
-                  src="/assets/camisa_laranja_oficial.jpg"
-                  alt="Camisa Oficial Laranja"
+                  src="/assets/camiseta_corrida_laranja_68_anos.png"
+                  alt="Camiseta Oficial Laranja 68 Anos"
                   className="w-14 h-14 object-contain rounded-lg bg-white border border-slate-200"
                 />
                 <img
@@ -218,7 +228,7 @@ export const Step2CategoryAndShirt: React.FC<Step2CategoryAndShirtProps> = ({
               <div className="text-xs">
                 <span className="font-extrabold text-slate-900 block">Kit Oficial do Atleta • Edição 68 Anos</span>
                 <span className="text-slate-500 block mt-0.5">
-                  Camisa Poliamida FPU 50+ Laranja + Medalha Finisher com Fita Sublimada 68 Anos.
+                  Camiseta Poliamida FPU 50+ Laranja 68 Anos + Medalha Finisher com Fita Sublimada.
                 </span>
               </div>
             </div>
@@ -252,6 +262,60 @@ export const Step2CategoryAndShirt: React.FC<Step2CategoryAndShirtProps> = ({
                 );
               })}
             </div>
+
+            {/* Guia de Medidas do Tamanho Selecionado */}
+            {data.shirtSize && SHIRT_MEASUREMENTS[data.shirtSize] && (
+              <div className="mt-2.5 p-2.5 bg-orange-50/70 border border-orange-200/80 rounded-xl text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="text-slate-700">
+                  <span className="font-bold text-orange-700 uppercase">Medidas Tam. {data.shirtSize}: </span>
+                  <span>
+                    Largura: <strong>{SHIRT_MEASUREMENTS[data.shirtSize].width}</strong> • Altura Frente: <strong>{SHIRT_MEASUREMENTS[data.shirtSize].frontHeight}</strong> • Altura Costa: <strong>{SHIRT_MEASUREMENTS[data.shirtSize].backHeight}</strong>
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowMeasurements(!showMeasurements)}
+                  className="inline-flex items-center gap-1 text-[11px] font-bold text-orange-700 hover:text-orange-800 underline self-start sm:self-auto cursor-pointer"
+                >
+                  <Ruler size={13} />
+                  <span>{showMeasurements ? 'Ocultar tabela' : 'Ver tabela completa'}</span>
+                  {showMeasurements ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                </button>
+              </div>
+            )}
+
+            {/* Tabela Completa de Medidas (Colapsável) */}
+            {showMeasurements && (
+              <div className="mt-2 p-3 bg-white border border-slate-200 rounded-xl shadow-xs overflow-x-auto">
+                <div className="text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1.5 flex items-center justify-between">
+                  <span>Tabela Oficial de Medidas (cm)</span>
+                  <span className="text-[10px] text-amber-600 font-medium">Sem troca no dia</span>
+                </div>
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-200 text-slate-500 font-semibold text-[11px]">
+                      <th className="py-1 px-2 uppercase">Tamanho</th>
+                      <th className="py-1 px-2 uppercase">Altura Costa</th>
+                      <th className="py-1 px-2 uppercase">Largura</th>
+                      <th className="py-1 px-2 uppercase">Altura Frente</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {(['PP', 'P', 'M', 'G', 'GG', 'XG'] as ShirtSize[]).map((sz) => (
+                      <tr
+                        key={sz}
+                        className={data.shirtSize === sz ? 'bg-orange-50 font-bold text-orange-700' : 'text-slate-700'}
+                      >
+                        <td className="py-1.5 px-2">{sz}</td>
+                        <td className="py-1.5 px-2">{SHIRT_MEASUREMENTS[sz].backHeight}</td>
+                        <td className="py-1.5 px-2">{SHIRT_MEASUREMENTS[sz].width}</td>
+                        <td className="py-1.5 px-2">{SHIRT_MEASUREMENTS[sz].frontHeight}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
 
           {/* 4. Forma de Pagamento (Pix ou Cartão à vista) */}

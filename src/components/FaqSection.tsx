@@ -19,7 +19,7 @@ const FAQ_ITEMS: FaqItem[] = [
     id: 'faq-2',
     category: 'inscricao',
     question: 'Qual é a data, o horário e a distância da prova?',
-    answer: 'A 5ª Corrida de Emancipação Política ocorrerá no dia 26 de dezembro de 2026 (sábado), com percurso oficial aferido de 5 km em vias pavimentadas de Lajes Pintadas/RN. A largada será pontual às 06:00 horas da manhã, com concentração na Praça Monsenhor Freitas.',
+    answer: 'A 5ª Corrida de Emancipação Política ocorrerá no dia 26 de dezembro de 2026 (sábado), com percurso oficial aferido de 5 km em vias pavimentadas de Lajes Pintadas/RN. A largada será pontual às 17 horas, com concentração na Feira Livre Coberta.',
   },
   {
     id: 'faq-3',
@@ -43,7 +43,7 @@ const FAQ_ITEMS: FaqItem[] = [
     id: 'faq-6',
     category: 'kit',
     question: 'Onde e quando será realizada a entrega dos kits?',
-    answer: 'A entrega dos kits será realizada no Centro de Convivência dos Idosos (Rua São Francisco, s/n, Centro, Lajes Pintadas/RN). No dia 25/12 (14h às 18h) para atletas locais e antecipados, e no dia 26/12 (05h às 05h40) para atletas visitantes de outros municípios. É indispensável apresentar documento com foto e comprovante de inscrição.',
+    answer: 'A entrega dos kits será realizada no Centro de Convivência dos Idosos (Rua São Francisco, s/n, Centro, Lajes Pintadas/RN). No dia 25/12 (14h às 18h) para atletas locais e antecipados, e no dia 26/12 (14h às 16h20) para atletas visitantes de outros municípios. É indispensável apresentar documento com foto e comprovante de inscrição.',
   },
   {
     id: 'faq-7',

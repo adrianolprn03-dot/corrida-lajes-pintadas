@@ -4,35 +4,35 @@ import { Clock, Calendar, CheckCircle2, Flame } from 'lucide-react';
 export const ScheduleSection: React.FC = () => {
   const scheduleEvents = [
     {
-      time: '05:00',
+      time: '15:30',
       title: 'Abertura da Arena & Guarda-Volumes',
-      desc: 'Acolhimento dos atletas na Praça Monsenhor Freitas. Tenda de apoio e depósito de pertences identificado.',
+      desc: 'Acolhimento dos atletas na Feira Livre Coberta. Tenda de apoio e depósito de pertences identificado.',
     },
     {
-      time: '05:30',
+      time: '16:15',
       title: 'Concentração Geral de Pelotões',
-      desc: 'Chamada dos atletas para alinhamento nas baias e ativação esportiva.',
+      desc: 'Concentração na Feira Livre Coberta, chamada dos atletas para alinhamento nas baias e ativação esportiva.',
     },
     {
-      time: '05:45',
+      time: '16:40',
       title: 'Aquecimento Técnico & Briefing',
       desc: 'Alongamento guiado com educador físico e orientações finais da comissão de arbitragem.',
     },
     {
-      time: '06:00',
+      time: '17:00',
       title: 'Largada Oficial 5 KM',
       desc: 'Disparo pontual da largada para todas as categorias com cronometragem eletrônica ativa.',
       isMain: true,
     },
     {
-      time: '07:15',
+      time: '18:15',
       title: 'Cerimônia Oficial de Pódios',
-      desc: 'Premiação solene com troféus para Local, Visitante e PCD (Masculino e Feminino).',
+      desc: 'Premiação solene com troféus para Local e Visitante (Masculino e Feminino).',
     },
     {
-      time: '08:30',
-      title: 'Encerramento & Café Comunitário',
-      desc: 'Celebração cívica da emancipação de Lajes Pintadas/RN com café regional e hidratação.',
+      time: '19:15',
+      title: 'Encerramento & Confraternização',
+      desc: 'Celebração cívica da emancipação de Lajes Pintadas/RN com confraternização regional e hidratação.',
     },
   ];
 
@@ -46,10 +46,10 @@ export const ScheduleSection: React.FC = () => {
             Programação do Dia 26/12/2026
           </span>
           <h2 className="font-condensed font-extrabold text-4xl sm:text-6xl uppercase tracking-tight text-slate-900 leading-none">
-            Cronograma da Manhã de Prova
+            Cronograma Oficial da Prova
           </h2>
           <p className="font-sans text-sm sm:text-base text-slate-600 mt-3 max-w-2xl leading-relaxed">
-            Pontualidade rigorosa para garantir clima fresco, segurança viária com trânsito 100% bloqueado e máximo rendimento aos atletas.
+            Pontualidade rigorosa para garantir segurança viária com trânsito 100% bloqueado e máximo rendimento aos atletas.
           </p>
         </div>
 

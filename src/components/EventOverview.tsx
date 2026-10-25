@@ -63,7 +63,7 @@ export const EventOverview: React.FC<EventOverviewProps> = ({ settings }) => {
                 <span>Local Oficial: Centro de Convivência dos Idosos</span>
               </div>
               <p className="text-slate-600">
-                Rua São Francisco, s/n - Centro, Lajes Pintadas - RN, CEP 59230-000 (próximo à Praça Monsenhor Freitas).
+                Rua São Francisco, s/n - Centro, Lajes Pintadas - RN, CEP 59230-000 (próximo à Feira Livre Coberta).
               </p>
             </div>
 
@@ -85,10 +85,10 @@ export const EventOverview: React.FC<EventOverviewProps> = ({ settings }) => {
               <div className="p-4 border border-slate-200 bg-slate-50/60 rounded">
                 <div className="flex items-center gap-1.5 font-sans text-xs font-bold uppercase text-slate-700 mb-1">
                   <Clock className="w-3.5 h-3.5 text-orange-600" />
-                  <span>26/12 (Sábado) • Manhã</span>
+                  <span>26/12 (Sábado) • Tarde</span>
                 </div>
                 <div className="font-condensed font-extrabold text-2xl text-slate-900">
-                  05:00h às 05:40h
+                  14:00h às 16:20h
                 </div>
                 <p className="font-sans text-xs text-slate-500 mt-1">
                   Exclusivo para atletas visitantes residentes em outros municípios.
@@ -149,7 +149,7 @@ export const EventOverview: React.FC<EventOverviewProps> = ({ settings }) => {
                   Guarda-Volumes Gratuito
                 </h4>
                 <p className="text-xs text-slate-600 mt-1">
-                  Depósito seguro identificado com o seu número de peito na Praça Monsenhor Freitas.
+                  Depósito seguro identificado com o seu número de peito na Feira Livre Coberta.
                 </p>
               </div>
 

@@ -170,7 +170,7 @@ export class AsaasClient {
         const payId = endpoint.split('/')[2];
         return {
           encodedImage: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
-          payload: `00020101021226830014br.gov.bcb.pix2561asaas.com/pix/${payId}52040000530398654060.005802BR5925PREF MUNIC LAJES PINTADAS6014LAJES PINTADAS62070503***6304`,
+          payload: `00020101021226830014br.gov.bcb.pix2561asaas.com/pix/${payId}52040000530398654055.005802BR5925PREF MUNIC LAJES PINTADAS6014LAJES PINTADAS62070503***6304`,
           expirationDate: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
         } as T;
       }

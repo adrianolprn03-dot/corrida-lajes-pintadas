@@ -33,13 +33,8 @@ export const ShirtShowcase: React.FC<ShirtShowcaseProps> = ({
     switch (selectedView) {
       case 'ribbon':
         return '/assets/fita_laranja_oficial.png';
-      case 'front':
-        return '/assets/camisa_frente.webp';
-      case 'back':
-        return '/assets/camisa_costas.webp';
-      case 'both':
       default:
-        return '/assets/camisa_oficial_lajes.webp';
+        return '/assets/camiseta_corrida_laranja_68_anos.png';
     }
   };
 
@@ -47,13 +42,13 @@ export const ShirtShowcase: React.FC<ShirtShowcaseProps> = ({
   const availableStock = selectedSizeItem ? selectedSizeItem.availableStock : 10;
   const isAvailable = availableStock > 0;
 
-  const sizeMeasurements: Record<ShirtSize, { chest: string; length: string; height: string }> = {
-    PP: { chest: '46 cm', length: '64 cm', height: '1.50 - 1.60m' },
-    P: { chest: '49 cm', length: '67 cm', height: '1.60 - 1.70m' },
-    M: { chest: '52 cm', length: '70 cm', height: '1.70 - 1.78m' },
-    G: { chest: '55 cm', length: '73 cm', height: '1.78 - 1.85m' },
-    GG: { chest: '58 cm', length: '76 cm', height: '1.85 - 1.92m' },
-    XG: { chest: '62 cm', length: '79 cm', height: '1.92m+' },
+  const sizeMeasurements: Record<ShirtSize, { backHeight: string; width: string; frontHeight: string }> = {
+    PP: { backHeight: '69,5 cm', width: '49 cm', frontHeight: '65 cm' },
+    P:  { backHeight: '72 cm',   width: '51,5 cm', frontHeight: '67,5 cm' },
+    M:  { backHeight: '75 cm',   width: '54,5 cm', frontHeight: '71 cm' },
+    G:  { backHeight: '78,5 cm', width: '58 cm', frontHeight: '74 cm' },
+    GG: { backHeight: '81,5 cm', width: '60,5 cm', frontHeight: '78 cm' },
+    XG: { backHeight: '85 cm',   width: '63 cm', frontHeight: '81 cm' },
   };
 
   const currentMeasurements = sizeMeasurements[selectedSize];
@@ -92,56 +87,33 @@ export const ShirtShowcase: React.FC<ShirtShowcaseProps> = ({
                 <Shirt className="w-3.5 h-3.5 text-orange-600" />
                 <span>Visualização do Kit</span>
               </span>
-              <div className="flex flex-wrap items-center gap-1">
+              <div className="flex flex-wrap items-center gap-1.5">
                 <button
                   type="button"
                   onClick={() => setSelectedView('both')}
-                  aria-pressed={selectedView === 'both'}
-                  className={`px-3 py-1.5 font-sans text-xs font-bold rounded-lg transition cursor-pointer ${
-                    selectedView === 'both'
-                      ? 'bg-slate-900 text-white shadow-sm'
+                  aria-pressed={selectedView !== 'ribbon'}
+                  className={`px-3.5 py-1.5 font-sans text-xs font-bold rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
+                    selectedView !== 'ribbon'
+                      ? 'bg-orange-600 text-white shadow-sm'
                       : 'bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200'
                   }`}
                 >
-                  Camisa Geral
+                  <Shirt className="w-3.5 h-3.5" />
+                  <span>Camiseta Oficial 68 Anos</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setSelectedView('ribbon')}
                   aria-pressed={selectedView === 'ribbon'}
-                  className={`px-3 py-1.5 font-sans text-xs font-bold rounded-lg transition flex items-center gap-1 cursor-pointer ${
+                  className={`px-3.5 py-1.5 font-sans text-xs font-bold rounded-lg transition flex items-center gap-1.5 cursor-pointer ${
                     selectedView === 'ribbon'
                       ? 'bg-orange-600 text-white shadow-sm'
                       : 'bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-200/60'
                   }`}
                 >
                   <Award className="w-3.5 h-3.5" />
-                  <span>Fita & Medalha</span>
-                  <span className="text-[9px] bg-orange-700 text-white px-1.5 py-0.2 rounded-full uppercase">Nova</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedView('front')}
-                  aria-pressed={selectedView === 'front'}
-                  className={`px-2.5 py-1.5 font-sans text-xs font-bold rounded-lg transition cursor-pointer ${
-                    selectedView === 'front'
-                      ? 'bg-slate-900 text-white shadow-sm'
-                      : 'bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200'
-                  }`}
-                >
-                  Frente
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedView('back')}
-                  aria-pressed={selectedView === 'back'}
-                  className={`px-2.5 py-1.5 font-sans text-xs font-bold rounded-lg transition cursor-pointer ${
-                    selectedView === 'back'
-                      ? 'bg-slate-900 text-white shadow-sm'
-                      : 'bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200'
-                  }`}
-                >
-                  Costas
+                  <span>Fita & Medalha Finisher</span>
+                  <span className="text-[9px] bg-orange-700 text-white px-1.5 py-0.2 rounded-full uppercase">Oficial</span>
                 </button>
               </div>
             </div>
@@ -171,28 +143,31 @@ export const ShirtShowcase: React.FC<ShirtShowcaseProps> = ({
             </div>
 
             {/* Quick Interactive Thumbnail Strip */}
-            <div className="w-full grid grid-cols-4 gap-2 pt-2 pb-3">
+            <div className="w-full grid grid-cols-2 gap-3 pt-2 pb-3">
               <button
                 type="button"
                 onClick={() => setSelectedView('both')}
-                className={`p-1.5 rounded-xl border text-center transition flex flex-col items-center gap-1 cursor-pointer ${
-                  selectedView === 'both'
+                className={`p-2.5 rounded-xl border text-center transition flex items-center justify-center gap-3 cursor-pointer ${
+                  selectedView !== 'ribbon'
                     ? 'border-orange-500 bg-orange-50/60 ring-2 ring-orange-500/30'
                     : 'border-slate-200 bg-white hover:border-slate-300'
                 }`}
               >
                 <img
-                  src="/assets/camisa_oficial_lajes.webp"
-                  alt="Camisa Geral"
-                  className="w-10 h-10 object-contain"
+                  src="/assets/camiseta_corrida_laranja_68_anos.png"
+                  alt="Camiseta de Corrida Laranja 68 Anos"
+                  className="w-12 h-12 object-contain"
                 />
-                <span className="text-[10px] font-bold text-slate-700">Camisa</span>
+                <div className="text-left">
+                  <span className="text-xs font-bold text-slate-800 block">Camiseta 68 Anos</span>
+                  <span className="text-[10px] text-slate-500 block">Laranja Oficial</span>
+                </div>
               </button>
 
               <button
                 type="button"
                 onClick={() => setSelectedView('ribbon')}
-                className={`p-1.5 rounded-xl border text-center transition flex flex-col items-center gap-1 cursor-pointer ${
+                className={`p-2.5 rounded-xl border text-center transition flex items-center justify-center gap-3 cursor-pointer ${
                   selectedView === 'ribbon'
                     ? 'border-orange-500 bg-orange-50/60 ring-2 ring-orange-500/30'
                     : 'border-slate-200 bg-white hover:border-slate-300'
@@ -200,47 +175,13 @@ export const ShirtShowcase: React.FC<ShirtShowcaseProps> = ({
               >
                 <img
                   src="/assets/fita_laranja_oficial.png"
-                  alt="Fita e Medalha"
-                  className="w-10 h-10 object-contain"
+                  alt="Fita e Medalha Finisher"
+                  className="w-12 h-12 object-contain"
                 />
-                <span className="text-[10px] font-bold text-orange-700 flex items-center gap-0.5">
-                  <span>Medalha</span>
-                  <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setSelectedView('front')}
-                className={`p-1.5 rounded-xl border text-center transition flex flex-col items-center gap-1 cursor-pointer ${
-                  selectedView === 'front'
-                    ? 'border-orange-500 bg-orange-50/60 ring-2 ring-orange-500/30'
-                    : 'border-slate-200 bg-white hover:border-slate-300'
-                }`}
-              >
-                <img
-                  src="/assets/camisa_frente.webp"
-                  alt="Frente"
-                  className="w-10 h-10 object-contain"
-                />
-                <span className="text-[10px] font-bold text-slate-700">Frente</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setSelectedView('back')}
-                className={`p-1.5 rounded-xl border text-center transition flex flex-col items-center gap-1 cursor-pointer ${
-                  selectedView === 'back'
-                    ? 'border-orange-500 bg-orange-50/60 ring-2 ring-orange-500/30'
-                    : 'border-slate-200 bg-white hover:border-slate-300'
-                }`}
-              >
-                <img
-                  src="/assets/camisa_costas.webp"
-                  alt="Costas"
-                  className="w-10 h-10 object-contain"
-                />
-                <span className="text-[10px] font-bold text-slate-700">Costas</span>
+                <div className="text-left">
+                  <span className="text-xs font-bold text-orange-700 block">Medalha Finisher</span>
+                  <span className="text-[10px] text-slate-500 block">Fita Sublimada</span>
+                </div>
               </button>
             </div>
 
@@ -256,8 +197,8 @@ export const ShirtShowcase: React.FC<ShirtShowcaseProps> = ({
                 </>
               ) : (
                 <>
-                  <span className="font-medium text-slate-700">Laranja Oficial • Logo 68 Anos</span>
-                  <span className="font-semibold text-slate-900">Costas Lisas (Regulamento)</span>
+                  <span className="font-medium text-slate-700">Laranja Oficial • 68 Anos de Lajes Pintadas</span>
+                  <span className="font-semibold text-slate-900">Poliamida FPU 50+</span>
                 </>
               )}
             </div>
@@ -306,7 +247,7 @@ export const ShirtShowcase: React.FC<ShirtShowcaseProps> = ({
                   Selecione seu Tamanho de Camisa
                 </span>
                 <span className="font-sans text-xs text-[#BBC3CE]">
-                  Tórax: <strong className="text-white">{currentMeasurements.chest}</strong> • Comprimento: <strong className="text-white">{currentMeasurements.length}</strong>
+                  Largura: <strong className="text-white">{currentMeasurements.width}</strong> • Altura Frente: <strong className="text-white">{currentMeasurements.frontHeight}</strong> • Altura Costa: <strong className="text-white">{currentMeasurements.backHeight}</strong>
                 </span>
               </div>
 
@@ -368,17 +309,17 @@ export const ShirtShowcase: React.FC<ShirtShowcaseProps> = ({
             {/* Measurement Guide Table */}
             <div className="border border-white/10 bg-white/[0.02] rounded-2xl overflow-hidden shadow-sm">
               <div className="p-3 bg-white/5 border-b border-white/10 text-xs font-sans font-semibold uppercase tracking-wider text-white flex items-center justify-between">
-                <span>Tabela Oficial de Medidas Unissex (cm)</span>
+                <span>Tabela Oficial de Medidas (cm)</span>
                 <span className="text-[11px] text-orange-400 font-normal">Sem troca na entrega</span>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-left font-sans text-xs">
                   <thead>
                     <tr className="border-b border-white/10 text-[#BBC3CE]">
-                      <th className="py-2.5 px-3 font-semibold">Tamanho</th>
-                      <th className="py-2.5 px-3 font-semibold">Tórax (Largura)</th>
-                      <th className="py-2.5 px-3 font-semibold">Comprimento</th>
-                      <th className="py-2.5 px-3 font-semibold">Estatura Sugerida</th>
+                      <th className="py-2.5 px-3 font-semibold uppercase">Tamanho</th>
+                      <th className="py-2.5 px-3 font-semibold uppercase">Altura Costa</th>
+                      <th className="py-2.5 px-3 font-semibold uppercase">Largura</th>
+                      <th className="py-2.5 px-3 font-semibold uppercase">Altura Frente</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5 text-white">
@@ -387,10 +328,10 @@ export const ShirtShowcase: React.FC<ShirtShowcaseProps> = ({
                         key={size}
                         className={selectedSize === size ? 'bg-[#F97316]/10 text-[#FF872E]' : 'hover:bg-white/[0.02]'}
                       >
-                        <td className="py-2 px-3 font-bold">{size}</td>
-                        <td className="py-2 px-3">{sizeMeasurements[size].chest}</td>
-                        <td className="py-2 px-3">{sizeMeasurements[size].length}</td>
-                        <td className="py-2 px-3 text-[#BBC3CE]">{sizeMeasurements[size].height}</td>
+                        <td className="py-2.5 px-3 font-bold">{size}</td>
+                        <td className="py-2.5 px-3 font-medium">{sizeMeasurements[size].backHeight}</td>
+                        <td className="py-2.5 px-3 font-medium">{sizeMeasurements[size].width}</td>
+                        <td className="py-2.5 px-3 font-medium">{sizeMeasurements[size].frontHeight}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -428,7 +369,7 @@ export const ShirtShowcase: React.FC<ShirtShowcaseProps> = ({
             <p className="text-center font-sans text-xs text-[#5D6672] mt-4 font-semibold">
               {selectedView === 'ribbon'
                 ? 'Fita Oficial Sublimada & Medalha Finisher • 68 Anos de Emancipação • Lajes Pintadas/RN'
-                : 'Camisa Oficial em Poliamida FPU 50+ • 5ª Corrida de Emancipação • Lajes Pintadas/RN'}
+                : 'Camiseta Oficial em Poliamida FPU 50+ • 68 Anos de Emancipação • Lajes Pintadas/RN'}
             </p>
           </div>
         </div>

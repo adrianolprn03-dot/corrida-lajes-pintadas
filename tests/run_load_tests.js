@@ -517,8 +517,8 @@ async function main() {
           id: `pay_test_${idx}`,
           externalReference: target ? target.protocol : 'LP5-2612-NONE',
           status: 'RECEIVED',
-          value: 60.99,
-          netValue: 60.00,
+          value: 55.00,
+          netValue: 50.00,
         },
       });
     },
