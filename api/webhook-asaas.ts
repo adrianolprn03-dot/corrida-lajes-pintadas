@@ -100,6 +100,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (['PAYMENT_CONFIRMED', 'PAYMENT_RECEIVED', 'CHECKOUT_PAID'].includes(eventType)) {
       try {
         let athleteData: any = null;
+        let regId: string | null = null;
+        let alreadySentInDb = false;
 
         // Buscar dados da inscrição na memória ou no Supabase
         const targetProtocol = payment.externalReference;
@@ -117,57 +119,101 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             shirtSize: memoryReg.shirtSize,
             status: 'CONFIRMED',
           };
-        } else if (supabase) {
-          const { data: reg } = await supabase
+        }
+
+        if (supabase) {
+          let regQuery = supabase
             .from('registrations')
             .select(`
+              id,
               protocol,
               category,
               gender,
               shirt_size,
               kit_notes,
+              status,
+              financial_status,
               athletes (
                 full_name,
                 email,
                 cpf
               )
-            `)
-            .eq('asaas_payment_id', payment.id)
-            .maybeSingle();
+            `);
 
-          if (reg && reg.athletes) {
-            const athlete = Array.isArray(reg.athletes) ? reg.athletes[0] : reg.athletes;
-            let accessCode: string | undefined = undefined;
-            if (reg.kit_notes && typeof reg.kit_notes === 'string') {
-              const match = reg.kit_notes.match(/ACCESS_CODE:([A-Za-z0-9]+)/);
-              if (match) accessCode = match[1];
-            }
-            if (!accessCode) {
-              const mem = memoryStore.registrations.get(reg.protocol);
-              if (mem) accessCode = mem.accessCode;
+          if (targetProtocol) {
+            regQuery = regQuery.or(`asaas_payment_id.eq.${payment.id},protocol.eq.${targetProtocol}`);
+          } else {
+            regQuery = regQuery.eq('asaas_payment_id', payment.id);
+          }
+
+          const { data: reg } = await regQuery.maybeSingle();
+
+          if (reg) {
+            regId = reg.id;
+            if (reg.kit_notes && typeof reg.kit_notes === 'string' && reg.kit_notes.includes('CONFIRMATION_EMAIL_SENT:true')) {
+              alreadySentInDb = true;
             }
 
-            athleteData = {
-              athleteName: athlete?.full_name || 'Atleta',
-              athleteEmail: athlete?.email,
-              athleteCpf: athlete?.cpf || '',
-              protocol: reg.protocol,
-              accessCode,
-              category: reg.category,
-              gender: reg.gender,
-              shirtSize: reg.shirt_size,
-              status: 'CONFIRMED',
-            };
+            if (reg.athletes && !athleteData) {
+              const athlete = Array.isArray(reg.athletes) ? reg.athletes[0] : reg.athletes;
+              let accessCode: string | undefined = undefined;
+              if (reg.kit_notes && typeof reg.kit_notes === 'string') {
+                const match = reg.kit_notes.match(/ACCESS_CODE:([A-Za-z0-9]+)/);
+                if (match) accessCode = match[1];
+              }
+              if (!accessCode && memoryReg) {
+                accessCode = memoryReg.accessCode;
+              }
+
+              athleteData = {
+                athleteName: athlete?.full_name || 'Atleta',
+                athleteEmail: athlete?.email,
+                athleteCpf: athlete?.cpf || '',
+                protocol: reg.protocol,
+                accessCode,
+                category: reg.category,
+                gender: reg.gender,
+                shirtSize: reg.shirt_size,
+                status: 'CONFIRMED',
+              };
+            }
           }
         }
 
-        if (athleteData && athleteData.athleteEmail) {
+        const alreadySentInMemory = Boolean(memoryReg?.confirmationEmailSent);
+
+        if (!alreadySentInDb && !alreadySentInMemory && athleteData && athleteData.athleteEmail) {
           try {
             await sendConfirmationEmail(athleteData);
-            console.log(`[Webhook] E-mail institucional de confirmação enviado para ${athleteData.athleteEmail}`);
+            console.log(`[Webhook] E-mail institucional de confirmação enviado com sucesso para ${athleteData.athleteEmail}`);
+
+            // Prevenir disparos duplicados
+            if (memoryReg) {
+              memoryReg.confirmationEmailSent = true;
+            }
+            if (supabase && regId) {
+              const { data: existingReg } = await supabase
+                .from('registrations')
+                .select('kit_notes')
+                .eq('id', regId)
+                .single();
+
+              const currentNotes = existingReg?.kit_notes || '';
+              if (!currentNotes.includes('CONFIRMATION_EMAIL_SENT:true')) {
+                await supabase
+                  .from('registrations')
+                  .update({
+                    kit_notes: currentNotes ? `${currentNotes}|CONFIRMATION_EMAIL_SENT:true` : 'CONFIRMATION_EMAIL_SENT:true',
+                    updated_at: new Date().toISOString(),
+                  })
+                  .eq('id', regId);
+              }
+            }
           } catch (e) {
             console.error('[Webhook] Falha no disparo de e-mail institucional:', e);
           }
+        } else if (alreadySentInDb || alreadySentInMemory) {
+          console.log(`[Webhook] E-mail institucional já havia sido enviado para ${payment.externalReference || payment.id}, pulando envio duplicado.`);
         }
       } catch (emailErr) {
         console.warn('[Webhook] Falha ao coletar dados para envio de e-mail:', emailErr);

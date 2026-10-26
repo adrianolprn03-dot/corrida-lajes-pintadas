@@ -51,6 +51,7 @@ export interface StoredRegistration {
   documentCheckedAt?: string;
   attendantName?: string;
   attendantId?: string;
+  confirmationEmailSent?: boolean;
 }
 
 // Estado singleton em memória para garantir consistência sob carga concorrente

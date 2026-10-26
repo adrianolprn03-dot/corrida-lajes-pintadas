@@ -385,7 +385,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           document_checked_at: new Date().toISOString(),
           attendant_name: attendantName || null,
           attendant_id: attendantId || null,
-          kit_notes: `ACCESS_CODE:${reservationResult.access_code}`,
+          kit_notes: `ACCESS_CODE:${reservationResult.access_code}${isPaymentConfirmed ? '|CONFIRMATION_EMAIL_SENT:true' : ''}`,
           updated_at: new Date().toISOString(),
         };
 
@@ -448,8 +448,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    // Disparo imediato de e-mail institucional oficial com Protocolo e Código de Acesso
-    if (email) {
+    // Disparo de e-mail institucional oficial de confirmação:
+    // APENAS SE O PAGAMENTO ESTIVER CONFIRMADO (Cartão aprovado na hora ou atleta Casa/gratuito)!
+    // Para pagamentos via Pix, o e-mail de confirmação NÃO é enviado aqui; ele será disparado
+    // exclusivamente pelo Webhook do Asaas assim que o banco acusar a compensação do Pix!
+    if (email && isPaymentConfirmed) {
       try {
         await sendConfirmationEmail({
           athleteName: fullName,
@@ -462,11 +465,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           shirtSize,
           paymentMethod,
           originType,
-          status: isPaymentConfirmed ? 'CONFIRMED' : (originType === 'CASA' ? 'CONFIRMED' : 'RESERVED'),
-          pixCopyPaste: pixCopy || undefined,
-          invoiceUrl: payment.invoiceUrl || undefined,
+          status: 'CONFIRMED',
         });
-        console.log(`[create-reservation] E-mail institucional oficial enviado para ${email}`);
+        console.log(`[create-reservation] E-mail institucional oficial de confirmação enviado para ${email}`);
+        if (memReg) {
+          memReg.confirmationEmailSent = true;
+        }
       } catch (emailErr) {
         console.warn('[create-reservation] Aviso ao disparar e-mail de confirmação:', emailErr);
       }
