@@ -28,22 +28,20 @@ export function calculatePricing(
   paymentMethod: PaymentMethod,
   config: FeeConfig = DEFAULT_FEE_CONFIG
 ): PricingBreakdown {
-  const baseCents = config.basePriceCents || 5000;
-  // Garantir que a taxa percentual padrão seja rigorosamente 10% (0.10)
-  const feePercent = (config.feePercent && config.feePercent > 0) ? config.feePercent : 0.10;
-  const feeCents = config.pixFixedFeeCents && config.pixFixedFeeCents > 0 && config.pixFixedFeeCents !== 99 && config.pixFixedFeeCents !== 49
-    ? config.pixFixedFeeCents
-    : Math.round(baseCents * feePercent); // R$ 5,00 para R$ 50,00
+  // O valor oficial e imutável da inscrição conforme Edital é rigorosamente R$ 50,00 (5000 centavos)
+  const baseCents = 5000; // R$ 50,00
+  const feePercent = 0.10; // Taxa de 10%
+  const feeCents = Math.round(baseCents * feePercent); // R$ 5,00 (10% de R$ 50,00)
   const totalCents = baseCents + feeCents; // R$ 55,00
 
-  const paymentLabel = paymentMethod === 'PIX' ? 'Pix' : 'Cartão';
+  const paymentLabel = paymentMethod === 'PIX' ? 'Pix' : 'Cartão 1x';
 
   return {
     baseAmountCents: baseCents,
     feeCents,
     totalAmountCents: totalCents,
     paymentMethod,
-    formulaDescription: `R$ ${(baseCents / 100).toFixed(2).replace('.', ',')} + R$ ${(feeCents / 100).toFixed(2).replace('.', ',')} (taxa de serviço 10% - ${paymentLabel})`,
+    formulaDescription: `R$ 50,00 + R$ 5,00 (taxa de serviço 10% - ${paymentLabel})`,
   };
 }
 

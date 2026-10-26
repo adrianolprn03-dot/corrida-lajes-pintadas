@@ -94,6 +94,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       casaProofType,
       shirtSize,
       paymentMethod,
+      creditCard,
       idempotencyKey,
       channel,
       attendantName,
@@ -296,13 +297,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       mobilePhone: phone,
     });
 
-    // 5.2 Conciliar / obter cobrança Asaas usando o Protocolo como chave externa
+    // 5.2 Conciliar / obter cobrança Asaas ou efetuar cobrança direta no cartão
+    const isDirectCreditCard = paymentMethod === 'CREDIT_CARD' && !!creditCard;
+    const clientIp = ((req.headers['x-forwarded-for'] as string) || '').split(',')[0]?.trim() || req.socket?.remoteAddress || '127.0.0.1';
+
+    const cardHolderCpf = (creditCard?.holderCpf || cleanCpf).replace(/\D/g, '');
+    const cardHolderPhone = (creditCard?.holderPhone || phone).replace(/\D/g, '');
+    const cardHolderPostalCode = (creditCard?.postalCode || '59250000').replace(/\D/g, '');
+
     const payment = await asaasClient.getOrCreatePayment({
       customerId: customer.id,
       billingType: paymentMethod,
       value: totalFloat,
       protocol: reservationResult.protocol,
       description: `5ª Corrida de Emancipação de Lajes Pintadas/RN - Atleta: ${fullName} (Camisa: ${shirtSize})`,
+      remoteIp: clientIp,
+      creditCard: isDirectCreditCard ? {
+        holderName: creditCard.holderName.trim().toUpperCase(),
+        number: creditCard.number.replace(/\D/g, ''),
+        expiryMonth: creditCard.expiryMonth.toString().padStart(2, '0'),
+        expiryYear: creditCard.expiryYear.toString().length === 2 ? `20${creditCard.expiryYear}` : creditCard.expiryYear.toString(),
+        ccv: creditCard.ccv.toString().trim(),
+      } : undefined,
+      creditCardHolderInfo: isDirectCreditCard ? {
+        name: creditCard.holderName.trim().toUpperCase(),
+        email: email,
+        cpfCnpj: cardHolderCpf,
+        postalCode: cardHolderPostalCode,
+        addressNumber: creditCard.addressNumber || 'S/N',
+        phone: cardHolderPhone,
+        mobilePhone: cardHolderPhone,
+      } : undefined,
     });
 
     let pixQr = null;
@@ -318,12 +343,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    // Atualizar registro com dados Asaas e Atendimento
+    const isPaymentConfirmed = ['CONFIRMED', 'RECEIVED'].includes(payment.status);
+    const cardBrand = payment.creditCard?.creditCardBrand || (isDirectCreditCard ? 'CARTÃO DE CRÉDITO' : null);
+    const cardLastDigits = payment.creditCard?.creditCardNumber || (creditCard?.number ? creditCard.number.replace(/\D/g, '').slice(-4) : null);
+
+    // Atualizar registro com dados Asaas, status de pagamento e atendimento
     reservationResult.asaas_payment_id = payment.id;
     reservationResult.invoice_url = payment.invoiceUrl;
     reservationResult.pix_qr_code = pixQr;
     reservationResult.pix_copy_paste = pixCopy;
     reservationResult.channel = registrationChannel;
+    reservationResult.status = isPaymentConfirmed ? 'CONFIRMED' : (originType === 'CASA' ? 'CONFIRMED' : 'RESERVED');
+    reservationResult.financial_status = isPaymentConfirmed ? 'CONFIRMED' : 'PENDING';
+    reservationResult.credit_card_brand = cardBrand;
+    reservationResult.credit_card_last_digits = cardLastDigits;
+    if (isPaymentConfirmed) {
+      reservationResult.paid_at = new Date().toISOString();
+    }
     reservationResult.document_verification_status = documentVerificationStatus || (originType === 'CASA' ? 'APROVADO' : 'PENDENTE');
     reservationResult.document_type_presented = documentTypePresented || null;
     reservationResult.document_checked_by = attendantName || null;
@@ -332,28 +368,53 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Persistir dados no Supabase para consulta e conciliação
     if (supabase && reservationResult.registration_id) {
       try {
+        const updatePayload: Record<string, any> = {
+          asaas_payment_id: payment.id,
+          asaas_customer_id: customer.id,
+          asaas_invoice_url: payment.invoiceUrl,
+          asaas_pix_qr_code: pixQr,
+          asaas_pix_copy_paste: pixCopy,
+          base_amount_cents: pricing.baseAmountCents,
+          processing_fee_cents: pricing.feeCents,
+          total_amount_cents: pricing.totalAmountCents,
+          channel: registrationChannel,
+          document_verification_status: documentVerificationStatus || (originType === 'CASA' ? 'APROVADO' : 'PENDENTE'),
+          document_type_presented: documentTypePresented || null,
+          document_verification_notes: documentVerificationNotes || null,
+          document_checked_by: attendantName || null,
+          document_checked_at: new Date().toISOString(),
+          attendant_name: attendantName || null,
+          attendant_id: attendantId || null,
+          kit_notes: `ACCESS_CODE:${reservationResult.access_code}`,
+          updated_at: new Date().toISOString(),
+        };
+
+        if (isPaymentConfirmed) {
+          updatePayload.status = 'CONFIRMED';
+          updatePayload.financial_status = 'CONFIRMED';
+          updatePayload.paid_at = new Date().toISOString();
+
+          // Mover camisa de reservada para confirmada
+          const { data: stockRow } = await supabase
+            .from('shirt_inventory')
+            .select('reserved_count, confirmed_count')
+            .eq('size', shirtSize)
+            .single();
+          if (stockRow) {
+            await supabase
+              .from('shirt_inventory')
+              .update({
+                reserved_count: Math.max(0, stockRow.reserved_count - 1),
+                confirmed_count: stockRow.confirmed_count + 1,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('size', shirtSize);
+          }
+        }
+
         await supabase
           .from('registrations')
-          .update({
-            asaas_payment_id: payment.id,
-            asaas_customer_id: customer.id,
-            asaas_invoice_url: payment.invoiceUrl,
-            asaas_pix_qr_code: pixQr,
-            asaas_pix_copy_paste: pixCopy,
-            base_amount_cents: pricing.baseAmountCents,
-            processing_fee_cents: pricing.feeCents,
-            total_amount_cents: pricing.totalAmountCents,
-            channel: registrationChannel,
-            document_verification_status: documentVerificationStatus || (originType === 'CASA' ? 'APROVADO' : 'PENDENTE'),
-            document_type_presented: documentTypePresented || null,
-            document_verification_notes: documentVerificationNotes || null,
-            document_checked_by: attendantName || null,
-            document_checked_at: new Date().toISOString(),
-            attendant_name: attendantName || null,
-            attendant_id: attendantId || null,
-            kit_notes: `ACCESS_CODE:${reservationResult.access_code}`,
-            updated_at: new Date().toISOString(),
-          })
+          .update(updatePayload)
           .eq('id', reservationResult.registration_id);
       } catch (updateErr) {
         console.warn('[create-reservation] Aviso ao atualizar dados no Supabase:', updateErr);
@@ -376,6 +437,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       memReg.documentCheckedAt = new Date().toISOString();
       memReg.attendantName = attendantName;
       memReg.attendantId = attendantId;
+      if (isPaymentConfirmed) {
+        memReg.status = 'CONFIRMED';
+        memReg.financialStatus = 'CONFIRMED';
+        const shirt = memoryStore.shirts.get(shirtSize);
+        if (shirt) {
+          if (shirt.reservedCount > 0) shirt.reservedCount--;
+          shirt.confirmedCount++;
+        }
+      }
     }
 
     // Disparo imediato de e-mail institucional oficial com Protocolo e Código de Acesso
@@ -391,7 +461,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         shirtSize,
         paymentMethod,
         originType,
-        status: originType === 'CASA' ? 'CONFIRMED' : 'RESERVED',
+        status: isPaymentConfirmed ? 'CONFIRMED' : (originType === 'CASA' ? 'CONFIRMED' : 'RESERVED'),
         pixCopyPaste: pixCopy || undefined,
         invoiceUrl: payment.invoiceUrl || undefined,
       }).catch((emailErr) => {

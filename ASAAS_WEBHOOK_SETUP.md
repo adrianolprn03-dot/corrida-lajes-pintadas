@@ -31,7 +31,7 @@ Content-Type: application/json
   "items": [
     {
       "name": "Inscrição 5ª Corrida de Emancipação Lajes Pintadas (Tam: M)",
-      "value": 66.00,
+      "value": 55.00,
       "quantity": 1
     }
   ],

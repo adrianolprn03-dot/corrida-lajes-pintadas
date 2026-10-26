@@ -8,6 +8,7 @@ import {
   ShirtInventoryItem,
   Registration,
   ShirtSize,
+  PaymentMethod,
 } from '../../types';
 import { storageService } from '../../services/storage';
 
@@ -84,12 +85,19 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
     setStep2Data((prev) => ({ ...prev, ...fields }));
   };
 
-  const handleFinalSubmit = async (agreements: { termsAccepted: boolean; privacyAccepted: boolean }) => {
+  const handleFinalSubmit = async (params: {
+    termsAccepted: boolean;
+    privacyAccepted: boolean;
+    paymentMethod?: PaymentMethod;
+    creditCard?: any;
+  }) => {
     return onSubmitRegistration({
       ...step1Data,
       ...step2Data,
-      termsAccepted: agreements.termsAccepted,
-      privacyAccepted: agreements.privacyAccepted,
+      paymentMethod: params.paymentMethod || step2Data.paymentMethod,
+      creditCard: params.creditCard,
+      termsAccepted: params.termsAccepted,
+      privacyAccepted: params.privacyAccepted,
       termsVersion: settings.termsVersion,
       privacyVersion: settings.privacyVersion,
     });
@@ -220,6 +228,7 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
               onOpenTerms={onOpenTerms}
               onOpenPrivacy={onOpenPrivacy}
               onFinish={onClose}
+              onChangePaymentMethod={(method) => setStep2Data((prev) => ({ ...prev, paymentMethod: method }))}
             />
           )}
         </div>

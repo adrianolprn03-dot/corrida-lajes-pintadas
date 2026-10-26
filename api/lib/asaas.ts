@@ -28,6 +28,30 @@ export interface AsaasPayment {
   dueDate: string;
   invoiceUrl?: string;
   externalReference?: string;
+  creditCard?: {
+    creditCardNumber?: string;
+    creditCardBrand?: string;
+    creditCardToken?: string;
+  };
+}
+
+export interface AsaasCreditCardInput {
+  holderName: string;
+  number: string;
+  expiryMonth: string;
+  expiryYear: string;
+  ccv: string;
+}
+
+export interface AsaasCreditCardHolderInfo {
+  name: string;
+  email: string;
+  cpfCnpj: string;
+  postalCode: string;
+  addressNumber: string;
+  addressComplement?: string;
+  phone: string;
+  mobilePhone?: string;
 }
 
 export interface AsaasPixQrCode {
@@ -178,15 +202,22 @@ export class AsaasClient {
       if (method === 'POST') {
         const body = JSON.parse((options.body as string) || '{}');
         const mockPayId = `pay_mock_${Math.random().toString(36).substring(2, 12)}`;
+        const isCreditCard = body.billingType === 'CREDIT_CARD' && body.creditCard;
         return {
           id: mockPayId,
           customer: body.customer,
           value: body.value,
           billingType: body.billingType,
-          status: 'PENDING',
+          status: isCreditCard ? 'CONFIRMED' : 'PENDING',
           dueDate: body.dueDate,
           invoiceUrl: `https://sandbox.asaas.com/i/${mockPayId}`,
           externalReference: body.externalReference,
+          creditCard: isCreditCard
+            ? {
+                creditCardNumber: body.creditCard?.number ? body.creditCard.number.slice(-4) : '1234',
+                creditCardBrand: 'MASTERCARD',
+              }
+            : undefined,
         } as T;
       }
 
@@ -233,42 +264,59 @@ export class AsaasClient {
   }
 
   // 2. CONCILIAÇÃO E CRIAÇÃO SEGURA DE COBRANÇA
-  // Antes de criar, verifica se já existe cobrança com o mesmo externalReference (Protocolo)
-  // para evitar cobrança em duplicidade caso a requisição anterior tenha oscilado na rede
+  // Para cartão de crédito: processa a cobrança instantânea com os dados do cartão
+  // Para Pix: concilia por externalReference (Protocolo) para evitar duplicidade
   async getOrCreatePayment(params: {
     customerId: string;
     billingType: 'PIX' | 'CREDIT_CARD';
     value: number;
     protocol: string;
     description: string;
+    remoteIp?: string;
+    creditCard?: AsaasCreditCardInput;
+    creditCardHolderInfo?: AsaasCreditCardHolderInfo;
   }): Promise<AsaasPayment> {
-    // Conciliação prévia por externalReference
-    try {
-      const searchRes = await this.fetchWithRetry<{ data: AsaasPayment[] }>(
-        `/payments?externalReference=${params.protocol}`
-      );
-      if (searchRes.data && searchRes.data.length > 0) {
-        asaasMetrics.reconciliations++;
-        const existing = searchRes.data[0];
-        console.log(`[AsaasClient] Cobrança conciliada existente encontrada para ${params.protocol}: ${existing.id}`);
-        return existing;
+    // Conciliação prévia por externalReference (apenas para Pix sem envio de cartão)
+    if (!params.creditCard) {
+      try {
+        const searchRes = await this.fetchWithRetry<{ data: AsaasPayment[] }>(
+          `/payments?externalReference=${params.protocol}`
+        );
+        if (searchRes.data && searchRes.data.length > 0) {
+          asaasMetrics.reconciliations++;
+          const existing = searchRes.data[0];
+          console.log(`[AsaasClient] Cobrança conciliada existente encontrada para ${params.protocol}: ${existing.id}`);
+          return existing;
+        }
+      } catch (e) {
+        console.warn('[AsaasClient] Consulta prévia de cobrança falhou, criando nova:', e);
       }
-    } catch (e) {
-      console.warn('[AsaasClient] Consulta prévia de cobrança falhou, criando nova:', e);
     }
 
-    // Criar cobrança única (sem parcelamento, conforme Edital)
+    const payload: Record<string, any> = {
+      customer: params.customerId,
+      billingType: params.billingType,
+      value: params.value,
+      dueDate: new Date().toISOString().slice(0, 10),
+      description: params.description,
+      externalReference: params.protocol,
+      postalService: false,
+    };
+
+    if (params.billingType === 'CREDIT_CARD' && params.creditCard) {
+      payload.creditCard = params.creditCard;
+      if (params.creditCardHolderInfo) {
+        payload.creditCardHolderInfo = params.creditCardHolderInfo;
+      }
+      if (params.remoteIp) {
+        payload.remoteIp = params.remoteIp;
+      }
+    }
+
+    // Criar cobrança ou efetuar cobrança direta no cartão
     return this.fetchWithRetry<AsaasPayment>('/payments', {
       method: 'POST',
-      body: JSON.stringify({
-        customer: params.customerId,
-        billingType: params.billingType,
-        value: params.value,
-        dueDate: '2026-12-26',
-        description: params.description,
-        externalReference: params.protocol,
-        postalService: false,
-      }),
+      body: JSON.stringify(payload),
     });
   }
 

@@ -152,6 +152,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         data.status = 'OPEN';
       }
 
+      // Se valor base no banco for diferente de R$ 50,00 (5000 centavos), auto-atualizar
+      if (data && data.base_price_cents !== 5000) {
+        await supabase
+          .from('event_settings')
+          .update({
+            base_price_cents: 5000,
+            asaas_pix_fixed_fee_cents: 500,
+            asaas_credit_fixed_fee_cents: 500,
+            asaas_credit_percent_fee: 0.10,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('is_singleton', true);
+        data.base_price_cents = 5000;
+        data.asaas_pix_fixed_fee_cents = 500;
+        data.asaas_credit_fixed_fee_cents = 500;
+        data.asaas_credit_percent_fee = 0.10;
+      }
+
       // Se cotas não vierem na tabela event_settings, carregar do audit_logs
       if (data) {
         if (data.local_max_capacity === undefined || data.local_max_capacity === null) {

@@ -181,7 +181,7 @@ class StorageService {
             edition: d.edition,
             eventDate: d.event_date,
             distanceKm: Number(d.distance_km),
-            basePriceCents: d.base_price_cents,
+            basePriceCents: 5000, // Rigorosamente R$ 50,00 conforme Edital
             status,
             maxCapacity: d.max_capacity,
             localMaxCapacity: d.local_max_capacity !== undefined ? d.local_max_capacity : (d.max_capacity ? Math.floor(d.max_capacity / 2) : 350),
@@ -198,9 +198,9 @@ class StorageService {
             organizerContact: d.organizer_contact,
             revenueResponsible: d.revenue_responsible,
             asaasEnvironment: d.asaas_environment,
-            asaasPixFixedFeeCents: d.asaas_pix_fixed_fee_cents,
-            asaasCreditFixedFeeCents: d.asaas_credit_fixed_fee_cents,
-            asaasCreditPercentFee: Number(d.asaas_credit_percent_fee),
+            asaasPixFixedFeeCents: 500, // R$ 5,00 (10%)
+            asaasCreditFixedFeeCents: 500, // R$ 5,00 (10%)
+            asaasCreditPercentFee: 0.10, // 10%
             termsVersion: d.terms_version,
             privacyVersion: d.privacy_version,
             termsContent: d.terms_content,
@@ -223,7 +223,7 @@ class StorageService {
             edition: data.edition,
             eventDate: data.event_date,
             distanceKm: Number(data.distance_km),
-            basePriceCents: data.base_price_cents,
+            basePriceCents: 5000, // Rigorosamente R$ 50,00 conforme Edital
             status,
             maxCapacity: data.max_capacity,
             localMaxCapacity: data.local_max_capacity !== undefined ? data.local_max_capacity : (data.max_capacity ? Math.floor(data.max_capacity / 2) : 350),
@@ -240,9 +240,9 @@ class StorageService {
             organizerContact: data.organizer_contact,
             revenueResponsible: data.revenue_responsible,
             asaasEnvironment: data.asaas_environment,
-            asaasPixFixedFeeCents: data.asaas_pix_fixed_fee_cents,
-            asaasCreditFixedFeeCents: data.asaas_credit_fixed_fee_cents,
-            asaasCreditPercentFee: Number(data.asaas_credit_percent_fee),
+            asaasPixFixedFeeCents: 500, // R$ 5,00 (10%)
+            asaasCreditFixedFeeCents: 500, // R$ 5,00 (10%)
+            asaasCreditPercentFee: 0.10, // 10%
             termsVersion: data.terms_version,
             privacyVersion: data.privacy_version,
             termsContent: data.terms_content,
@@ -269,8 +269,20 @@ class StorageService {
       localSettings.startLocation = 'Feira Livre Coberta, Centro, Lajes Pintadas/RN';
       changed = true;
     }
-    if (localSettings.basePriceCents === 6000) {
+    if (localSettings.basePriceCents !== 5000) {
       localSettings.basePriceCents = 5000;
+      changed = true;
+    }
+    if (localSettings.asaasPixFixedFeeCents !== 500) {
+      localSettings.asaasPixFixedFeeCents = 500;
+      changed = true;
+    }
+    if (localSettings.asaasCreditFixedFeeCents !== 500) {
+      localSettings.asaasCreditFixedFeeCents = 500;
+      changed = true;
+    }
+    if (localSettings.asaasCreditPercentFee !== 0.10) {
+      localSettings.asaasCreditPercentFee = 0.10;
       changed = true;
     }
     if (changed) {
@@ -701,6 +713,7 @@ class StorageService {
           casaProofType: submission.casaProofType,
           shirtSize: submission.shirtSize,
           paymentMethod: submission.paymentMethod,
+          creditCard: submission.creditCard,
           channel: registrationChannel,
           attendantName: submission.attendantName,
           attendantId: submission.attendantId,
@@ -716,6 +729,7 @@ class StorageService {
           throw new Error('Servidor retornou resposta inesperada. Por favor, atualize a página (F5) e tente novamente.');
         }
         const data = await apiResponse.json();
+        const isPaid = data.status === 'CONFIRMED' || submission.paymentMethod === 'CREDIT_CARD';
         const apiReg: Registration = {
           id: data.registration_id || crypto.randomUUID(),
           athleteId: crypto.randomUUID(),
@@ -725,8 +739,11 @@ class StorageService {
           gender: submission.gender,
           casaProofType: submission.casaProofType || null,
           shirtSize: submission.shirtSize,
-          status: 'RESERVED',
-          financialStatus: 'PENDING',
+          status: isPaid ? 'CONFIRMED' : 'RESERVED',
+          financialStatus: isPaid ? 'CONFIRMED' : 'PENDING',
+          paidAt: isPaid ? (data.paid_at || new Date().toISOString()) : undefined,
+          creditCardBrand: data.credit_card_brand || (submission.creditCard ? 'CARTÃO DE CRÉDITO' : undefined),
+          creditCardLastDigits: data.credit_card_last_digits || (submission.creditCard?.number ? submission.creditCard.number.replace(/\D/g, '').slice(-4) : undefined),
           paymentMethod: submission.paymentMethod,
           baseAmountCents: pricing.baseAmountCents,
           processingFeeCents: pricing.feeCents,
@@ -808,6 +825,9 @@ class StorageService {
 
     const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString(); // 30 minutos
 
+    const isPaid = submission.paymentMethod === 'CREDIT_CARD';
+    const cardLastDigits = submission.creditCard?.number ? submission.creditCard.number.replace(/\D/g, '').slice(-4) : '1234';
+
     const newReg: Registration = {
       id: crypto.randomUUID(),
       athleteId: crypto.randomUUID(),
@@ -817,8 +837,11 @@ class StorageService {
       gender: submission.gender,
       casaProofType: submission.casaProofType || null,
       shirtSize: submission.shirtSize,
-      status: 'RESERVED',
-      financialStatus: 'PENDING',
+      status: isPaid ? 'CONFIRMED' : 'RESERVED',
+      financialStatus: isPaid ? 'CONFIRMED' : 'PENDING',
+      paidAt: isPaid ? new Date().toISOString() : undefined,
+      creditCardBrand: isPaid ? 'CARTÃO DE CRÉDITO' : undefined,
+      creditCardLastDigits: isPaid ? cardLastDigits : undefined,
       paymentMethod: submission.paymentMethod,
       baseAmountCents: pricing.baseAmountCents,
       processingFeeCents: pricing.feeCents,
@@ -850,10 +873,16 @@ class StorageService {
       },
     };
 
-    // Atualizar estoque local reservado
-    const updatedShirts = shirts.map((s) =>
-      s.size === submission.shirtSize ? { ...s, reservedCount: s.reservedCount + 1 } : s
-    );
+    // Atualizar estoque local (se cartão: já confirmado; se pix: reservado)
+    const updatedShirts = shirts.map((s) => {
+      if (s.size === submission.shirtSize) {
+        if (isPaid) {
+          return { ...s, confirmedCount: s.confirmedCount + 1 };
+        }
+        return { ...s, reservedCount: s.reservedCount + 1 };
+      }
+      return s;
+    });
     this.setLocal(STORAGE_KEYS.SHIRTS, updatedShirts);
 
     // Salvar registro

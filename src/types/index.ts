@@ -138,6 +138,18 @@ export interface AthleteData {
   team?: string;
 }
 
+export interface CreditCardData {
+  holderName: string;
+  number: string;
+  expiryMonth: string;
+  expiryYear: string;
+  ccv: string;
+  holderCpf?: string;
+  holderPhone?: string;
+  postalCode?: string;
+  addressNumber?: string;
+}
+
 export interface RegistrationSubmission {
   // Step 1 - Athlete data
   fullName: string;
@@ -161,6 +173,9 @@ export interface RegistrationSubmission {
   privacyAccepted: boolean;
   termsVersion: string;
   privacyVersion: string;
+
+  // Credit card payment data (when paymentMethod is CREDIT_CARD)
+  creditCard?: CreditCardData;
 
   // Presential attendance fields
   channel?: RegistrationChannel;
@@ -193,6 +208,8 @@ export interface Registration {
   asaasPixCopyPaste?: string | null;
   pixQrCodeUrl?: string | null;
   pixPayload?: string | null;
+  creditCardBrand?: string | null;
+  creditCardLastDigits?: string | null;
   reservationExpiresAt: string;
   paidAt?: string | null;
   kitDelivered: boolean;
