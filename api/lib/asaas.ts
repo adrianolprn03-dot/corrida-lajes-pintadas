@@ -245,13 +245,21 @@ export class AsaasClient {
       );
       if (searchRes.data && searchRes.data.length > 0) {
         asaasMetrics.reconciliations++;
-        return searchRes.data[0];
+        const customer = searchRes.data[0];
+        // Assegurar que notificações automáticas do Asaas fiquem desligadas para enviar apenas o institucional
+        try {
+          await this.fetchWithRetry(`/customers/${customer.id}`, {
+            method: 'PUT',
+            body: JSON.stringify({ notificationDisabled: true }),
+          });
+        } catch (_) {}
+        return customer;
       }
     } catch (e) {
       console.warn('[AsaasClient] Consulta prévia de cliente falhou, prosseguindo com criação:', e);
     }
 
-    // Criar novo cliente
+    // Criar novo cliente com notificações desativadas no Asaas
     return this.fetchWithRetry<AsaasCustomer>('/customers', {
       method: 'POST',
       body: JSON.stringify({
@@ -259,6 +267,7 @@ export class AsaasClient {
         cpfCnpj: cleanCpf,
         email: params.email,
         mobilePhone: params.mobilePhone.replace(/\D/g, ''),
+        notificationDisabled: true,
       }),
     });
   }

@@ -162,9 +162,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         if (athleteData && athleteData.athleteEmail) {
-          sendConfirmationEmail(athleteData).catch((e) =>
-            console.error('[Webhook] Falha no disparo de e-mail institucional:', e)
-          );
+          try {
+            await sendConfirmationEmail(athleteData);
+            console.log(`[Webhook] E-mail institucional de confirmação enviado para ${athleteData.athleteEmail}`);
+          } catch (e) {
+            console.error('[Webhook] Falha no disparo de e-mail institucional:', e);
+          }
         }
       } catch (emailErr) {
         console.warn('[Webhook] Falha ao coletar dados para envio de e-mail:', emailErr);

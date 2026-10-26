@@ -450,23 +450,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Disparo imediato de e-mail institucional oficial com Protocolo e Código de Acesso
     if (email) {
-      sendConfirmationEmail({
-        athleteName: fullName,
-        athleteEmail: email,
-        athleteCpf: cleanCpf,
-        protocol: reservationResult.protocol,
-        accessCode: reservationResult.access_code,
-        category: reservationResult.category,
-        gender,
-        shirtSize,
-        paymentMethod,
-        originType,
-        status: isPaymentConfirmed ? 'CONFIRMED' : (originType === 'CASA' ? 'CONFIRMED' : 'RESERVED'),
-        pixCopyPaste: pixCopy || undefined,
-        invoiceUrl: payment.invoiceUrl || undefined,
-      }).catch((emailErr) => {
+      try {
+        await sendConfirmationEmail({
+          athleteName: fullName,
+          athleteEmail: email,
+          athleteCpf: cleanCpf,
+          protocol: reservationResult.protocol,
+          accessCode: reservationResult.access_code,
+          category: reservationResult.category,
+          gender,
+          shirtSize,
+          paymentMethod,
+          originType,
+          status: isPaymentConfirmed ? 'CONFIRMED' : (originType === 'CASA' ? 'CONFIRMED' : 'RESERVED'),
+          pixCopyPaste: pixCopy || undefined,
+          invoiceUrl: payment.invoiceUrl || undefined,
+        });
+        console.log(`[create-reservation] E-mail institucional oficial enviado para ${email}`);
+      } catch (emailErr) {
         console.warn('[create-reservation] Aviso ao disparar e-mail de confirmação:', emailErr);
-      });
+      }
     }
 
     const durationMs = Date.now() - startTime;
