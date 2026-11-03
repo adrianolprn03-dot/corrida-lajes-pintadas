@@ -4,8 +4,7 @@
 // ==============================================================================
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { memoryStore } from './lib/state.js';
-import { asaasMetrics } from './lib/asaas.js';
+import { memoryStore, asaasMetrics } from './lib/state.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const shirtStats: Record<string, { total: number; reserved: number; confirmed: number; available: number }> = {};

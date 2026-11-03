@@ -1,19 +1,6 @@
 {
   "framework": "vite",
   "regions": ["gru1"],
-  "redirects": [
-    {
-      "source": "/((?!api/).*)",
-      "has": [
-        {
-          "type": "host",
-          "value": "corrida-lajes-pintadas-rn.vercel.app"
-        }
-      ],
-      "destination": "https://corridadeemancipacao.lajespintadas.rn.gov.br/$1",
-      "permanent": true
-    }
-  ],
   "headers": [
     {
       "source": "/assets/(.*)",

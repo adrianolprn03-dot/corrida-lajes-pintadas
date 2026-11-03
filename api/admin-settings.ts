@@ -5,7 +5,7 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { getBatchState, saveBatches } from './lib/batches.js';
+import { getBatchState, saveBatches } from './lib/state.js';
 
 function normalizeSupabaseUrl(rawUrl?: string): string {
   if (!rawUrl) return '';

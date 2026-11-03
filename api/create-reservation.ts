@@ -6,10 +6,8 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { AsaasClient } from './lib/asaas.js';
-import { memoryStore } from './lib/state.js';
+import { AsaasClient, memoryStore, getBatchState, computeBatchPricing, DEFAULT_BASE_PRICE_CENTS } from './lib/state.js';
 import { sendConfirmationEmail } from './lib/email.js';
-import { getBatchState, computeBatchPricing, DEFAULT_BASE_PRICE_CENTS } from './lib/batches.js';
 
 function normalizeSupabaseUrl(rawUrl?: string): string {
   if (!rawUrl) return '';
