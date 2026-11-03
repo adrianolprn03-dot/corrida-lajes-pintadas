@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowRight, Clock, ShieldCheck, Ticket, Zap, Award } from 'lucide-react';
 import { EventSettings } from '../types';
-import { formatCentsToBRL } from '../lib/pricing';
+import { formatCentsToBRL, getActiveBatchLabel, getActiveBasePriceCents } from '../lib/pricing';
 
 interface HeroProps {
   settings: EventSettings;
@@ -17,7 +17,12 @@ export const Hero: React.FC<HeroProps> = ({
   onOpenLookup,
   availableCapacity,
 }) => {
-  const formattedBasePrice = formatCentsToBRL(settings.basePriceCents);
+  const activeBasePriceCents = getActiveBasePriceCents(settings);
+  const formattedBasePrice = formatCentsToBRL(activeBasePriceCents);
+  const activeBatchLabel = getActiveBatchLabel(settings);
+  const currentBatch = settings.batchState?.current || null;
+  const nextBatch = settings.batchState?.next || null;
+  const isBatchesExhausted = Boolean(settings.batchState?.configured && !currentBatch);
 
   // Live countdown to 2026-12-26 17:00:00 (Local time Lajes Pintadas / America/Fortaleza -03:00)
   const [timeLeft, setTimeLeft] = useState<{
@@ -106,7 +111,7 @@ export const Hero: React.FC<HeroProps> = ({
             <div className="flex flex-wrap items-center gap-3 pt-1">
               <div className="flex items-baseline gap-2 bg-white px-4 py-2.5 rounded-xl border border-slate-200/90 shadow-sm">
                 <span className="font-sans text-[11px] font-bold text-orange-700 uppercase tracking-wider bg-orange-50 px-2 py-0.5 rounded border border-orange-100">
-                  1º Lote Oficial
+                  {activeBatchLabel}
                 </span>
                 <span className="font-condensed font-extrabold text-3xl text-slate-950 leading-none">
                   {formattedBasePrice}
@@ -116,6 +121,18 @@ export const Hero: React.FC<HeroProps> = ({
                 </span>
               </div>
 
+              {currentBatch && (currentBatch.remaining !== null || currentBatch.endAt) && (
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-900 bg-amber-50/90 px-3 py-2 rounded-xl border border-amber-200">
+                  <Clock className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span>
+                    {currentBatch.remaining !== null ? `${currentBatch.remaining} vagas neste lote` : ''}
+                    {currentBatch.remaining !== null && currentBatch.endAt ? ' • ' : ''}
+                    {currentBatch.endAt ? `até ${new Date(currentBatch.endAt).toLocaleDateString('pt-BR')}` : ''}
+                    {nextBatch ? ` (Próximo: ${formatCentsToBRL(nextBatch.basePriceCents)})` : ''}
+                  </span>
+                </div>
+              )}
+
               <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-800 bg-emerald-50/90 px-3 py-2 rounded-xl border border-emerald-200">
                 <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
                 <span>Kit Completo Oficial Incluso</span>
@@ -124,7 +141,7 @@ export const Hero: React.FC<HeroProps> = ({
 
             {/* Action CTA Buttons */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
-              {settings.status === 'OPEN' ? (
+              {settings.status === 'OPEN' && !isBatchesExhausted ? (
                 <button
                   type="button"
                   onClick={onOpenRegister}

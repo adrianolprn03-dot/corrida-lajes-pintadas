@@ -52,7 +52,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(503).json({ error: 'Servidor de e-mail SMTP não está configurado.' });
       }
 
-      const { athleteName, athleteEmail, athleteCpf, protocol, accessCode, category, gender, shirtSize, status } = req.body;
+      const { 
+        athleteName, 
+        athleteEmail, 
+        athleteCpf, 
+        protocol, 
+        accessCode, 
+        category, 
+        gender, 
+        shirtSize, 
+        status,
+        totalAmountCents,
+        baseAmountCents,
+        feeCents,
+        paymentMethod,
+        isPcd,
+        pcdType,
+        pcdCid,
+        hasGuide,
+        guideName,
+        guideCpf,
+        guidePhone,
+        guideShirtSize,
+        originType
+      } = req.body;
       if (!athleteEmail || !protocol || !accessCode) {
         return res.status(400).json({ error: 'E-mail, protocolo e código de acesso são obrigatórios.' });
       }
@@ -64,9 +87,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         protocol: protocol.trim().toUpperCase(),
         accessCode: accessCode.trim().toUpperCase(),
         category: category || 'GERAL',
+        originType,
         gender: gender || 'MASCULINO',
         shirtSize: shirtSize || 'M',
         status: status === 'RESERVED' ? 'RESERVED' : 'CONFIRMED',
+        totalAmountCents: typeof totalAmountCents === 'number' ? totalAmountCents : undefined,
+        baseAmountCents: typeof baseAmountCents === 'number' ? baseAmountCents : undefined,
+        feeCents: typeof feeCents === 'number' ? feeCents : undefined,
+        paymentMethod,
+        isPcd: Boolean(isPcd),
+        pcdType,
+        pcdCid,
+        hasGuide: Boolean(hasGuide),
+        guideName,
+        guideCpf,
+        guidePhone,
+        guideShirtSize,
       });
 
       if (success) {
@@ -226,16 +262,44 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           const finalAthlete = athlete || currentReg.athlete;
           const targetEmail = (finalAthlete?.email || currentReg.athlete?.email || '').trim().toLowerCase();
           if (targetEmail) {
+            let pcdMeta: any = null;
+            if (currentReg.kit_notes && typeof currentReg.kit_notes === 'string') {
+              const matchPcd = currentReg.kit_notes.match(/PCD_META:(\{.*?\})/);
+              if (matchPcd) {
+                try { pcdMeta = JSON.parse(matchPcd[1]); } catch {}
+              }
+            }
+            const isPcd = Boolean(
+              registration?.isPcd ||
+              pcdMeta?.isPcd ||
+              currentReg.origin_type === 'PCD' ||
+              currentReg.category?.includes('PCD') ||
+              (currentReg.total_amount_cents && currentReg.total_amount_cents <= 3000)
+            );
+
             await sendConfirmationEmail({
               athleteName: finalAthlete?.fullName || currentReg.athlete?.full_name || 'Atleta',
               athleteEmail: targetEmail,
               athleteCpf: finalAthlete?.cpf || currentReg.athlete?.cpf || '',
               protocol: currentReg.protocol,
               accessCode: accessCode || 'CONSULTE NO PAINEL',
-              category: registration?.category || currentReg.category,
+              category: registration?.category || (isPcd ? (currentReg.gender === 'FEMININO' ? 'PCD_FEMININO' : 'PCD_MASCULINO') : currentReg.category),
+              originType: registration?.originType || currentReg.origin_type || (isPcd ? 'PCD' : undefined),
               gender: registration?.gender || currentReg.gender,
               shirtSize: registration?.shirtSize || currentReg.shirt_size,
               status: newStatus === 'RESERVED' ? 'RESERVED' : 'CONFIRMED',
+              totalAmountCents: currentReg.total_amount_cents,
+              baseAmountCents: currentReg.base_amount_cents,
+              feeCents: currentReg.processing_fee_cents,
+              paymentMethod: currentReg.payment_method,
+              isPcd,
+              pcdType: registration?.pcdType || pcdMeta?.pcdType,
+              pcdCid: registration?.pcdCid || pcdMeta?.pcdCid,
+              hasGuide: Boolean(registration?.hasGuide ?? pcdMeta?.hasGuide),
+              guideName: registration?.guideName || pcdMeta?.guideName,
+              guideCpf: registration?.guideCpf || pcdMeta?.guideCpf,
+              guidePhone: registration?.guidePhone || pcdMeta?.guidePhone,
+              guideShirtSize: registration?.guideShirtSize || pcdMeta?.guideShirtSize,
             }).catch(console.error);
           }
         }
@@ -312,16 +376,43 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (upErr) throw upErr;
 
         if (sendEmail && isEmailConfigured() && currentReg.athlete?.email) {
+          let pcdMeta: any = null;
+          if (currentReg.kit_notes && typeof currentReg.kit_notes === 'string') {
+            const matchPcd = currentReg.kit_notes.match(/PCD_META:(\{.*?\})/);
+            if (matchPcd) {
+              try { pcdMeta = JSON.parse(matchPcd[1]); } catch {}
+            }
+          }
+          const isPcd = Boolean(
+            pcdMeta?.isPcd ||
+            currentReg.origin_type === 'PCD' ||
+            currentReg.category?.includes('PCD') ||
+            (currentReg.total_amount_cents && currentReg.total_amount_cents <= 3000)
+          );
+
           await sendConfirmationEmail({
             athleteName: currentReg.athlete.full_name,
             athleteEmail: currentReg.athlete.email.trim().toLowerCase(),
             athleteCpf: currentReg.athlete.cpf || '',
             protocol: currentReg.protocol,
             accessCode: accessCode || 'CONFIRMADO',
-            category: currentReg.category,
+            category: isPcd ? (currentReg.gender === 'FEMININO' ? 'PCD_FEMININO' : 'PCD_MASCULINO') : currentReg.category,
+            originType: currentReg.origin_type || (isPcd ? 'PCD' : undefined),
             gender: currentReg.gender,
             shirtSize: currentReg.shirt_size,
             status: 'CONFIRMED',
+            totalAmountCents: currentReg.total_amount_cents,
+            baseAmountCents: currentReg.base_amount_cents,
+            feeCents: currentReg.processing_fee_cents,
+            paymentMethod: currentReg.payment_method,
+            isPcd,
+            pcdType: pcdMeta?.pcdType,
+            pcdCid: pcdMeta?.pcdCid,
+            hasGuide: Boolean(pcdMeta?.hasGuide),
+            guideName: pcdMeta?.guideName,
+            guideCpf: pcdMeta?.guideCpf,
+            guidePhone: pcdMeta?.guidePhone,
+            guideShirtSize: pcdMeta?.guideShirtSize,
           }).catch(console.error);
         }
 

@@ -11,7 +11,10 @@ import {
   ShieldAlert,
   Sparkles,
   Lock,
-  UserCheck
+  UserCheck,
+  Eye,
+  EyeOff,
+  Copy
 } from 'lucide-react';
 import { AdminOperator, AdminRole } from '../../types';
 import { storageService } from '../../services/storage';
@@ -79,13 +82,21 @@ export const AdminOperators: React.FC<AdminOperatorsProps> = ({ currentUsername 
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<AdminRole>('ATENDIMENTO');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const loadOperators = () => {
+  const loadOperators = async () => {
     try {
       const list = storageService.getAdminOperators();
       setOperators(list);
+
+      // Sincronizar em segundo plano com o servidor Vercel
+      const freshList = await storageService.syncOperatorsWithServer();
+      if (freshList && freshList.length > 0) {
+        setOperators(freshList);
+      }
     } catch (err: any) {
       setError('Erro ao carregar lista de operadores.');
     }
@@ -102,6 +113,7 @@ export const AdminOperators: React.FC<AdminOperatorsProps> = ({ currentUsername 
     setEmail('');
     setRole('ATENDIMENTO');
     setPassword('');
+    setShowPassword(false);
     setError(null);
     setIsModalOpen(true);
   };
@@ -113,6 +125,7 @@ export const AdminOperators: React.FC<AdminOperatorsProps> = ({ currentUsername 
     setEmail(op.email || '');
     setRole(op.role);
     setPassword('');
+    setShowPassword(false);
     setError(null);
     setIsModalOpen(true);
   };
@@ -121,39 +134,70 @@ export const AdminOperators: React.FC<AdminOperatorsProps> = ({ currentUsername 
     e.preventDefault();
     setError(null);
 
-    if (!name.trim() || !username.trim()) {
+    const cleanUser = username.trim().toLowerCase().replace(/^@/, '');
+    const cleanName = name.trim();
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPass = password.trim();
+
+    if (!cleanName || !cleanUser) {
       setError('Nome e nome de usuário são obrigatórios.');
       return;
     }
 
-    if (!editingOperator && !password.trim()) {
-      setError('Informe uma senha inicial para o novo operador.');
+    if (cleanUser.length < 2) {
+      setError('O nome de usuário deve ter pelo menos 2 caracteres.');
+      return;
+    }
+
+    // Verificar colisão de nome de usuário com outros operadores
+    const collision = operators.find(
+      (o) => o.username.toLowerCase() === cleanUser && (!editingOperator || o.id !== editingOperator.id)
+    );
+    if (collision) {
+      setError(`O nome de usuário "@${cleanUser}" já está cadastrado para outro operador (${collision.name}).`);
+      return;
+    }
+
+    if (!editingOperator && !cleanPass) {
+      setError('Informe uma senha inicial para o novo operador (mínimo 4 caracteres).');
+      return;
+    }
+
+    if (cleanPass && cleanPass.length < 4) {
+      setError('A senha deve conter no mínimo 4 caracteres.');
       return;
     }
 
     try {
       storageService.saveAdminOperator({
         id: editingOperator ? editingOperator.id : `op-${Date.now()}`,
-        username: username.trim().toLowerCase(),
-        name: name.trim(),
+        username: cleanUser,
+        name: cleanName,
         role,
-        email: email.trim() || '',
-        password: password.trim() || undefined,
+        email: cleanEmail,
+        password: cleanPass || (editingOperator ? editingOperator.password : 'admin123'),
         isActive: editingOperator ? editingOperator.isActive : true,
         createdAt: editingOperator ? editingOperator.createdAt : new Date().toISOString(),
       });
 
       setSuccessMessage(
         editingOperator 
-          ? `Operador "${name}" atualizado com sucesso.` 
-          : `Novo operador "${name}" criado com sucesso com o perfil ${ROLE_DETAILS[role].label}.`
+          ? `Operador "${cleanName}" atualizado com sucesso.` 
+          : `Novo operador "${cleanName}" (@${cleanUser}) criado com sucesso com o perfil ${ROLE_DETAILS[role].label}.`
       );
-      setTimeout(() => setSuccessMessage(null), 4000);
+      setTimeout(() => setSuccessMessage(null), 5000);
       setIsModalOpen(false);
       loadOperators();
     } catch (err: any) {
       setError(err.message || 'Erro ao salvar operador.');
     }
+  };
+
+  const handleCopyCredentials = (op: AdminOperator) => {
+    const text = `Acesso Painel da Corrida - Lajes Pintadas/RN\nUsuário: ${op.username}\nE-mail: ${op.email || 'Não cadastrado'}\nPerfil: ${ROLE_DETAILS[op.role]?.label || op.role}\nLink: ${window.location.origin}/admin`;
+    navigator.clipboard.writeText(text);
+    setCopiedId(op.id);
+    setTimeout(() => setCopiedId(null), 2500);
   };
 
   const handleToggleStatus = (op: AdminOperator) => {
@@ -357,6 +401,18 @@ export const AdminOperators: React.FC<AdminOperatorsProps> = ({ currentUsername 
                     <td className="py-3 px-4 text-right">
                       <div className="flex items-center justify-end gap-1.5">
                         <button
+                          type="button"
+                          onClick={() => handleCopyCredentials(op)}
+                          className="p-1.5 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition relative"
+                          title="Copiar dados de acesso do operador"
+                        >
+                          {copiedId === op.id ? (
+                            <Check className="w-3.5 h-3.5 text-emerald-600" />
+                          ) : (
+                            <Copy className="w-3.5 h-3.5" />
+                          )}
+                        </button>
+                        <button
                           onClick={() => openEditModal(op)}
                           className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition"
                           title="Editar operador e senha"
@@ -498,13 +554,25 @@ export const AdminOperators: React.FC<AdminOperatorsProps> = ({ currentUsername 
                 </label>
                 <div className="relative">
                   <input
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder={editingOperator ? '••••••••••••' : 'Mínimo 6 caracteres'}
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:ring-2 focus:ring-orange-500 shadow-2xs"
+                    placeholder={editingOperator ? 'Deixe em branco para manter a senha atual' : 'Mínimo 4 caracteres (ex: senha123)'}
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:ring-2 focus:ring-orange-500 shadow-2xs pr-10"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    title={showPassword ? 'Ocultar senha' : 'Ver senha'}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
+                <p className="text-[11px] text-slate-500 mt-1.5 flex items-center gap-1">
+                  <span>💡</span>
+                  <span>O operador poderá efetuar login usando o <strong>usuário</strong> (@{username || 'usuario'}) ou o seu <strong>e-mail</strong>.</span>
+                </p>
               </div>
 
               <div className="pt-2 flex justify-end gap-2.5">

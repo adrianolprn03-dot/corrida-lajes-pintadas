@@ -56,6 +56,11 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
     birthDate: '',
     email: '',
     phone: '',
+    cep: '',
+    street: '',
+    number: '',
+    complement: '',
+    neighborhood: '',
     city: '',
     state: 'RN',
     team: '',
@@ -210,6 +215,7 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
               data={step2Data}
               city={step1Data.city}
               state={step1Data.state}
+              athleteCpf={step1Data.cpf}
               inventory={liveInventory}
               settings={settings}
               onChange={handleStep2Change}

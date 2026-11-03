@@ -97,6 +97,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (!error && data) {
         const durationMs = Date.now() - startTime;
         memoryStore.recordLatency(durationMs);
+
+        const notes = data.kit_notes || data.kitNotes;
+        if (notes && typeof notes === 'string') {
+          const matchPcd = notes.match(/PCD_META:(\{.*?\})/);
+          if (matchPcd) {
+            try {
+              const pcdMeta = JSON.parse(matchPcd[1]);
+              data.isPcd = pcdMeta.isPcd;
+              data.pcdType = pcdMeta.pcdType;
+              data.pcdCid = pcdMeta.pcdCid;
+              data.hasGuide = pcdMeta.hasGuide;
+              data.guideName = pcdMeta.guideName;
+              data.guideCpf = pcdMeta.guideCpf;
+              data.guidePhone = pcdMeta.guidePhone;
+              data.guideShirtSize = pcdMeta.guideShirtSize;
+              if (pcdMeta.isPcd) {
+                data.category = data.gender === 'FEMININO' ? 'PCD_FEMININO' : 'PCD_MASCULINO';
+              }
+            } catch {}
+          }
+        }
+
         return res.status(200).json({
           registration: data,
           athlete: data.athlete,
@@ -119,6 +141,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (!regError && regData) {
         const durationMs = Date.now() - startTime;
         memoryStore.recordLatency(durationMs);
+
+        const notes = regData.kit_notes || regData.kitNotes;
+        if (notes && typeof notes === 'string') {
+          const matchPcd = notes.match(/PCD_META:(\{.*?\})/);
+          if (matchPcd) {
+            try {
+              const pcdMeta = JSON.parse(matchPcd[1]);
+              regData.isPcd = pcdMeta.isPcd;
+              regData.pcdType = pcdMeta.pcdType;
+              regData.pcdCid = pcdMeta.pcdCid;
+              regData.hasGuide = pcdMeta.hasGuide;
+              regData.guideName = pcdMeta.guideName;
+              regData.guideCpf = pcdMeta.guideCpf;
+              regData.guidePhone = pcdMeta.guidePhone;
+              regData.guideShirtSize = pcdMeta.guideShirtSize;
+              if (pcdMeta.isPcd) {
+                regData.category = regData.gender === 'FEMININO' ? 'PCD_FEMININO' : 'PCD_MASCULINO';
+              }
+            } catch {}
+          }
+        }
 
         const a = regData.athlete;
         const cpfMasked = a ? `${a.cpf.slice(0, 3)}.***.***-${a.cpf.slice(9)}` : '';

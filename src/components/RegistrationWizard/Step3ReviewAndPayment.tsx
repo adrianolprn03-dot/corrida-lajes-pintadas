@@ -21,7 +21,7 @@ import confetti from 'canvas-confetti';
 import { Step1Data } from './Step1AthleteData';
 import { Step2Data } from './Step2CategoryAndShirt';
 import { EventSettings, Registration, Category, PaymentMethod, CreditCardData } from '../../types';
-import { calculatePricing, formatCentsToBRL } from '../../lib/pricing';
+import { calculatePricing, formatCentsToBRL, getActiveBatchLabel, getActiveBasePriceCents } from '../../lib/pricing';
 import { formatDateBR, formatDateTimeBR, formatCPF, maskPhone } from '../../lib/masks';
 import {
   detectCardBrand,
@@ -82,8 +82,8 @@ export const Step3ReviewAndPayment: React.FC<Step3ReviewAndPaymentProps> = ({
   const [isSameHolder, setIsSameHolder] = useState(true);
   const [holderCpf, setHolderCpf] = useState(step1.cpf);
   const [holderPhone, setHolderPhone] = useState(step1.phone);
-  const [postalCode, setPostalCode] = useState('59250-000');
-  const [addressNumber, setAddressNumber] = useState('S/N');
+  const [postalCode, setPostalCode] = useState(step1.cep || '59235-000');
+  const [addressNumber, setAddressNumber] = useState(step1.number || 'S/N');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [activeCardField, setActiveCardField] = useState<'number' | 'name' | 'expiry' | 'cvv' | null>(null);
 
@@ -97,7 +97,11 @@ export const Step3ReviewAndPayment: React.FC<Step3ReviewAndPaymentProps> = ({
 
   // Calcular Categoria Oficial
   const computedCategory: Category =
-    step2.originType === 'CASA'
+    step2.originType === 'PCD'
+      ? step2.gender === 'MASCULINO'
+        ? 'PCD_MASCULINO'
+        : 'PCD_FEMININO'
+      : step2.originType === 'CASA' || step2.originType === 'LOCAL'
       ? step2.gender === 'MASCULINO'
         ? 'CASA_MASCULINO'
         : 'CASA_FEMININO'
@@ -113,14 +117,18 @@ export const Step3ReviewAndPayment: React.FC<Step3ReviewAndPaymentProps> = ({
       LOCAL_FEMININO: 'Local Feminino (5 km)',
       VISITANTE_MASCULINO: 'Visitante Masculino (5 km)',
       VISITANTE_FEMININO: 'Visitante Feminino (5 km)',
+      PCD_MASCULINO: 'PCD Masculino (5 km)',
+      PCD_FEMININO: 'PCD Feminino (5 km)',
     } as Record<string, string>)[computedCategory] || 'Visitante Masculino (5 km)';
 
+  const isPcd = step2.originType === 'PCD' || Boolean(step2.isPcd) || computedCategory.startsWith('PCD_');
+
   const pricing = calculatePricing(paymentMethod, {
-    basePriceCents: settings.basePriceCents,
+    basePriceCents: getActiveBasePriceCents(settings),
     pixFixedFeeCents: settings.asaasPixFixedFeeCents,
     creditFixedFeeCents: settings.asaasCreditFixedFeeCents,
     creditPercentFee: settings.asaasCreditPercentFee,
-  });
+  }, { isPcd, batchName: getActiveBatchLabel(settings) });
 
   const cardBrand = detectCardBrand(cardNumber);
 
@@ -221,8 +229,8 @@ export const Step3ReviewAndPayment: React.FC<Step3ReviewAndPaymentProps> = ({
               ccv: cardCVV.trim(),
               holderCpf: (isSameHolder ? step1.cpf : holderCpf).replace(/\D/g, ''),
               holderPhone: (isSameHolder ? step1.phone : holderPhone).replace(/\D/g, ''),
-              postalCode: postalCode.replace(/\D/g, '') || '59250000',
-              addressNumber: addressNumber || 'S/N',
+              postalCode: (isSameHolder ? (step1.cep || postalCode) : postalCode).replace(/\D/g, '') || '59235000',
+              addressNumber: isSameHolder ? (step1.number || addressNumber || 'S/N') : (addressNumber || 'S/N'),
             }
           : undefined;
 
@@ -475,6 +483,42 @@ export const Step3ReviewAndPayment: React.FC<Step3ReviewAndPaymentProps> = ({
             <span className="font-semibold text-slate-800">{step1.phone}</span>
           </div>
         </div>
+
+        {/* Endereço Residencial do Atleta */}
+        <div className="pt-2 border-t border-slate-200/80 text-xs text-slate-700">
+          <span className="text-[10px] text-slate-400 block font-medium uppercase">Residência do Atleta:</span>
+          <span className="font-semibold text-slate-800">
+            {step1.street
+              ? `${step1.street}, ${step1.number || 'S/N'}${step1.complement ? ` (${step1.complement})` : ''} - ${step1.neighborhood || ''}, ${step1.city}/${step1.state}${step1.cep ? ` • CEP: ${step1.cep}` : ''}`
+              : `${step1.city}/${step1.state}`}
+          </span>
+        </div>
+
+        {/* Informações Específicas de Inclusão PCD e Atleta-Guia */}
+        {step2.originType === 'PCD' && (
+          <div className="pt-2.5 border-t border-slate-200/80 space-y-2 text-xs">
+            <div className="flex flex-wrap items-center justify-between gap-1.5 text-[11px]">
+              <span className="font-bold text-purple-700 bg-purple-50 px-2.5 py-0.5 rounded-md border border-purple-200">
+                ♿ Categoria PCD ({step2.pcdType === 'FISICA' ? 'Física' : step2.pcdType === 'VISUAL' ? 'Visual' : step2.pcdType === 'AUDITIVA' ? 'Auditiva' : step2.pcdType === 'INTELECTUAL' ? 'Intelectual' : 'Outra'})
+              </span>
+              <span className="text-slate-600 font-medium">
+                CID / Laudo: <strong className="text-slate-800">{step2.pcdCid}</strong>
+              </span>
+            </div>
+            {step2.hasGuide && (
+              <div className="p-2.5 rounded-xl bg-purple-50/80 border border-purple-200/70 text-[11px] text-purple-950 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                <div>
+                  <span className="font-bold text-purple-800">Atleta-Guia Oficial:</span>{' '}
+                  <span className="font-semibold text-slate-800">{step2.guideName}</span>{' '}
+                  <span className="text-slate-500 font-mono">({formatCPF(step2.guideCpf || '')})</span>
+                </div>
+                <div className="text-purple-700 font-semibold shrink-0">
+                  Camisa do Guia: <strong>Tam. {step2.guideShirtSize}</strong> (Isento R$ 0,00)
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Seletor de Forma de Pagamento */}
@@ -840,9 +884,15 @@ export const Step3ReviewAndPayment: React.FC<Step3ReviewAndPaymentProps> = ({
       {/* Discriminação de Valores */}
       <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
         <div className="flex justify-between text-xs text-slate-600">
-          <span>Inscrição Oficial 5 km (Kit Oficial com Camisa):</span>
+          <span>{isPcd ? 'Inscrição PCD / Inclusão (50% Meia-Entrada • Kit Oficial com Camisa):' : 'Inscrição Oficial 5 km (Kit Oficial com Camisa):'}</span>
           <span className="font-semibold text-slate-900">{formatCentsToBRL(pricing.baseAmountCents)}</span>
         </div>
+        {step2.hasGuide && (
+          <div className="flex justify-between text-xs text-emerald-700 font-medium">
+            <span>Atleta-Guia Oficial (Camisa {step2.guideShirtSize || 'M'} Inclusa):</span>
+            <span className="font-bold">Gratuito (R$ 0,00)</span>
+          </div>
+        )}
         <div className="flex justify-between text-xs text-slate-600">
           <span>
             Taxa de Serviço ({paymentMethod === 'PIX' ? 'Pix' : 'Cartão 1x à vista'} - 10%):

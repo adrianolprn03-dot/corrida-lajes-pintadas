@@ -17,9 +17,16 @@ import {
   Building2,
   Globe,
   SlidersHorizontal,
-  ArrowLeftRight
+  ArrowLeftRight,
+  Layers,
+  Plus,
+  Trash2,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
-import { EventSettings, EventStatus, ShirtInventoryItem } from '../../types';
+import { EventSettings, EventStatus, ShirtInventoryItem, RegistrationBatch } from '../../types';
+import { generateBatchId, resolveBatchState } from '../../lib/batches';
+import { formatCentsToBRL } from '../../lib/pricing';
 
 interface AdminSettingsProps {
   settings: EventSettings;
@@ -34,8 +41,71 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({
   onSaveSettings,
   onRefresh,
 }) => {
-  const [formData, setFormData] = useState<EventSettings>({ ...settings });
+  const [formData, setFormData] = useState<EventSettings>({
+    ...settings,
+    registrationBatches: settings.registrationBatches ? [...settings.registrationBatches] : [],
+  });
   const [statusVal, setStatusVal] = useState<EventStatus>(settings.status);
+
+  const batches = formData.registrationBatches || [];
+  const soldByBatchMap: Record<string, number> = {};
+  if (settings.batchState?.batches) {
+    for (const b of settings.batchState.batches) {
+      soldByBatchMap[b.id] = b.soldCount;
+    }
+  }
+  const previewBatchState = resolveBatchState(batches, soldByBatchMap);
+
+  const toDatetimeLocalValue = (iso: string | null | undefined): string => {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return '';
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+
+  const handleAddBatch = () => {
+    const idx = batches.length + 1;
+    const lastBatch = batches[batches.length - 1];
+    const defaultPrice = lastBatch ? lastBatch.basePriceCents : (formData.basePriceCents || 5000);
+    const newBatch: RegistrationBatch = {
+      id: generateBatchId(),
+      name: `${idx}º Lote Oficial`,
+      basePriceCents: defaultPrice,
+      endAt: null,
+      capacity: null,
+    };
+    setFormData({
+      ...formData,
+      registrationBatches: [...batches, newBatch],
+    });
+  };
+
+  const handleUpdateBatch = (id: string, patch: Partial<RegistrationBatch>) => {
+    setFormData({
+      ...formData,
+      registrationBatches: batches.map((b) => (b.id === id ? { ...b, ...patch } : b)),
+    });
+  };
+
+  const handleRemoveBatch = (id: string) => {
+    setFormData({
+      ...formData,
+      registrationBatches: batches.filter((b) => b.id !== id),
+    });
+  };
+
+  const handleMoveBatch = (index: number, direction: -1 | 1) => {
+    const target = index + direction;
+    if (target < 0 || target >= batches.length) return;
+    const copy = [...batches];
+    const [item] = copy.splice(index, 1);
+    copy.splice(target, 0, item);
+    setFormData({
+      ...formData,
+      registrationBatches: copy,
+    });
+  };
   const [isSaving, setIsSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
@@ -270,6 +340,255 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({
             </label>
           ))}
         </div>
+      </div>
+
+      {/* SECTION: Gestão de Lotes de Inscrição (Virada Automática por Data ou Vagas) */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+          <div>
+            <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+              <Layers className="w-4 h-4 text-orange-600" />
+              Lotes de Inscrição (Valor, Prazo e Limite de Vagas por Lote)
+            </h4>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Virada automática para o próximo lote pelo que ocorrer primeiro: <strong>data final atingida</strong> ou <strong>vagas do lote esgotadas</strong>. PCD paga <strong>50%</strong> do lote vigente (+ 10% taxa).
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleAddBatch}
+              className="px-3.5 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center gap-1.5 whitespace-nowrap"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Adicionar Lote</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Resumo do Lote Vigente */}
+        {previewBatchState.configured ? (
+          <div className={`p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+            previewBatchState.current
+              ? 'bg-emerald-50/70 border-emerald-200 text-emerald-950'
+              : 'bg-red-50/70 border-red-200 text-red-950'
+          }`}>
+            {previewBatchState.current ? (
+              <>
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-600 text-white">
+                    Lote Vigente no Site
+                  </span>
+                  <div className="mt-1.5 font-black text-sm sm:text-base">
+                    {previewBatchState.current.name} — Base {formatCentsToBRL(previewBatchState.current.basePriceCents)}{' '}
+                    <span className="text-xs font-semibold text-emerald-800">
+                      (Total c/ 10%: {formatCentsToBRL(Math.round(previewBatchState.current.basePriceCents * 1.1))} • PCD 50%: {formatCentsToBRL(Math.round(Math.round(previewBatchState.current.basePriceCents / 2) * 1.1))})
+                    </span>
+                  </div>
+                </div>
+                <div className="text-xs font-bold text-emerald-900">
+                  {previewBatchState.current.capacity !== null
+                    ? `${previewBatchState.current.soldCount} / ${previewBatchState.current.capacity} vagas preenchidas (${previewBatchState.current.remaining} restantes)`
+                    : `${previewBatchState.current.soldCount} inscrições ativas neste lote`}
+                </div>
+              </>
+            ) : (
+              <div className="text-xs font-bold">
+                Todos os lotes cadastrados estão encerrados por data ou com vagas esgotadas. Adicione um novo lote ou amplie o prazo/vagas para reabrir as inscrições.
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="p-4 bg-slate-50 border border-slate-200/90 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <span className="text-xs font-bold text-slate-800 block">
+                Modo Lote Único (sem divisão de lotes cadastrada)
+              </span>
+              <span className="text-[11px] text-slate-500">
+                Enquanto nenhum lote for adicionado, o site aplica o valor base abaixo (com 50% para PCD e +10% de taxa de serviço).
+              </span>
+            </div>
+            <div className="w-full sm:w-52 shrink-0">
+              <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">
+                Valor Base Geral (R$)
+              </label>
+              <input
+                type="number"
+                min={1}
+                step="0.50"
+                value={((formData.basePriceCents || 5000) / 100).toFixed(2)}
+                onChange={(e) => {
+                  const reais = parseFloat(e.target.value);
+                  const cents = Number.isFinite(reais) && reais > 0 ? Math.round(reais * 100) : 5000;
+                  setFormData({
+                    ...formData,
+                    basePriceCents: cents,
+                    asaasPixFixedFeeCents: Math.round(cents * 0.10),
+                    asaasCreditFixedFeeCents: Math.round(cents * 0.10),
+                  });
+                }}
+                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-sm font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Lista de Lotes Configurados */}
+        {batches.length > 0 && (
+          <div className="space-y-3">
+            {batches.map((batch, index) => {
+              const resolved = previewBatchState.batches[index];
+              const baseCents = batch.basePriceCents || 5000;
+              const feeCents = Math.round(baseCents * 0.10);
+              const totalGeneralCents = baseCents + feeCents;
+              const pcdBaseCents = Math.round(baseCents / 2);
+              const pcdTotalCents = pcdBaseCents + Math.round(pcdBaseCents * 0.10);
+
+              const statusBadge =
+                resolved?.status === 'ACTIVE'
+                  ? { label: 'LOTE VIGENTE', cls: 'bg-emerald-100 text-emerald-800 border-emerald-300' }
+                  : resolved?.status === 'SOLD_OUT'
+                  ? { label: 'ESGOTADO POR VAGAS', cls: 'bg-red-100 text-red-800 border-red-300' }
+                  : resolved?.status === 'ENDED'
+                  ? { label: 'ENCERRADO POR DATA', cls: 'bg-slate-200 text-slate-700 border-slate-300' }
+                  : { label: 'EM ESPERA (PRÓXIMO)', cls: 'bg-amber-50 text-amber-800 border-amber-200' };
+
+              return (
+                <div
+                  key={batch.id}
+                  className={`p-4 rounded-2xl border transition ${
+                    resolved?.status === 'ACTIVE'
+                      ? 'bg-orange-50/40 border-orange-300 shadow-2xs'
+                      : 'bg-slate-50/60 border-slate-200'
+                  }`}
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="w-6 h-6 rounded-lg bg-slate-900 text-white text-xs font-black flex items-center justify-center">
+                        {index + 1}º
+                      </span>
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black border ${statusBadge.cls}`}>
+                        {statusBadge.label}
+                      </span>
+                      <span className="text-[11px] font-semibold text-slate-500">
+                        • {resolved?.soldCount || 0} inscrito(s) neste lote
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => handleMoveBatch(index, -1)}
+                        disabled={index === 0}
+                        className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-white rounded-lg disabled:opacity-30"
+                        title="Subir ordem do lote"
+                      >
+                        <ArrowUp className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleMoveBatch(index, 1)}
+                        disabled={index === batches.length - 1}
+                        className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-white rounded-lg disabled:opacity-30"
+                        title="Descer ordem do lote"
+                      >
+                        <ArrowDown className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveBatch(batch.id)}
+                        className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg"
+                        title="Remover lote"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                    <div className="sm:col-span-4">
+                      <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">
+                        Nome do Lote
+                      </label>
+                      <input
+                        type="text"
+                        value={batch.name}
+                        onChange={(e) => handleUpdateBatch(batch.id, { name: e.target.value })}
+                        placeholder="Ex: 1º Lote Promocional"
+                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">
+                        Valor Base (R$)
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        step="0.50"
+                        value={(baseCents / 100).toFixed(2)}
+                        onChange={(e) => {
+                          const reais = parseFloat(e.target.value);
+                          if (Number.isFinite(reais) && reais > 0) {
+                            handleUpdateBatch(batch.id, { basePriceCents: Math.round(reais * 100) });
+                          }
+                        }}
+                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-3">
+                      <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">
+                        Data/Hora Limite (Opcional)
+                      </label>
+                      <input
+                        type="datetime-local"
+                        value={toDatetimeLocalValue(batch.endAt)}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          handleUpdateBatch(batch.id, {
+                            endAt: val ? new Date(val).toISOString() : null,
+                          });
+                        }}
+                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-3">
+                      <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">
+                        Vagas do Lote (Opcional)
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        value={batch.capacity !== null && batch.capacity !== undefined ? batch.capacity : ''}
+                        onChange={(e) => {
+                          const v = parseInt(e.target.value, 10);
+                          handleUpdateBatch(batch.id, { capacity: Number.isFinite(v) && v > 0 ? v : null });
+                        }}
+                        placeholder="Sem limite por lote"
+                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-2.5 pt-2 border-t border-slate-200/70 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-600">
+                    <div>
+                      <strong>Geral:</strong> {formatCentsToBRL(baseCents)} + 10% ({formatCentsToBRL(feeCents)}) ={' '}
+                      <strong className="text-slate-900">{formatCentsToBRL(totalGeneralCents)}</strong>
+                    </div>
+                    <div>
+                      <strong>PCD / Inclusão (50%):</strong> {formatCentsToBRL(pcdBaseCents)} + 10% ={' '}
+                      <strong className="text-purple-800">{formatCentsToBRL(pcdTotalCents)}</strong>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* SECTION: Divisão de Vagas por Categoria (Cotas Oficiais) */}
@@ -592,7 +911,7 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({
         </h4>
 
         <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-900 leading-relaxed">
-          <strong>Regra Regimental Estrita:</strong> O valor base municipal da inscrição é <strong>R$ 50,00</strong> com taxa de serviço de <strong>10% (R$ 5,00)</strong>, garantindo a liquidez municipal líquida de R$ 50,00 integral por atleta.
+          <strong>Regra de Precificação por Lote:</strong> O valor base segue automaticamente o <strong>lote vigente</strong> configurado acima (ou o valor base geral quando em lote único), acrescido da taxa de serviço de <strong>10%</strong>. Atletas PCD pagam <strong>50%</strong> do valor base do lote vigente + 10% de taxa.
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">

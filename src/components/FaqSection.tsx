@@ -1,5 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { ChevronDown, ChevronUp, Search, Mail, HelpCircle } from 'lucide-react';
+import { ChevronDown, ChevronUp, Search, Mail } from 'lucide-react';
+import { EventSettings } from '../types';
+import { formatCentsToBRL, getActiveBatchLabel, getActiveBasePriceCents } from '../lib/pricing';
 
 interface FaqItem {
   id: string;
@@ -8,61 +10,79 @@ interface FaqItem {
   answer: string;
 }
 
-const FAQ_ITEMS: FaqItem[] = [
-  {
-    id: 'faq-1',
-    category: 'categoria',
-    question: 'Quem tem direito a se inscrever na Categoria "Local" (Lajespintadense)?',
-    answer: 'A categoria Local destina-se estritamente aos atletas que nasceram em Lajes Pintadas/RN ou que residem atualmente no município, abrangendo também os lajenses naturais que residam em outras localidades. As inscrições são realizadas exclusivamente de forma presencial na sede da Prefeitura. A comprovação do vínculo ocorre mediante Certidão de Nascimento, Título de Eleitor do município ou Comprovante de Residência idôneo.',
-  },
-  {
-    id: 'faq-2',
-    category: 'inscricao',
-    question: 'Qual é a data, o horário e a distância da prova?',
-    answer: 'A 5ª Corrida de Emancipação Política ocorrerá no dia 26 de dezembro de 2026 (sábado), com percurso oficial aferido de 5 km em vias pavimentadas de Lajes Pintadas/RN. A largada será pontual às 17 horas, com concentração na Feira Livre Coberta.',
-  },
-  {
-    id: 'faq-3',
-    category: 'pagamento',
-    question: 'Por que há uma taxa de processamento além dos R$ 50,00 da inscrição?',
-    answer: 'O regulamento da prova fixa a inscrição no valor base de R$ 50,00 com direito à camisa oficial e medalha finisher. O acréscimo de 10% (R$ 5,00) corresponde à taxa de processamento e serviço da plataforma, garantindo a reserva garantida da sua vaga por 30 minutos e a confirmação automática do pagamento.',
-  },
-  {
-    id: 'faq-4',
-    category: 'pagamento',
-    question: 'Quanto tempo tenho para pagar o Pix antes de perder minha vaga?',
-    answer: 'Ao concluir o formulário, o sistema efetua uma reserva em tempo real da sua vaga e do tamanho de camisa escolhido por exatamente 30 minutos. Se o Pix não for compensado dentro desta janela, a reserva expira automaticamente e o tamanho volta a ficar disponível no estoque público para outros corredores.',
-  },
-  {
-    id: 'faq-5',
-    category: 'kit',
-    question: 'O que compõe o kit oficial e posso trocar o tamanho da camisa depois?',
-    answer: 'O kit oficial inclui a Camisa Oficial Laranja de tecido tecnológico em poliamida com proteção UV fator FPU 50+, chip eletrônico descartável, número de peito personalizado com 4 alfinetes e brindes institucionais. Não será permitida a troca de tamanho no ato da retirada do kit, valendo estritamente a grade selecionada no momento da inscrição.',
-  },
-  {
-    id: 'faq-6',
-    category: 'kit',
-    question: 'Onde e quando será realizada a entrega dos kits?',
-    answer: 'A entrega dos kits será realizada no Centro de Convivência dos Idosos (Rua São Francisco, s/n, Centro, Lajes Pintadas/RN). No dia 25/12 (14h às 18h) para atletas locais e antecipados, e no dia 26/12 (14h às 16h20) para atletas visitantes de outros municípios. É indispensável apresentar documento com foto e comprovante de inscrição.',
-  },
-  {
-    id: 'faq-7',
-    category: 'inscricao',
-    question: 'Como consultar minha inscrição ou reimprimir o comprovante?',
-    answer: 'Basta clicar no botão "Minha Inscrição" no topo ou rodapé do site e digitar o seu Número de Protocolo (ex: LP5-2612-XXXXX) e o Código de Acesso gerado na finalização. Você poderá visualizar o status, efetuar o pagamento Pix pendente ou emitir seu comprovante oficial em PDF.',
-  },
-  {
-    id: 'faq-8',
-    category: 'categoria',
-    question: 'Atletas de outras cidades podem concorrer a troféus?',
-    answer: 'Sim! A Categoria Visitante foi criada especificamente para atletas de outros municípios do Rio Grande do Norte e outros estados. Há troféus oficiais do 1º ao 3º lugar para a categoria Masculino e Feminino na divisão Visitante, além da medalha finisher entregue a todos os concluintes.',
-  },
-];
+interface FaqSectionProps {
+  settings?: EventSettings;
+}
 
-export const FaqSection: React.FC = () => {
+export const FaqSection: React.FC<FaqSectionProps> = ({ settings }) => {
   const [openId, setOpenId] = useState<string | null>('faq-1');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('todas');
+
+  const baseCents = getActiveBasePriceCents(settings);
+  const feeCents = Math.round(baseCents * 0.10);
+  const totalCents = baseCents + feeCents;
+  const pcdBaseCents = Math.round(baseCents / 2);
+  const pcdFeeCents = Math.round(pcdBaseCents * 0.10);
+  const pcdTotalCents = pcdBaseCents + pcdFeeCents;
+  const batchLabel = getActiveBatchLabel(settings);
+
+  const faqItems: FaqItem[] = useMemo(() => [
+    {
+      id: 'faq-1',
+      category: 'categoria',
+      question: 'Quem tem direito a se inscrever na Categoria "Local" (Lajespintadense)?',
+      answer: 'A categoria Local destina-se estritamente aos atletas que nasceram em Lajes Pintadas/RN ou que residem atualmente no município, abrangendo também os lajenses naturais que residam em outras localidades. As inscrições são realizadas exclusivamente de forma presencial na sede da Prefeitura. A comprovação do vínculo ocorre mediante Certidão de Nascimento, Título de Eleitor do município ou Comprovante de Residência idôneo.',
+    },
+    {
+      id: 'faq-2',
+      category: 'inscricao',
+      question: 'Qual é a data, o horário e a distância da prova?',
+      answer: 'A 5ª Corrida de Emancipação Política ocorrerá no dia 26 de dezembro de 2026 (sábado), com percurso oficial aferido de 5 km em vias pavimentadas de Lajes Pintadas/RN. A largada será pontual às 17 horas, com concentração na Feira Livre Coberta.',
+    },
+    {
+      id: 'faq-3',
+      category: 'pagamento',
+      question: 'Qual é o valor da inscrição, como funcionam os lotes e a taxa de serviço de 10%?',
+      answer: `As inscrições são realizadas por lotes, que viram automaticamente por data final ou por esgotamento das vagas do lote (o que ocorrer primeiro). No lote vigente (${batchLabel}), o valor base da Categoria Geral é de ${formatCentsToBRL(baseCents)} acrescido da taxa de serviço de 10% (${formatCentsToBRL(feeCents)}), totalizando ${formatCentsToBRL(totalCents)}. Para atletas PCD / Inclusão, há 50% de desconto sobre o lote vigente: ${formatCentsToBRL(pcdBaseCents)} acrescido da taxa de 10% (${formatCentsToBRL(pcdFeeCents)}), totalizando ${formatCentsToBRL(pcdTotalCents)}. Atletas-guia acompanhantes possuem inscrição e camisa 100% gratuitas.`,
+    },
+    {
+      id: 'faq-pcd',
+      category: 'categoria',
+      question: 'Como funciona a inscrição para a categoria PCD (Pessoas com Deficiência)?',
+      answer: `A Categoria PCD / Inclusão possui 50% de desconto sobre o lote vigente (${formatCentsToBRL(pcdBaseCents)} + taxa de 10% = ${formatCentsToBRL(pcdTotalCents)} no ${batchLabel}), largada prioritária, suporte especializado e pódio exclusivo masculino e feminino. Caso necessite de Atleta-Guia, a inscrição do guia é totalmente gratuita (R$ 0,00) com camisa oficial inclusa. É obrigatório informar o CID/Laudo no cadastro e apresentar o documento comprobatório na entrega do kit.`,
+    },
+    {
+      id: 'faq-4',
+      category: 'pagamento',
+      question: 'Quanto tempo tenho para pagar o Pix antes de perder minha vaga?',
+      answer: 'Ao concluir o formulário, o sistema efetua uma reserva em tempo real da sua vaga e do tamanho de camisa escolhido por exatamente 30 minutos. Se o Pix não for compensado dentro desta janela, a reserva expira automaticamente e o tamanho volta a ficar disponível no estoque público para outros corredores.',
+    },
+    {
+      id: 'faq-5',
+      category: 'kit',
+      question: 'O que compõe o kit oficial e posso trocar o tamanho da camisa depois?',
+      answer: 'O kit oficial inclui a Camisa Oficial Laranja de tecido tecnológico em poliamida com proteção UV fator FPU 50+, chip eletrônico descartável, número de peito personalizado com 4 alfinetes e brindes institucionais. Não será permitida a troca de tamanho no ato da retirada do kit, valendo estritamente a grade selecionada no momento da inscrição.',
+    },
+    {
+      id: 'faq-6',
+      category: 'kit',
+      question: 'Onde e quando será realizada a entrega dos kits?',
+      answer: 'A entrega dos kits será realizada no Centro de Convivência dos Idosos (Rua São Francisco, s/n, Centro, Lajes Pintadas/RN). No dia 25/12 (14h às 18h) para atletas locais e antecipados, e no dia 26/12 (14h às 16h20) para atletas visitantes de outros municípios. É indispensável apresentar documento com foto e comprovante de inscrição.',
+    },
+    {
+      id: 'faq-7',
+      category: 'inscricao',
+      question: 'Como consultar minha inscrição ou reimprimir o comprovante?',
+      answer: 'Basta clicar no botão "Minha Inscrição" no topo ou rodapé do site e digitar o seu Número de Protocolo (ex: LP5-2612-XXXXX) e o Código de Acesso gerado na finalização. Você poderá visualizar o status, efetuar o pagamento Pix pendente ou emitir seu comprovante oficial em PDF.',
+    },
+    {
+      id: 'faq-8',
+      category: 'categoria',
+      question: 'Atletas de outras cidades podem concorrer a troféus?',
+      answer: 'Sim! A Categoria Visitante foi criada especificamente para atletas de outros municípios do Rio Grande do Norte e outros estados. Há troféus oficiais do 1º ao 3º lugar para a categoria Masculino e Feminino na divisão Visitante, além da medalha finisher entregue a todos os concluintes.',
+    },
+  ], [batchLabel, baseCents, feeCents, totalCents, pcdBaseCents, pcdFeeCents, pcdTotalCents]);
 
   const categories = [
     { id: 'todas', label: 'Todas as Dúvidas' },
@@ -73,14 +93,14 @@ export const FaqSection: React.FC = () => {
   ];
 
   const filteredFaqs = useMemo(() => {
-    return FAQ_ITEMS.filter((item) => {
+    return faqItems.filter((item) => {
       const matchesCategory = selectedCategory === 'todas' || item.category === selectedCategory;
       const matchesSearch =
         item.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.answer.toLowerCase().includes(searchQuery.toLowerCase());
       return matchesCategory && matchesSearch;
     });
-  }, [selectedCategory, searchQuery]);
+  }, [faqItems, selectedCategory, searchQuery]);
 
   const toggleFaq = (id: string) => {
     setOpenId(openId === id ? null : id);

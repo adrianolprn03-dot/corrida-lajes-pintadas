@@ -235,6 +235,11 @@ export class AsaasClient {
     cpfCnpj: string;
     email: string;
     mobilePhone: string;
+    postalCode?: string;
+    address?: string;
+    addressNumber?: string;
+    complement?: string;
+    province?: string;
   }): Promise<AsaasCustomer> {
     const cleanCpf = params.cpfCnpj.replace(/\D/g, '');
 
@@ -250,7 +255,14 @@ export class AsaasClient {
         try {
           await this.fetchWithRetry(`/customers/${customer.id}`, {
             method: 'PUT',
-            body: JSON.stringify({ notificationDisabled: true }),
+            body: JSON.stringify({
+              notificationDisabled: true,
+              postalCode: params.postalCode ? params.postalCode.replace(/\D/g, '') : undefined,
+              address: params.address,
+              addressNumber: params.addressNumber,
+              complement: params.complement,
+              province: params.province,
+            }),
           });
         } catch (_) {}
         return customer;
@@ -267,6 +279,11 @@ export class AsaasClient {
         cpfCnpj: cleanCpf,
         email: params.email,
         mobilePhone: params.mobilePhone.replace(/\D/g, ''),
+        postalCode: params.postalCode ? params.postalCode.replace(/\D/g, '') : undefined,
+        address: params.address,
+        addressNumber: params.addressNumber,
+        complement: params.complement,
+        province: params.province,
         notificationDisabled: true,
       }),
     });

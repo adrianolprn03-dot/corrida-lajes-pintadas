@@ -3,18 +3,19 @@
 
 ---
 
-### 1. Modelo de Cobrança e Regras Financeiras
-- **Valor Base Municipal:** R$ 50,00 (líquido destinado aos cofres municipais / fundo de esportes).
-- **Repasse das Tarifas (10%):** O atleta arca com o acréscimo de 10% (R$ 5,00) de taxa de serviço da plataforma.
+### 1. Modelo de Cobrança e Regras Financeiras por Lote
+- **Valor Base Municipal:** Definido dinamicamente pelo **Lote Vigente** configurado no Painel Administrativo (`Admin -> Configurações -> Lotes de Inscrição`).
+- **Categoria PCD / Inclusão:** Meia-inscrição oficial (**50% do valor base** do lote vigente). Atleta-Guia permanece 100% gratuito.
+- **Repasse das Tarifas (10%):** O atleta arca com o acréscimo de **10%** sobre o valor base aplicável da sua inscrição como taxa de serviço da plataforma.
 - **Formas de Pagamento Permitidas:**
-  - **Pix:** `R$ 50,00 + 10% (R$ 5,00) = R$ 55,00`.
-  - **Cartão de Crédito (1x à vista):** `R$ 50,00 + 10% (R$ 5,00) = R$ 55,00`.
+  - **Pix:** `Valor Base do Lote (ou 50% PCD) + 10% de taxa de serviço`.
+  - **Cartão de Crédito (1x à vista):** `Valor Base do Lote (ou 50% PCD) + 10% de taxa de serviço`.
   - **Parcelamento:** Estritamente desabilitado (`installmentCount: 1`).
 
 ---
 
-### 2. Criação do Checkout Avulso no Asaas
-O sistema utiliza o endpoint oficial `/v3/checkouts` da API v3 do Asaas com a seguinte estrutura:
+### 2. Criação da Cobrança no Asaas
+O sistema utiliza a API v3 do Asaas com o domínio oficial `https://corridadeemancipacao.lajespintadas.rn.gov.br`:
 
 ```http
 POST https://api.asaas.com/v3/checkouts
@@ -36,9 +37,9 @@ Content-Type: application/json
     }
   ],
   "callback": {
-    "successUrl": "https://corrida-lajes-pintadas-rn.vercel.app/#/pagamento-sucesso",
-    "cancelUrl": "https://corrida-lajes-pintadas-rn.vercel.app/#/pagamento-cancelado",
-    "expiredUrl": "https://corrida-lajes-pintadas-rn.vercel.app/#/pagamento-expirado",
+    "successUrl": "https://corridadeemancipacao.lajespintadas.rn.gov.br/#/pagamento-sucesso",
+    "cancelUrl": "https://corridadeemancipacao.lajespintadas.rn.gov.br/#/pagamento-cancelado",
+    "expiredUrl": "https://corridadeemancipacao.lajespintadas.rn.gov.br/#/pagamento-expirado",
     "autoRedirect": true
   }
 }
@@ -53,7 +54,7 @@ Content-Type: application/json
 2. Navegue até: **Minha Conta > Configurações da Conta > Integrações > Webhooks**.
 3. Clique em **"Novo Webhook"** e preencha:
    - **Nome:** Webhook Inscrições - Corrida Lajes Pintadas 2026
-   - **URL de Destino:** `https://corrida-lajes-pintadas-rn.vercel.app/api/webhook-asaas`
+   - **URL de Destino:** `https://corridadeemancipacao.lajespintadas.rn.gov.br/api/webhook-asaas`
    - **Versão da API:** `v3`
    - **Token de Autenticação:** Digite uma chave alfanumérica segura e salve-a também na variável de ambiente `ASAAS_WEBHOOK_SECRET`.
    - **Eventos a Selecionar:**

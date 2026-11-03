@@ -924,3 +924,16 @@ CREATE INDEX IF NOT EXISTS idx_registrations_channel ON registrations(channel);
 CREATE INDEX IF NOT EXISTS idx_registrations_doc_status ON registrations(document_verification_status);
 CREATE INDEX IF NOT EXISTS idx_registrations_attendant ON registrations(attendant_name);
 
+-- ==============================================================================
+-- MIGRAÇÃO INCREMENTAL: DINÂMICA DE LOTES DE INSCRIÇÃO (PREÇO, PRAZO E VAGAS)
+-- ==============================================================================
+ALTER TABLE event_settings
+    ADD COLUMN IF NOT EXISTS registration_batches JSONB NOT NULL DEFAULT '[]'::jsonb;
+
+ALTER TABLE registrations
+    ADD COLUMN IF NOT EXISTS batch_id TEXT DEFAULT NULL,
+    ADD COLUMN IF NOT EXISTS batch_name TEXT DEFAULT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_registrations_batch_id ON registrations(batch_id);
+
+

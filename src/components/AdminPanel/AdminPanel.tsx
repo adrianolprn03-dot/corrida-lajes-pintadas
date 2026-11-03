@@ -101,6 +101,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
       setRegistrations(r);
       setShirts(sh);
       setAuditLogs(l);
+
+      // Sincronizar lista de operadores com o servidor
+      storageService.syncOperatorsWithServer().catch(() => {});
     } catch (err) {
       console.error('Failed to load admin data:', err);
     } finally {
@@ -472,10 +475,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
                         Estrutura de Taxas
                       </span>
                       <div className="text-lg font-black text-slate-900">
-                        10% (R$ 5,00)
+                        10% sobre o Lote
                       </div>
                       <p className="text-[11px] text-emerald-700 mt-2 font-medium">
-                        R$ 50,00 líquido municipal preservado integralmente
+                        Valor líquido municipal do lote preservado integralmente
                       </p>
                     </div>
                   </div>
@@ -489,7 +492,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
                     <p className="text-slate-700 leading-relaxed">
                       Para homologação final ou produção, cadastre a URL 
                       <strong className="text-slate-900 font-mono bg-white border border-orange-200 px-1.5 py-0.5 rounded mx-1">
-                        https://corrida-lajes-pintadas-rn.vercel.app/api/webhook-asaas
+                        https://corridadeemancipacao.lajespintadas.rn.gov.br/api/webhook-asaas
                       </strong>
                       no menu <em>Integrações &rarr; Webhooks para Cobranças</em> do painel Asaas. O sistema atualiza o status dos atletas para CONFIRMED automaticamente no momento em que o Pix é compensado.
                     </p>

@@ -24,6 +24,16 @@ export function formatCPF(value: string): string {
   return digits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
 }
 
+export function maskCEP(value: string): string {
+  const digits = (value || '').replace(/\D/g, '').slice(0, 8);
+  if (digits.length <= 5) return digits;
+  return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+}
+
+export function formatCEP(value: string): string {
+  return maskCEP(value || '');
+}
+
 export function maskDate(value: string): string {
   const digits = value.replace(/\D/g, '').slice(0, 8);
   return digits

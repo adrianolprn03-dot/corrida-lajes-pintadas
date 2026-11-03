@@ -29,6 +29,9 @@ export interface ExportRow {
   'Data Nasc.': string;
   Email: string;
   WhatsApp: string;
+  CEP: string;
+  'Endereço Completo': string;
+  Bairro: string;
   Cidade: string;
   UF: string;
   Equipe: string;
@@ -54,6 +57,10 @@ export interface ExportRow {
 export function prepareRegistrationsForExport(registrations: Registration[]): ExportRow[] {
   return registrations.map((r) => {
     const athlete = r.athlete;
+    const fullAddress = athlete?.street 
+      ? `${athlete.street}, ${athlete.number || 'S/N'}${athlete.complement ? ` - ${athlete.complement}` : ''}`
+      : '-';
+
     return {
       Protocolo: sanitizeFormulaInjection(r.protocol),
       Atleta: sanitizeFormulaInjection(athlete?.fullName || 'N/A'),
@@ -61,6 +68,9 @@ export function prepareRegistrationsForExport(registrations: Registration[]): Ex
       'Data Nasc.': sanitizeFormulaInjection(formatDateBR(athlete?.birthDate)),
       Email: sanitizeFormulaInjection(athlete?.email || 'N/A'),
       WhatsApp: sanitizeFormulaInjection(athlete?.phone || 'N/A'),
+      CEP: sanitizeFormulaInjection(athlete?.cep || '-'),
+      'Endereço Completo': sanitizeFormulaInjection(fullAddress),
+      Bairro: sanitizeFormulaInjection(athlete?.neighborhood || '-'),
       Cidade: sanitizeFormulaInjection(athlete?.city || 'N/A'),
       UF: sanitizeFormulaInjection(athlete?.state || 'N/A'),
       Equipe: sanitizeFormulaInjection(athlete?.team || '-'),

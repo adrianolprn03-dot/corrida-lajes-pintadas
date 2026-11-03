@@ -9,6 +9,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { AsaasClient } from './lib/asaas.js';
 import { memoryStore } from './lib/state.js';
 import { sendConfirmationEmail } from './lib/email.js';
+import { getBatchState, computeBatchPricing, DEFAULT_BASE_PRICE_CENTS } from './lib/batches.js';
 
 function normalizeSupabaseUrl(rawUrl?: string): string {
   if (!rawUrl) return '';
@@ -60,15 +61,8 @@ function isValidCPF(cpf: string): boolean {
   return check === parseInt(clean[10]);
 }
 
-function calculatePricing(paymentMethod: 'PIX' | 'CREDIT_CARD') {
-  const basePriceCents = 5000; // R$ 50,00
-  const feeCents = Math.round(basePriceCents * 0.10); // R$ 5,00 (10% de taxa de serviço)
-  const totalAmountCents = basePriceCents + feeCents; // R$ 55,00
-  return {
-    baseAmountCents: basePriceCents,
-    feeCents,
-    totalAmountCents,
-  };
+function formatBRL(cents: number): string {
+  return `R$ ${(cents / 100).toFixed(2).replace('.', ',')}`;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -86,6 +80,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       birthDate,
       email,
       phone,
+      cep,
+      street,
+      number,
+      complement,
+      neighborhood,
       city,
       state,
       team,
@@ -102,9 +101,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       documentVerificationStatus,
       documentTypePresented,
       documentVerificationNotes,
+      isPcd,
+      pcdType,
+      pcdCid,
+      hasGuide,
+      guideName,
+      guideCpf,
+      guidePhone,
+      guideShirtSize,
+      expectedTotalAmountCents,
     } = req.body;
 
     const registrationChannel = channel === 'PRESENCIAL_PREFEITURA' ? 'PRESENCIAL_PREFEITURA' : 'ONLINE';
+    const isPcdRegistration = originType === 'PCD' || Boolean(isPcd);
 
     // REGRA REGIMENTAL ESTREITA: Inscrições da categoria Casa são exclusivamente presenciais na sede da Prefeitura
     if (originType === 'CASA' && registrationChannel !== 'PRESENCIAL_PREFEITURA') {
@@ -138,8 +147,65 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    // 2. Preço calculado de forma imutável no backend
-    const pricing = calculatePricing(paymentMethod);
+    // Validação de regras para Categoria PCD / Inclusão
+    if (isPcdRegistration) {
+      if (!pcdType) {
+        return res.status(400).json({ error: 'Tipo de deficiência obrigatório para inscrição PCD.' });
+      }
+      if (!pcdCid || pcdCid.trim().length < 3) {
+        return res.status(400).json({ error: 'Código CID ou número do Laudo Médico / CIPTEA comprobatório é obrigatório.' });
+      }
+      if (hasGuide) {
+        if (!guideName || guideName.trim().length < 5) {
+          return res.status(400).json({ error: 'Nome completo do Atleta-Guia é obrigatório.' });
+        }
+        const cleanGuideCpf = (guideCpf || '').replace(/\D/g, '');
+        if (!cleanGuideCpf || !isValidCPF(cleanGuideCpf)) {
+          return res.status(400).json({ error: 'CPF do Atleta-Guia inválido.' });
+        }
+        if (cleanGuideCpf === cleanCpf) {
+          return res.status(400).json({ error: 'O CPF do Atleta-Guia não pode ser idêntico ao CPF do atleta participante.' });
+        }
+        if (!guidePhone || guidePhone.replace(/\D/g, '').length < 10) {
+          return res.status(400).json({ error: 'Telefone/WhatsApp do Atleta-Guia é obrigatório.' });
+        }
+        if (!guideShirtSize) {
+          return res.status(400).json({ error: 'Tamanho da camisa oficial do Atleta-Guia é obrigatório.' });
+        }
+      }
+    }
+
+    // 2. Lote vigente e preço calculados de forma imutável no backend
+    //    (valor base do lote + 10% de taxa; PCD paga 50% do valor base do lote)
+    const supabase = getSupabase();
+
+    let batchState;
+    try {
+      batchState = await getBatchState(supabase);
+    } catch (batchErr) {
+      console.error('[create-reservation] Falha ao verificar lote vigente:', batchErr);
+      return res.status(503).json({ error: 'Não foi possível verificar o lote de inscrição vigente. Tente novamente em instantes.' });
+    }
+
+    if (batchState.configured && !batchState.current) {
+      return res.status(400).json({
+        error: 'Inscrições encerradas: todos os lotes de inscrição foram encerrados ou esgotados.',
+        code: 'NO_ACTIVE_BATCH',
+      });
+    }
+
+    const currentBatch = batchState.current;
+    const pricing = computeBatchPricing(currentBatch?.basePriceCents ?? DEFAULT_BASE_PRICE_CENTS, isPcdRegistration);
+
+    // Se o lote virou entre a exibição do valor e o envio, o atleta precisa revisar o novo valor
+    if (typeof expectedTotalAmountCents === 'number' && expectedTotalAmountCents !== pricing.totalAmountCents) {
+      return res.status(409).json({
+        error: `O valor da inscrição foi atualizado${currentBatch ? ` para o ${currentBatch.name}` : ''}: novo total de ${formatBRL(pricing.totalAmountCents)}. Atualize a página (F5) e confirme novamente.`,
+        code: 'BATCH_CHANGED',
+        batch: currentBatch ? { id: currentBatch.id, name: currentBatch.name, basePriceCents: currentBatch.basePriceCents } : null,
+        totalAmountCents: pricing.totalAmountCents,
+      });
+    }
 
     // 3. Inicializar AsaasClient com tratamento de rate-limit (429), conciliação e backoff
     const asaasApiKey = normalizeKey(process.env.ASAAS_API_KEY || '');
@@ -158,8 +224,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
     // 4. Executar Reserva Transacional Atômica
-    const supabase = getSupabase();
-
     if (supabase) {
       // 4.0 Validação estrita de cota por categoria (Local vs Visitante)
       try {
@@ -225,6 +289,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       // 4.1 Via Supabase RPC com SELECT FOR UPDATE no PostgreSQL
+      // Mapeamento seguro para o enum origin_type_enum existente ('CASA' ou 'VISITANTE')
+      const rpcOriginType = (originType === 'CASA' || originType === 'LOCAL') ? 'CASA' : 'VISITANTE';
       const { data, error } = await supabase.rpc('create_registration_reservation', {
         p_full_name: fullName,
         p_cpf: cleanCpf,
@@ -234,7 +300,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         p_city: city,
         p_state: state,
         p_team: team || null,
-        p_origin_type: originType,
+        p_origin_type: rpcOriginType,
         p_gender: gender,
         p_casa_proof_type: casaProofType || null,
         p_shirt_size: shirtSize,
@@ -249,6 +315,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(400).json({ error: error.message });
       }
       reservationResult = data;
+
+      // Se houver atleta-guia com camisa, reservar a camisa do guia no Supabase
+      if (hasGuide && guideShirtSize) {
+        const { data: guideStockRow } = await supabase
+          .from('shirt_inventory')
+          .select('total_stock, reserved_count, confirmed_count')
+          .eq('size', guideShirtSize)
+          .single();
+        if (guideStockRow) {
+          const avail = guideStockRow.total_stock - (guideStockRow.reserved_count + guideStockRow.confirmed_count);
+          if (avail <= 0) {
+            await supabase.from('registrations').delete().eq('id', reservationResult.registration_id);
+            return res.status(400).json({ error: `A camisa tamanho ${guideShirtSize} do Atleta-Guia está esgotada no momento.` });
+          }
+          await supabase
+            .from('shirt_inventory')
+            .update({
+              reserved_count: guideStockRow.reserved_count + 1,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('size', guideShirtSize);
+        }
+      }
     } else {
       // 4.2 Via Motor Transacional em Memória com Mutex (usado em testes de carga e alta concorrência)
       const { registration, accessCode } = await memoryStore.createReservation({
@@ -257,10 +346,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         birthDate,
         email,
         phone,
+        cep,
+        street,
+        number,
+        complement,
+        neighborhood,
         city,
         state,
         team,
-        originType,
+        originType: isPcdRegistration ? 'PCD' : originType,
         gender,
         casaProofType,
         shirtSize,
@@ -269,6 +363,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         feeCents: pricing.feeCents,
         totalAmountCents: pricing.totalAmountCents,
         idempotencyKey,
+        isPcd: isPcdRegistration,
+        pcdType,
+        pcdCid,
+        hasGuide,
+        guideName,
+        guideCpf,
+        guidePhone,
+        guideShirtSize,
+        batchId: currentBatch?.id,
+        batchName: currentBatch?.name,
       });
 
       reservationResult = {
@@ -281,20 +385,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       };
     }
 
-    // Garantir que os valores oficiais (R$ 50,00 base + 10% taxa = R$ 55,00 total) prevaleçam
+    // Se for categoria PCD, assegurar a categoria correta no retorno da API
+    if (isPcdRegistration) {
+      reservationResult.category = gender === 'MASCULINO' ? 'PCD_MASCULINO' : 'PCD_FEMININO';
+      reservationResult.origin_type = 'PCD';
+    }
+
+    // Garantir que os valores do lote vigente prevaleçam (valor base + 10% de taxa)
     reservationResult.base_amount_cents = pricing.baseAmountCents;
     reservationResult.fee_cents = pricing.feeCents;
     reservationResult.total_amount_cents = pricing.totalAmountCents;
+    reservationResult.batch_id = currentBatch?.id || null;
+    reservationResult.batch_name = currentBatch?.name || null;
 
     // 5. Integração com Gateway Asaas (com conciliação prévia por CPF e por Protocolo)
-    const totalFloat = pricing.totalAmountCents / 100; // Rigorosamente R$ 55,00
+    const totalFloat = pricing.totalAmountCents / 100;
     
-    // 5.1 Conciliar / obter cliente Asaas sem duplicar
+    // 5.1 Conciliar / obter cliente Asaas sem duplicar com endereço completo
     const customer = await asaasClient.getOrCreateCustomer({
       name: fullName,
       cpfCnpj: cleanCpf,
       email,
       mobilePhone: phone,
+      postalCode: cep,
+      address: street,
+      addressNumber: number,
+      complement,
+      province: neighborhood,
     });
 
     // 5.2 Conciliar / obter cobrança Asaas ou efetuar cobrança direta no cartão
@@ -303,14 +420,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const cardHolderCpf = (creditCard?.holderCpf || cleanCpf).replace(/\D/g, '');
     const cardHolderPhone = (creditCard?.holderPhone || phone).replace(/\D/g, '');
-    const cardHolderPostalCode = (creditCard?.postalCode || '59250000').replace(/\D/g, '');
+    const cardHolderPostalCode = (creditCard?.postalCode || cep || '59235000').replace(/\D/g, '');
 
     const payment = await asaasClient.getOrCreatePayment({
       customerId: customer.id,
       billingType: paymentMethod,
       value: totalFloat,
       protocol: reservationResult.protocol,
-      description: `5ª Corrida de Emancipação de Lajes Pintadas/RN - Atleta: ${fullName} (Camisa: ${shirtSize})`,
+      description: `5ª Corrida de Emancipação de Lajes Pintadas/RN${currentBatch ? ` - ${currentBatch.name}` : ''} - Atleta: ${fullName} (Camisa: ${shirtSize})${isPcdRegistration ? ' [PCD/Inclusão - Meia-Inscrição]' : ''}`,
       remoteIp: clientIp,
       creditCard: isDirectCreditCard ? {
         holderName: creditCard.holderName.trim().toUpperCase(),
@@ -324,7 +441,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         email: email,
         cpfCnpj: cardHolderCpf,
         postalCode: cardHolderPostalCode,
-        addressNumber: creditCard.addressNumber || 'S/N',
+        addressNumber: creditCard.addressNumber || number || 'S/N',
+        addressComplement: creditCard.complement || complement,
         phone: cardHolderPhone,
         mobilePhone: cardHolderPhone,
       } : undefined,
@@ -368,6 +486,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Persistir dados no Supabase para consulta e conciliação
     if (supabase && reservationResult.registration_id) {
       try {
+        const pcdMeta = isPcdRegistration ? {
+          isPcd: true,
+          pcdType,
+          pcdCid: pcdCid?.trim(),
+          hasGuide: Boolean(hasGuide),
+          guideName: guideName?.trim() || null,
+          guideCpf: guideCpf ? guideCpf.replace(/\D/g, '') : null,
+          guidePhone: guidePhone?.trim() || null,
+          guideShirtSize: guideShirtSize || null,
+        } : null;
+
+        const pcdMetaStr = pcdMeta ? `|PCD_META:${JSON.stringify(pcdMeta)}` : '';
+        if (pcdMeta) {
+          reservationResult.pcd = pcdMeta;
+        }
+
         const updatePayload: Record<string, any> = {
           asaas_payment_id: payment.id,
           asaas_customer_id: customer.id,
@@ -385,7 +519,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           document_checked_at: new Date().toISOString(),
           attendant_name: attendantName || null,
           attendant_id: attendantId || null,
-          kit_notes: `ACCESS_CODE:${reservationResult.access_code}${isPaymentConfirmed ? '|CONFIRMATION_EMAIL_SENT:true' : ''}`,
+          kit_notes: `ACCESS_CODE:${reservationResult.access_code}${currentBatch ? `|BATCH:${currentBatch.id}` : ''}${pcdMetaStr}${cep ? `|ADDR:${encodeURIComponent(JSON.stringify({ cep, street, number, complement, neighborhood }))}` : ''}${isPaymentConfirmed ? '|CONFIRMATION_EMAIL_SENT:true' : ''}`,
           updated_at: new Date().toISOString(),
         };
 
@@ -394,7 +528,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           updatePayload.financial_status = 'CONFIRMED';
           updatePayload.paid_at = new Date().toISOString();
 
-          // Mover camisa de reservada para confirmada
+          // Mover camisa do atleta de reservada para confirmada
           const { data: stockRow } = await supabase
             .from('shirt_inventory')
             .select('reserved_count, confirmed_count')
@@ -410,12 +544,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               })
               .eq('size', shirtSize);
           }
+
+          // Mover camisa do atleta-guia de reservada para confirmada
+          if (hasGuide && guideShirtSize) {
+            const { data: guideStockRow } = await supabase
+              .from('shirt_inventory')
+              .select('reserved_count, confirmed_count')
+              .eq('size', guideShirtSize)
+              .single();
+            if (guideStockRow) {
+              await supabase
+                .from('shirt_inventory')
+                .update({
+                  reserved_count: Math.max(0, guideStockRow.reserved_count - 1),
+                  confirmed_count: guideStockRow.confirmed_count + 1,
+                  updated_at: new Date().toISOString(),
+                })
+                .eq('size', guideShirtSize);
+            }
+          }
         }
 
-        await supabase
+        // Gravar o lote na coluna dedicada; se a migração ainda não foi executada,
+        // grava sem ela (o lote continua registrado no marcador BATCH: do kit_notes)
+        const { error: regUpdateErr } = await supabase
           .from('registrations')
-          .update(updatePayload)
+          .update(currentBatch ? { ...updatePayload, batch_id: currentBatch.id, batch_name: currentBatch.name } : updatePayload)
           .eq('id', reservationResult.registration_id);
+
+        if (regUpdateErr && currentBatch) {
+          await supabase
+            .from('registrations')
+            .update(updatePayload)
+            .eq('id', reservationResult.registration_id);
+        }
       } catch (updateErr) {
         console.warn('[create-reservation] Aviso ao atualizar dados no Supabase:', updateErr);
       }
@@ -445,6 +607,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           if (shirt.reservedCount > 0) shirt.reservedCount--;
           shirt.confirmedCount++;
         }
+        if (hasGuide && guideShirtSize) {
+          const guideShirt = memoryStore.shirts.get(guideShirtSize);
+          if (guideShirt) {
+            if (guideShirt.reservedCount > 0) guideShirt.reservedCount--;
+            guideShirt.confirmedCount++;
+          }
+        }
       }
     }
 
@@ -464,8 +633,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           gender,
           shirtSize,
           paymentMethod,
-          originType,
+          originType: isPcdRegistration ? 'PCD' : originType,
           status: 'CONFIRMED',
+          totalAmountCents: pricing.totalAmountCents,
+          baseAmountCents: pricing.baseAmountCents,
+          feeCents: pricing.feeCents,
+          isPcd: isPcdRegistration,
+          pcdType,
+          pcdCid,
+          hasGuide: Boolean(hasGuide),
+          guideName: guideName?.trim(),
+          guideCpf: guideCpf ? guideCpf.replace(/\D/g, '') : undefined,
+          guidePhone: guidePhone?.trim(),
+          guideShirtSize,
         });
         console.log(`[create-reservation] E-mail institucional oficial de confirmação enviado para ${email}`);
         if (memReg) {

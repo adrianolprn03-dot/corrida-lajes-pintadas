@@ -234,7 +234,30 @@ export const AdminShirtsAndKits: React.FC<AdminShirtsAndKitsProps> = ({
   const recentDeliveries = registrations
     .filter((r) => r.kitDelivered)
     .sort((a, b) => new Date(b.kitDeliveredAt || '').getTime() - new Date(a.kitDeliveredAt || '').getTime())
-    .slice(0, 5);
+  // Handle selecting athlete and unpacking PCD metadata
+  const handleSelectAthleteForKit = (reg: Registration) => {
+    let enriched = { ...reg };
+    if (enriched.kitNotes && typeof enriched.kitNotes === 'string') {
+      const matchPcd = enriched.kitNotes.match(/PCD_META:(\{.*?\})/);
+      if (matchPcd) {
+        try {
+          const pcdMeta = JSON.parse(matchPcd[1]);
+          enriched = {
+            ...enriched,
+            isPcd: pcdMeta.isPcd,
+            pcdType: pcdMeta.pcdType,
+            pcdCid: pcdMeta.pcdCid,
+            hasGuide: pcdMeta.hasGuide,
+            guideName: pcdMeta.guideName,
+            guideCpf: pcdMeta.guideCpf,
+            guidePhone: pcdMeta.guidePhone,
+            guideShirtSize: pcdMeta.guideShirtSize,
+          };
+        } catch {}
+      }
+    }
+    setSelectedAthleteForKit(enriched);
+  };
 
   return (
     <div className="space-y-8 animate-in fade-in duration-200">
@@ -618,7 +641,7 @@ export const AdminShirtsAndKits: React.FC<AdminShirtsAndKitsProps> = ({
                 {searchResults.map((reg) => (
                   <div
                     key={reg.id}
-                    onClick={() => setSelectedAthleteForKit(reg)}
+                    onClick={() => handleSelectAthleteForKit(reg)}
                     className={`p-3 text-xs cursor-pointer transition flex items-center justify-between ${
                       selectedAthleteForKit?.id === reg.id 
                         ? 'bg-orange-50/70 border-l-4 border-orange-600' 
@@ -632,7 +655,13 @@ export const AdminShirtsAndKits: React.FC<AdminShirtsAndKitsProps> = ({
                         <span>•</span>
                         <span className="font-mono text-orange-700">{reg.protocol}</span>
                         <span>•</span>
-                        <span>{reg.originType === 'LOCAL' || reg.originType === 'CASA' ? 'Local' : 'Visitante'}</span>
+                        <span>
+                          {reg.originType === 'PCD' || reg.category.startsWith('PCD_')
+                            ? '♿ PCD'
+                            : reg.originType === 'LOCAL' || reg.originType === 'CASA'
+                            ? 'Local'
+                            : 'Visitante'}
+                        </span>
                       </div>
                     </div>
 
@@ -678,6 +707,28 @@ export const AdminShirtsAndKits: React.FC<AdminShirtsAndKitsProps> = ({
                     </strong>
                   </div>
                 </div>
+
+                {/* Alerta de Entrega Especial para PCD / Guia */}
+                {(selectedAthleteForKit.isPcd || selectedAthleteForKit.category.startsWith('PCD_') || (selectedAthleteForKit.kitNotes && selectedAthleteForKit.kitNotes.includes('PCD_META'))) && (
+                  <div className="p-3 bg-purple-50 border border-purple-200 rounded-xl text-xs text-purple-950 space-y-1.5">
+                    <div className="font-bold flex items-center gap-1.5 text-purple-900">
+                      <span>♿ Inscrição Especial: Divisão PCD</span>
+                    </div>
+                    <p className="text-[11px] text-purple-800">
+                      Verificar laudo médico original comprobatório ou CIPTEA antes de entregar o kit.
+                    </p>
+                    {(selectedAthleteForKit.hasGuide || (selectedAthleteForKit.kitNotes && selectedAthleteForKit.kitNotes.includes('"hasGuide":true'))) && (
+                      <div className="mt-2 p-2.5 bg-white rounded-lg border border-purple-300">
+                        <span className="font-black text-orange-600 block text-[11px] uppercase">
+                          ⚠️ ATENÇÃO: Atleta com Guia Cadastrado!
+                        </span>
+                        <span className="text-[11px] text-slate-800 block mt-1">
+                          Entregar <strong>2 Camisetas Oficiais</strong> (Atleta: {selectedAthleteForKit.shirtSize} + Guia: {selectedAthleteForKit.guideShirtSize || 'M'}) e <strong>2 Números de Peito</strong>.
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">

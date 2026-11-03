@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { AdminRole, AdminOperator } from '../../types';
 import { storageService } from '../../services/storage';
+import { supabase, isSupabaseConfigured } from '../../lib/supabase';
 
 interface AdminLoginProps {
   onLoginSuccess: (operator: { username: string; role: AdminRole; name: string }) => void;
@@ -26,30 +27,74 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onCancel
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const performLogin = (targetUser: string, targetPass: string) => {
+  const performLogin = async (targetUser: string, targetPass: string) => {
     setIsLoading(true);
     setError(null);
 
-    setTimeout(() => {
-      const trimmedUser = targetUser.trim().toLowerCase();
-      const operators = storageService.getAdminOperators();
-      const op = operators.find((o) => o.username.toLowerCase() === trimmedUser);
+    const cleanInput = targetUser.trim().toLowerCase().replace(/^@/, '');
+    const cleanPass = targetPass.trim();
 
-      // Check against operator list
-      if (op) {
-        if (!op.isActive) {
-          setError('Este usuário operador foi desativado pela administração.');
-          setIsLoading(false);
-          return;
-        }
+    if (!cleanInput) {
+      setError('Informe o usuário ou e-mail de acesso.');
+      setIsLoading(false);
+      return;
+    }
 
-        // Validate password (supports operator password or master passwords)
-        const validPass = op.password === targetPass || targetPass === 'admin123' || targetPass === 'LajesPintadas2026!';
-        if (validPass) {
+    if (!cleanPass) {
+      setError('Informe a senha de acesso.');
+      setIsLoading(false);
+      return;
+    }
+
+    // 1. Tentar autenticação contra a lista de operadores local
+    const operators = storageService.getAdminOperators();
+    const op = operators.find(
+      (o) =>
+        o.username.toLowerCase() === cleanInput ||
+        (o.email && o.email.toLowerCase() === cleanInput)
+    );
+
+    if (op) {
+      if (!op.isActive) {
+        setError('Este usuário operador foi desativado pela administração.');
+        setIsLoading(false);
+        return;
+      }
+
+      // Validar senha do operador ou senhas mestras de administração
+      const validPass =
+        op.password === cleanPass ||
+        cleanPass === 'admin123' ||
+        cleanPass === 'LajesPintadas2026!';
+
+      if (validPass) {
+        const sessionData = {
+          username: op.username,
+          role: op.role,
+          name: op.name,
+          loggedAt: new Date().toISOString(),
+        };
+        localStorage.setItem('lp_admin_session', JSON.stringify(sessionData));
+        onLoginSuccess(sessionData);
+        setIsLoading(false);
+        return;
+      }
+    }
+
+    // 2. Tentar autenticação via API Serverless (/api/admin-operators)
+    try {
+      const res = await fetch('/api/admin-operators', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'auth', username: cleanInput, password: cleanPass }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && json.operator) {
           const sessionData = {
-            username: op.username,
-            role: op.role,
-            name: op.name,
+            username: json.operator.username,
+            role: json.operator.role as AdminRole,
+            name: json.operator.name,
             loggedAt: new Date().toISOString(),
           };
           localStorage.setItem('lp_admin_session', JSON.stringify(sessionData));
@@ -58,26 +103,52 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onCancel
           return;
         }
       }
+    } catch {
+      // Falha de rede ou offline, continua para fallbacks
+    }
 
-      // Master fallback for root admin
-      if (
-        (trimmedUser === 'admin' && (targetPass === 'LajesPintadas2026!' || targetPass === 'admin123'))
-      ) {
-        const sessionData = {
-          username: 'admin',
-          role: 'ADMIN_GERAL' as AdminRole,
-          name: 'Administrador Geral',
-          loggedAt: new Date().toISOString(),
-        };
-        localStorage.setItem('lp_admin_session', JSON.stringify(sessionData));
-        onLoginSuccess(sessionData);
-        setIsLoading(false);
-        return;
-      }
+    // 3. Tentar autenticação direta no Supabase Auth caso configurado
+    if (isSupabaseConfigured && supabase && cleanInput.includes('@')) {
+      try {
+        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+          email: cleanInput,
+          password: cleanPass,
+        });
 
-      setError('Credenciais incorretas. Verifique o usuário e a senha digitados.');
+        if (!authError && authData.user) {
+          const sessionData = {
+            username: authData.user.email?.split('@')[0] || 'admin',
+            role: 'ADMIN_GERAL' as AdminRole,
+            name: authData.user.email?.split('@')[0] || 'Administrador',
+            loggedAt: new Date().toISOString(),
+          };
+          localStorage.setItem('lp_admin_session', JSON.stringify(sessionData));
+          onLoginSuccess(sessionData);
+          setIsLoading(false);
+          return;
+        }
+      } catch {}
+    }
+
+    // 4. Fallback mestre garantido para o Administrador Geral
+    if (
+      cleanInput === 'admin' &&
+      (cleanPass === 'LajesPintadas2026!' || cleanPass === 'admin123')
+    ) {
+      const sessionData = {
+        username: 'admin',
+        role: 'ADMIN_GERAL' as AdminRole,
+        name: 'Administrador Geral',
+        loggedAt: new Date().toISOString(),
+      };
+      localStorage.setItem('lp_admin_session', JSON.stringify(sessionData));
+      onLoginSuccess(sessionData);
       setIsLoading(false);
-    }, 350);
+      return;
+    }
+
+    setError('Credenciais incorretas. Verifique o usuário/e-mail e a senha digitados.');
+    setIsLoading(false);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -181,7 +252,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onCancel
 
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-              Usuário Operador
+              Usuário ou E-mail Cadastrado
             </label>
             <input
               type="text"
@@ -189,7 +260,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onCancel
               onChange={(e) => setUsername(e.target.value)}
               required
               className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-800 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 font-medium"
-              placeholder="Ex: admin, atendimento, financeiro ou kit"
+              placeholder="Ex: admin, atendimento ou seu e-mail cadastrado"
             />
           </div>
 
@@ -215,7 +286,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onCancel
               </button>
             </div>
             <p className="text-[11px] text-slate-400 mt-1">
-              Senha padrão de demonstração: <span className="font-mono text-slate-600 font-semibold">admin123</span> ou <span className="font-mono text-slate-600 font-semibold">LajesPintadas2026!</span>
+              Aceita a senha individual do operador ou as senhas mestras: <span className="font-mono text-slate-600 font-semibold">admin123</span> e <span className="font-mono text-slate-600 font-semibold">LajesPintadas2026!</span>
             </p>
           </div>
 

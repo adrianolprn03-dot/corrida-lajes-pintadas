@@ -1,5 +1,26 @@
 import React, { useState } from 'react';
-import { Home, Globe, Shirt, CreditCard, QrCode, AlertTriangle, Check, ArrowLeft, ArrowRight, Building2, Info, Ruler, ChevronDown, ChevronUp } from 'lucide-react';
+import {
+  Home,
+  Globe,
+  Shirt,
+  CreditCard,
+  QrCode,
+  AlertTriangle,
+  Check,
+  ArrowLeft,
+  ArrowRight,
+  Building2,
+  Info,
+  Ruler,
+  ChevronDown,
+  ChevronUp,
+  Accessibility,
+  Award,
+  FileText,
+  UserCheck,
+  ShieldCheck,
+  HeartHandshake,
+} from 'lucide-react';
 import {
   OriginType,
   AthleteGender,
@@ -8,8 +29,11 @@ import {
   PaymentMethod,
   ShirtInventoryItem,
   EventSettings,
+  PcdType,
 } from '../../types';
-import { calculatePricing, formatCentsToBRL } from '../../lib/pricing';
+import { calculatePricing, formatCentsToBRL, getActiveBatchLabel, getActiveBasePriceCents } from '../../lib/pricing';
+import { isValidCPF } from '../../lib/cpf';
+import { formatCPF, maskPhone } from '../../lib/masks';
 
 const SHIRT_MEASUREMENTS: Record<ShirtSize, { backHeight: string; width: string; frontHeight: string }> = {
   PP: { backHeight: '69,5 cm', width: '49 cm', frontHeight: '65 cm' },
@@ -26,12 +50,22 @@ export interface Step2Data {
   casaProofType?: CasaProofType;
   shirtSize: ShirtSize;
   paymentMethod: PaymentMethod;
+  // PCD / Inclusão & Atleta-Guia
+  isPcd?: boolean;
+  pcdType?: PcdType;
+  pcdCid?: string;
+  hasGuide?: boolean;
+  guideName?: string;
+  guideCpf?: string;
+  guidePhone?: string;
+  guideShirtSize?: ShirtSize;
 }
 
 interface Step2CategoryAndShirtProps {
   data: Step2Data;
   city: string;
   state: string;
+  athleteCpf?: string;
   inventory: ShirtInventoryItem[];
   settings: EventSettings;
   onChange: (fields: Partial<Step2Data>) => void;
@@ -43,6 +77,7 @@ export const Step2CategoryAndShirt: React.FC<Step2CategoryAndShirtProps> = ({
   data,
   city,
   state,
+  athleteCpf,
   inventory,
   settings,
   onChange,
@@ -52,19 +87,24 @@ export const Step2CategoryAndShirt: React.FC<Step2CategoryAndShirtProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [showMeasurements, setShowMeasurements] = useState(false);
 
+  const isPcd = data.originType === 'PCD' || Boolean(data.isPcd);
+  const activeBaseCents = getActiveBasePriceCents(settings);
+  const pcdBaseCents = Math.round(activeBaseCents / 2);
+  const activeBatchLabel = getActiveBatchLabel(settings);
+
   const pixPricing = calculatePricing('PIX', {
-    basePriceCents: settings.basePriceCents,
+    basePriceCents: activeBaseCents,
     pixFixedFeeCents: settings.asaasPixFixedFeeCents,
     creditFixedFeeCents: settings.asaasCreditFixedFeeCents,
     creditPercentFee: settings.asaasCreditPercentFee,
-  });
+  }, { isPcd, batchName: activeBatchLabel });
 
   const cardPricing = calculatePricing('CREDIT_CARD', {
-    basePriceCents: settings.basePriceCents,
+    basePriceCents: activeBaseCents,
     pixFixedFeeCents: settings.asaasPixFixedFeeCents,
     creditFixedFeeCents: settings.asaasCreditFixedFeeCents,
     creditPercentFee: settings.asaasCreditPercentFee,
-  });
+  }, { isPcd, batchName: activeBatchLabel });
 
   const handleNext = (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,12 +118,54 @@ export const Step2CategoryAndShirt: React.FC<Step2CategoryAndShirtProps> = ({
       return;
     }
 
-    // Validação da Camisa
+    // Validação da Camisa do Atleta
     const selectedShirt = inventory.find((s) => s.size === data.shirtSize);
     const stockCount = selectedShirt?.visitorAvailableStock !== undefined ? selectedShirt.visitorAvailableStock : selectedShirt?.availableStock;
     if (!selectedShirt || (stockCount !== undefined && stockCount <= 0)) {
       setError(`O tamanho de camisa ${data.shirtSize} está esgotado no momento. Escolha outro tamanho disponível.`);
       return;
+    }
+
+    // Validação específica para categoria PCD / Inclusão
+    if (data.originType === 'PCD') {
+      if (!data.pcdType) {
+        setError('Por favor, selecione o tipo de deficiência para a inscrição na categoria PCD.');
+        return;
+      }
+      if (!data.pcdCid || data.pcdCid.trim().length < 3) {
+        setError('Informe o código CID ou número do Laudo Médico / CIPTEA comprobatório.');
+        return;
+      }
+      if (data.hasGuide) {
+        if (!data.guideName || data.guideName.trim().length < 5) {
+          setError('Informe o nome e sobrenome completos do Atleta-Guia.');
+          return;
+        }
+        const cleanGuideCpf = (data.guideCpf || '').replace(/\D/g, '');
+        if (!cleanGuideCpf || !isValidCPF(cleanGuideCpf)) {
+          setError('CPF do Atleta-Guia inválido. Por favor, confira os números digitados.');
+          return;
+        }
+        const cleanAthleteCpf = (athleteCpf || '').replace(/\D/g, '');
+        if (cleanAthleteCpf && cleanGuideCpf === cleanAthleteCpf) {
+          setError('O CPF do Atleta-Guia não pode ser idêntico ao CPF do atleta participante.');
+          return;
+        }
+        if (!data.guidePhone || data.guidePhone.replace(/\D/g, '').length < 10) {
+          setError('Informe um telefone ou WhatsApp válido com DDD para o Atleta-Guia.');
+          return;
+        }
+        if (!data.guideShirtSize) {
+          setError('Selecione o tamanho da camisa oficial gratuita do Atleta-Guia.');
+          return;
+        }
+        const guideShirt = inventory.find((s) => s.size === data.guideShirtSize);
+        const guideStock = guideShirt?.visitorAvailableStock !== undefined ? guideShirt.visitorAvailableStock : guideShirt?.availableStock;
+        if (!guideShirt || (guideStock !== undefined && guideStock <= 0)) {
+          setError(`A camisa tamanho ${data.guideShirtSize} do Atleta-Guia está esgotada no momento. Selecione outro tamanho.`);
+          return;
+        }
+      }
     }
 
     onNext();
@@ -98,67 +180,304 @@ export const Step2CategoryAndShirt: React.FC<Step2CategoryAndShirtProps> = ({
         </div>
       )}
 
-      {/* 1. Origem: Local ou Visitante */}
+      {/* 1. Origem: Local, Visitante ou PCD */}
       <div>
         <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">
           1. Origem da Participação <span className="text-red-500">*</span>
         </label>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {/* Categoria Local */}
           <button
             type="button"
             onClick={() => {
-              onChange({ originType: 'CASA' });
+              onChange({ originType: 'CASA', isPcd: false });
               setError(null);
             }}
-            className={`p-4 rounded-xl border-2 text-left transition-all flex items-start gap-3 ${
+            className={`p-3.5 rounded-xl border-2 text-left transition-all flex flex-col justify-between ${
               data.originType === 'CASA' || data.originType === 'LOCAL'
-                ? 'border-orange-500 bg-orange-50/50 shadow-sm'
+                ? 'border-orange-500 bg-orange-50/50 shadow-sm ring-2 ring-orange-200'
                 : 'border-slate-200 bg-white hover:border-slate-300'
             }`}
           >
-            <div
-              className={`p-2 rounded-lg ${
-                data.originType === 'CASA' || data.originType === 'LOCAL' ? 'bg-orange-600 text-white' : 'bg-slate-100 text-slate-600'
-              }`}
-            >
-              <Home size={20} />
+            <div className="flex items-center gap-2 mb-2">
+              <div
+                className={`p-1.5 rounded-lg ${
+                  data.originType === 'CASA' || data.originType === 'LOCAL' ? 'bg-orange-600 text-white' : 'bg-slate-100 text-slate-600'
+                }`}
+              >
+                <Home size={18} />
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-orange-700 bg-orange-100/70 px-2 py-0.5 rounded">
+                Presencial
+              </span>
             </div>
             <div>
-              <div className="font-display font-bold text-slate-900 text-sm">Categoria Local</div>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Naturais de Lajes Pintadas/RN ou moradores atuais da cidade.
+              <div className="font-display font-bold text-slate-900 text-xs sm:text-sm">Local — Lajespintadense</div>
+              <p className="text-[11px] text-slate-500 mt-1 leading-snug">
+                Naturais ou moradores comprovados de Lajes Pintadas/RN.
               </p>
             </div>
           </button>
 
+          {/* Categoria Visitante */}
           <button
             type="button"
             onClick={() => {
-              onChange({ originType: 'VISITANTE', casaProofType: undefined });
+              onChange({ originType: 'VISITANTE', casaProofType: undefined, isPcd: false });
               setError(null);
             }}
-            className={`p-4 rounded-xl border-2 text-left transition-all flex items-start gap-3 ${
+            className={`p-3.5 rounded-xl border-2 text-left transition-all flex flex-col justify-between ${
               data.originType === 'VISITANTE'
-                ? 'border-sky-500 bg-sky-50/50 shadow-sm'
+                ? 'border-sky-500 bg-sky-50/50 shadow-sm ring-2 ring-sky-200'
                 : 'border-slate-200 bg-white hover:border-slate-300'
             }`}
           >
-            <div
-              className={`p-2 rounded-lg ${
-                data.originType === 'VISITANTE' ? 'bg-sky-600 text-white' : 'bg-slate-100 text-slate-600'
-              }`}
-            >
-              <Globe size={20} />
+            <div className="flex items-center gap-2 mb-2">
+              <div
+                className={`p-1.5 rounded-lg ${
+                  data.originType === 'VISITANTE' ? 'bg-sky-600 text-white' : 'bg-slate-100 text-slate-600'
+                }`}
+              >
+                <Globe size={18} />
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-sky-700 bg-sky-100/70 px-2 py-0.5 rounded">
+                Geral
+              </span>
             </div>
             <div>
-              <div className="font-display font-bold text-slate-900 text-sm">Categoria Visitante</div>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Atletas que não nasceram e não residem em Lajes Pintadas/RN.
+              <div className="font-display font-bold text-slate-900 text-xs sm:text-sm">Categoria Visitante</div>
+              <p className="text-[11px] text-slate-500 mt-1 leading-snug">
+                Corredores e assessorias esportivas de demais cidades.
+              </p>
+            </div>
+          </button>
+
+          {/* Categoria PCD / Inclusão */}
+          <button
+            type="button"
+            onClick={() => {
+              onChange({
+                originType: 'PCD',
+                isPcd: true,
+                pcdType: data.pcdType || 'FISICA',
+                casaProofType: undefined,
+              });
+              setError(null);
+            }}
+            className={`p-3.5 rounded-xl border-2 text-left transition-all flex flex-col justify-between ${
+              data.originType === 'PCD'
+                ? 'border-purple-600 bg-purple-50/60 shadow-sm ring-2 ring-purple-200'
+                : 'border-slate-200 bg-white hover:border-slate-300'
+            }`}
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <div
+                className={`p-1.5 rounded-lg ${
+                  data.originType === 'PCD' ? 'bg-purple-600 text-white' : 'bg-slate-100 text-slate-600'
+                }`}
+              >
+                <Accessibility size={18} />
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-purple-700 bg-purple-100 px-2 py-0.5 rounded">
+                50% OFF • {formatCentsToBRL(pcdBaseCents)} + taxa
+              </span>
+            </div>
+            <div>
+              <div className="font-display font-bold text-slate-900 text-xs sm:text-sm">PCD / Inclusão</div>
+              <p className="text-[11px] text-slate-500 mt-1 leading-snug">
+                Pessoas com deficiência (meia-inscrição {formatCentsToBRL(pcdBaseCents)} + taxa 10%), largada prioritária e pódio exclusivo.
               </p>
             </div>
           </button>
         </div>
       </div>
+
+      {/* Formulário Específico da Categoria PCD / Inclusão */}
+      {data.originType === 'PCD' && (
+        <div className="p-5 rounded-2xl bg-purple-50/70 border-2 border-purple-200 space-y-4">
+          <div className="flex items-center justify-between border-b border-purple-200/80 pb-3">
+            <div className="flex items-center gap-2">
+              <Accessibility className="w-5 h-5 text-purple-700" />
+              <span className="font-display font-bold text-sm text-purple-950 uppercase tracking-wide">
+                Informações da Inclusão / PCD
+              </span>
+            </div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-purple-700 bg-purple-100 px-2 py-0.5 rounded">
+              Regulamento Oficial
+            </span>
+          </div>
+
+          {/* Tipo de Deficiência */}
+          <div>
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">
+              Tipo de Deficiência <span className="text-red-500">*</span>
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {[
+                { type: 'FISICA', label: 'Física / Motora' },
+                { type: 'VISUAL', label: 'Visual' },
+                { type: 'AUDITIVA', label: 'Auditiva' },
+                { type: 'INTELECTUAL', label: 'Intelectual' },
+                { type: 'OUTRA', label: 'Outra Deficiência' },
+              ].map((opt) => (
+                <button
+                  key={opt.type}
+                  type="button"
+                  onClick={() => onChange({ pcdType: opt.type as PcdType })}
+                  className={`p-2.5 rounded-xl border text-center text-xs font-semibold transition-all cursor-pointer ${
+                    data.pcdType === opt.type
+                      ? 'border-purple-600 bg-purple-600 text-white shadow-sm font-bold'
+                      : 'border-slate-200 bg-white text-slate-700 hover:border-purple-300'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Código CID ou Nº do Laudo Médico / CIPTEA */}
+          <div>
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5">
+              Código CID ou Nº do Laudo Médico / CIPTEA <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              required
+              value={data.pcdCid || ''}
+              onChange={(e) => onChange({ pcdCid: e.target.value })}
+              placeholder="Ex: CID-10 H54.0 ou Laudo Dr. CRM 12345 / Carteira CIPTEA"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
+            <div className="mt-1.5 p-2.5 rounded-lg bg-purple-100/70 border border-purple-200 text-[11px] text-purple-900 flex items-start gap-1.5">
+              <FileText className="w-4 h-4 shrink-0 mt-0.5 text-purple-700" />
+              <span>
+                <strong>Apresentação Obrigatória:</strong> O laudo médico comprobatório original ou documento oficial equivalente deverá ser apresentado presencialmente no ato da entrega do kit para validação.
+              </span>
+            </div>
+          </div>
+
+          {/* Atleta-Guia Toggle */}
+          <div className="pt-2 border-t border-purple-200/80">
+            <label className="flex items-start gap-3 cursor-pointer p-3 rounded-xl bg-white border border-purple-200 hover:border-purple-300 transition">
+              <input
+                type="checkbox"
+                checked={data.hasGuide || false}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  onChange({
+                    hasGuide: checked,
+                    guideName: checked ? data.guideName : undefined,
+                    guideCpf: checked ? data.guideCpf : undefined,
+                    guidePhone: checked ? data.guidePhone : undefined,
+                    guideShirtSize: checked ? (data.guideShirtSize || 'M') : undefined,
+                  });
+                }}
+                className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500 mt-0.5 cursor-pointer"
+              />
+              <div className="flex-1 text-xs">
+                <div className="flex items-center gap-1.5 font-bold text-slate-900">
+                  <HeartHandshake className="w-4 h-4 text-purple-600" />
+                  <span>Participarei com Atleta-Guia</span>
+                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded ml-1">
+                    Isento (Grátis)
+                  </span>
+                </div>
+                <p className="text-slate-500 text-[11px] mt-0.5">
+                  O guia não paga taxa de inscrição, tem direito ao kit oficial com camisa oficial laranja e número de peito de suporte.
+                </p>
+              </div>
+            </label>
+
+            {/* Dados do Atleta-Guia (se ativado) */}
+            {data.hasGuide && (
+              <div className="mt-3 p-4 rounded-xl bg-white border border-purple-200 space-y-3 animate-fadeIn">
+                <span className="font-bold text-xs text-purple-950 uppercase tracking-wide block">
+                  Dados do Atleta-Guia Oficial:
+                </span>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">
+                      Nome Completo do Guia <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={data.guideName || ''}
+                      onChange={(e) => onChange({ guideName: e.target.value })}
+                      placeholder="Nome completo do guia"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">
+                      CPF do Guia <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      maxLength={14}
+                      value={formatCPF(data.guideCpf || '')}
+                      onChange={(e) => onChange({ guideCpf: e.target.value.replace(/\D/g, '') })}
+                      placeholder="000.000.000-00"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">
+                      Telefone / WhatsApp do Guia <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      maxLength={15}
+                      value={maskPhone(data.guidePhone || '')}
+                      onChange={(e) => onChange({ guidePhone: e.target.value.replace(/\D/g, '') })}
+                      placeholder="(84) 99999-9999"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">
+                      Camisa Oficial do Guia (Grátis) <span className="text-red-500">*</span>
+                    </label>
+                    <div className="grid grid-cols-6 gap-1">
+                      {(['PP', 'P', 'M', 'G', 'GG', 'XG'] as ShirtSize[]).map((sz) => {
+                        const item = inventory.find((s) => s.size === sz);
+                        const stock = item?.visitorAvailableStock !== undefined ? item.visitorAvailableStock : item?.availableStock;
+                        const isAvailable = (stock || 0) > 0;
+                        const isSelected = data.guideShirtSize === sz;
+
+                        return (
+                          <button
+                            key={sz}
+                            type="button"
+                            disabled={!isAvailable}
+                            onClick={() => onChange({ guideShirtSize: sz })}
+                            className={`p-1.5 rounded-lg border text-center transition-all cursor-pointer ${
+                              !isAvailable
+                                ? 'border-slate-200 bg-slate-100 text-slate-400 opacity-50 cursor-not-allowed'
+                                : isSelected
+                                ? 'border-purple-600 bg-purple-600 text-white font-bold'
+                                : 'border-slate-200 bg-slate-50 text-slate-800 hover:border-purple-400'
+                            }`}
+                          >
+                            <span className="text-xs uppercase">{sz}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Aviso Obrigatório e Orientação Local */}
       {(data.originType === 'CASA' || data.originType === 'LOCAL') && (
@@ -352,7 +671,7 @@ export const Step2CategoryAndShirt: React.FC<Step2CategoryAndShirtProps> = ({
                     {formatCentsToBRL(pixPricing.totalAmountCents)}
                   </div>
                   <p className="text-[11px] text-slate-500 mt-0.5">
-                    R$ 50,00 + {formatCentsToBRL(pixPricing.feeCents)} (taxa de serviço 10%)
+                    {formatCentsToBRL(pixPricing.baseAmountCents)} + {formatCentsToBRL(pixPricing.feeCents)} (taxa de serviço 10%)
                   </p>
                 </div>
               </button>
@@ -385,7 +704,7 @@ export const Step2CategoryAndShirt: React.FC<Step2CategoryAndShirtProps> = ({
                     {formatCentsToBRL(cardPricing.totalAmountCents)}
                   </div>
                   <p className="text-[11px] text-slate-500 mt-0.5">
-                    R$ 50,00 + {formatCentsToBRL(cardPricing.feeCents)} (taxa de serviço 10%)
+                    {formatCentsToBRL(cardPricing.baseAmountCents)} + {formatCentsToBRL(cardPricing.feeCents)} (taxa de serviço 10%)
                   </p>
                 </div>
               </button>

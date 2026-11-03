@@ -23,6 +23,14 @@ import {
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { isValidCPF } from '../lib/cpf';
 import { calculatePricing } from '../lib/pricing';
+import {
+  RegistrationBatch,
+  BatchState,
+  sanitizeBatches,
+  resolveBatchState,
+  extractBatchId,
+  LEGACY_BATCH_ID,
+} from '../lib/batches';
 
 const STORAGE_KEYS = {
   SETTINGS: 'lp_race_settings_v1',
@@ -44,6 +52,7 @@ export const INITIAL_OPERATORS: AdminOperator[] = [
     email: 'admin@lajespintadas.rn.gov.br',
     isActive: true,
     createdAt: '2026-01-01T08:00:00Z',
+    password: 'admin123',
   },
   {
     id: 'op-atendimento',
@@ -53,6 +62,7 @@ export const INITIAL_OPERATORS: AdminOperator[] = [
     email: 'atendimento@lajespintadas.rn.gov.br',
     isActive: true,
     createdAt: '2026-01-01T08:00:00Z',
+    password: 'atendimento123',
   },
   {
     id: 'op-financeiro',
@@ -62,6 +72,7 @@ export const INITIAL_OPERATORS: AdminOperator[] = [
     email: 'financas@lajespintadas.rn.gov.br',
     isActive: true,
     createdAt: '2026-01-01T08:00:00Z',
+    password: 'financeiro123',
   },
   {
     id: 'op-kit',
@@ -71,6 +82,7 @@ export const INITIAL_OPERATORS: AdminOperator[] = [
     email: 'kits@lajespintadas.rn.gov.br',
     isActive: true,
     createdAt: '2026-01-01T08:00:00Z',
+    password: 'kit123',
   },
 ];
 
@@ -109,17 +121,19 @@ export const INITIAL_SETTINGS: EventSettings = {
 A 5ª Corrida de Emancipação Política de Lajes Pintadas/RN será realizada no dia 26 de dezembro de 2026, com percurso oficial aferido de 5 km, em vias públicas asfaltadas e pavimentadas do município de Lajes Pintadas/RN.
 
 2. CATEGORIAS DE PREMIAÇÃO
-2.1. O evento é dividido estritamente em quatro categorias oficiais:
+2.1. O evento é dividido nas seguintes categorias oficiais:
     a) Local Masculino;
     b) Local Feminino;
     c) Visitante Masculino;
-    d) Visitante Feminino.
+    d) Visitante Feminino;
+    e) PCD / Inclusão (Masculino e Feminino - Pessoas com Deficiência física, visual, auditiva ou intelectual).
 2.2. A categoria "Local" (Lajespintadense) é privativa para quem nasceu em Lajes Pintadas/RN ou reside atualmente no município, inclusive naturais que residam em outras localidades.
 2.3. A categoria "Visitante" destina-se aos participantes que não se enquadram nas condições de natural nem de residente no município.
-2.4. A declaração do vínculo para a categoria Local realizada na inscrição é uma autodeclaração prévia. A homologação definitiva do resultado e premiação dependerá da comprovação documental cabal (Certidão de Nascimento, Título Eleitoral do Município ou Comprovante de Residência idôneo).
+2.4. A categoria "PCD / Inclusão" conta com largada prioritária, pódio exclusivo e direito a acompanhamento por Atleta-Guia com inscrição 100% gratuita e kit oficial (camisa laranja e número de peito de suporte). É obrigatória a apresentação de laudo médico original ou carteira comprobatória (ex: CIPTEA) no ato da retirada do kit.
+2.5. A declaração do vínculo para a categoria Local realizada na inscrição é uma autodeclaração prévia. A homologação definitiva do resultado e premiação dependerá da comprovação documental cabal (Certidão de Nascimento, Título Eleitoral do Município ou Comprovante de Residência idôneo).
 
 3. DO VALOR E DO KIT
-3.1. A taxa de inscrição é de R$ 50,00 (cinquenta reais), acrescida exclusivamente da taxa de serviço de 10% de processamento da plataforma de pagamento oficial.
+3.1. A taxa de inscrição na Categoria Geral é de R$ 50,00 (cinquenta reais), acrescida exclusivamente da taxa de serviço de 10% (R$ 5,00), totalizando R$ 55,00. Na Categoria PCD / Inclusão, a inscrição tem 50% de desconto (metade do valor), totalizando R$ 25,00 (vinte e cinco reais) acrescida da taxa de serviço de 10% (R$ 2,50), perfazendo R$ 27,50 para o atleta. Atletas-guia acompanhantes de atletas PCD possuem inscrição e kit 100% gratuitos (R$ 0,00).
 3.2. A inscrição confere direito ao Kit Oficial contendo camisa técnica em poliamida com proteção UV fator FPU 50+ oficial laranja, chip de cronometragem eletrônica, número de peito e medalha finisher para os que concluírem o percurso dentro do tempo regulamentar.
 3.3. Não será permitida troca de tamanho de camisa no ato da retirada do kit, prevalecendo estritamente a grade selecionada no ato da inscrição.
 
@@ -134,6 +148,8 @@ A Prefeitura Municipal de Lajes Pintadas e a Comissão Organizadora da 5ª Corri
 2. SIGILO E NÃO EXPOSIÇÃO: Em nenhuma hipótese o CPF, telefone, data de nascimento ou e-mail dos inscritos serão publicados em listas públicas de largada ou murais públicos. A consulta à inscrição é protegida por protocolo e código de acesso pessoal gerado com hash criptográfico.
 3. COMPARTILHAMENTO CONTROLADO: Os dados estritamente necessários para cobrança são transmitidos via conexão criptografada SSL/TLS ao gateway financeiro credenciado.`,
   updatedAt: new Date().toISOString(),
+  registrationBatches: [],
+  batchState: null,
 };
 
 // Grade e Estoque de Camisas com separação estrita: Local (Lajespintadense) vs Visitante (Geral)
@@ -164,24 +180,56 @@ class StorageService {
     }
   }
 
-  // Obter Configurações
+  private computeLocalBatchState(batchesRaw?: RegistrationBatch[]): BatchState {
+    const batches = sanitizeBatches(batchesRaw || []);
+    if (batches.length === 0) return resolveBatchState([], {});
+    const allRegs = this.getLocal<Registration[]>(STORAGE_KEYS.REGISTRATIONS, []);
+    const now = Date.now();
+    const sold: Record<string, number> = {};
+    for (const r of allRegs) {
+      const isActive =
+        r.status === 'CONFIRMED' ||
+        r.status === 'IN_REVIEW' ||
+        (r.status === 'RESERVED' && new Date(r.reservationExpiresAt).getTime() > now);
+      if (isActive) {
+        const bid = r.batchId || extractBatchId({ kit_notes: r.kitNotes }) || LEGACY_BATCH_ID;
+        sold[bid] = (sold[bid] || 0) + 1;
+      }
+    }
+    return resolveBatchState(batches, sold);
+  }
+
   // Obter Configurações do Evento
   async getSettings(): Promise<EventSettings> {
+    const localSettings = this.getLocal<EventSettings>(STORAGE_KEYS.SETTINGS, INITIAL_SETTINGS);
+
     // 1. Tentar via API oficial Vercel Serverless (com Service Role para bypass de RLS)
     try {
       const apiRes = await fetch('/api/admin-settings');
       if (apiRes.ok) {
         const json = await apiRes.json();
+        const serverBatchState: BatchState | null = json.batchState || null;
         if (json.settings) {
           const d = json.settings;
           const status = (d.status === 'PREPARATION' ? 'OPEN' : d.status) as EventStatus;
+          const batches = sanitizeBatches(
+            serverBatchState?.batches || d.registration_batches || localSettings.registrationBatches || []
+          );
+          const resolvedBatchState =
+            serverBatchState && serverBatchState.configured
+              ? serverBatchState
+              : this.computeLocalBatchState(batches);
+          const effectiveBaseCents =
+            resolvedBatchState.current?.basePriceCents ||
+            (Number(d.base_price_cents) > 0 ? Number(d.base_price_cents) : localSettings.basePriceCents || 5000);
+
           return {
             id: d.id,
             eventName: d.event_name,
             edition: d.edition,
             eventDate: d.event_date,
             distanceKm: Number(d.distance_km),
-            basePriceCents: 5000, // Rigorosamente R$ 50,00 conforme Edital
+            basePriceCents: effectiveBaseCents,
             status,
             maxCapacity: d.max_capacity,
             localMaxCapacity: d.local_max_capacity !== undefined ? d.local_max_capacity : (d.max_capacity ? Math.floor(d.max_capacity / 2) : 350),
@@ -198,15 +246,24 @@ class StorageService {
             organizerContact: d.organizer_contact,
             revenueResponsible: d.revenue_responsible,
             asaasEnvironment: d.asaas_environment,
-            asaasPixFixedFeeCents: 500, // R$ 5,00 (10%)
-            asaasCreditFixedFeeCents: 500, // R$ 5,00 (10%)
-            asaasCreditPercentFee: 0.10, // 10%
+            asaasPixFixedFeeCents: Math.round(effectiveBaseCents * 0.10),
+            asaasCreditFixedFeeCents: Math.round(effectiveBaseCents * 0.10),
+            asaasCreditPercentFee: 0.10,
             termsVersion: d.terms_version,
             privacyVersion: d.privacy_version,
             termsContent: d.terms_content,
             privacyContent: d.privacy_content,
             updatedAt: d.updated_at,
+            registrationBatches: batches,
+            batchState: resolvedBatchState,
           };
+        } else if (serverBatchState && serverBatchState.configured) {
+          localSettings.registrationBatches = sanitizeBatches(serverBatchState.batches);
+          localSettings.batchState = serverBatchState;
+          if (serverBatchState.current) {
+            localSettings.basePriceCents = serverBatchState.current.basePriceCents;
+          }
+          this.setLocal(STORAGE_KEYS.SETTINGS, localSettings);
         }
       }
     } catch {}
@@ -217,13 +274,19 @@ class StorageService {
         const { data, error } = await supabase.from('event_settings').select('*').limit(1).single();
         if (!error && data) {
           const status = (data.status === 'PREPARATION' ? 'OPEN' : data.status) as EventStatus;
+          const batches = sanitizeBatches(data.registration_batches || localSettings.registrationBatches || []);
+          const resolvedBatchState = this.computeLocalBatchState(batches);
+          const effectiveBaseCents =
+            resolvedBatchState.current?.basePriceCents ||
+            (Number(data.base_price_cents) > 0 ? Number(data.base_price_cents) : localSettings.basePriceCents || 5000);
+
           return {
             id: data.id,
             eventName: data.event_name,
             edition: data.edition,
             eventDate: data.event_date,
             distanceKm: Number(data.distance_km),
-            basePriceCents: 5000, // Rigorosamente R$ 50,00 conforme Edital
+            basePriceCents: effectiveBaseCents,
             status,
             maxCapacity: data.max_capacity,
             localMaxCapacity: data.local_max_capacity !== undefined ? data.local_max_capacity : (data.max_capacity ? Math.floor(data.max_capacity / 2) : 350),
@@ -240,14 +303,16 @@ class StorageService {
             organizerContact: data.organizer_contact,
             revenueResponsible: data.revenue_responsible,
             asaasEnvironment: data.asaas_environment,
-            asaasPixFixedFeeCents: 500, // R$ 5,00 (10%)
-            asaasCreditFixedFeeCents: 500, // R$ 5,00 (10%)
-            asaasCreditPercentFee: 0.10, // 10%
+            asaasPixFixedFeeCents: Math.round(effectiveBaseCents * 0.10),
+            asaasCreditFixedFeeCents: Math.round(effectiveBaseCents * 0.10),
+            asaasCreditPercentFee: 0.10,
             termsVersion: data.terms_version,
             privacyVersion: data.privacy_version,
             termsContent: data.terms_content,
             privacyContent: data.privacy_content,
             updatedAt: data.updated_at,
+            registrationBatches: batches,
+            batchState: resolvedBatchState,
           };
         }
       } catch (err) {
@@ -255,7 +320,6 @@ class StorageService {
       }
     }
 
-    const localSettings = this.getLocal<EventSettings>(STORAGE_KEYS.SETTINGS, INITIAL_SETTINGS);
     let changed = false;
     if (localSettings.status === 'PREPARATION') {
       localSettings.status = 'OPEN';
@@ -269,22 +333,19 @@ class StorageService {
       localSettings.startLocation = 'Feira Livre Coberta, Centro, Lajes Pintadas/RN';
       changed = true;
     }
-    if (localSettings.basePriceCents !== 5000) {
+    if (!localSettings.basePriceCents || localSettings.basePriceCents <= 0) {
       localSettings.basePriceCents = 5000;
       changed = true;
     }
-    if (localSettings.asaasPixFixedFeeCents !== 500) {
-      localSettings.asaasPixFixedFeeCents = 500;
-      changed = true;
+    localSettings.registrationBatches = sanitizeBatches(localSettings.registrationBatches || []);
+    localSettings.batchState = this.computeLocalBatchState(localSettings.registrationBatches);
+    if (localSettings.batchState.current) {
+      localSettings.basePriceCents = localSettings.batchState.current.basePriceCents;
     }
-    if (localSettings.asaasCreditFixedFeeCents !== 500) {
-      localSettings.asaasCreditFixedFeeCents = 500;
-      changed = true;
-    }
-    if (localSettings.asaasCreditPercentFee !== 0.10) {
-      localSettings.asaasCreditPercentFee = 0.10;
-      changed = true;
-    }
+    const feeCents = Math.round(localSettings.basePriceCents * 0.10);
+    localSettings.asaasPixFixedFeeCents = feeCents;
+    localSettings.asaasCreditFixedFeeCents = feeCents;
+    localSettings.asaasCreditPercentFee = 0.10;
     if (changed) {
       this.setLocal(STORAGE_KEYS.SETTINGS, localSettings);
     }
@@ -294,16 +355,49 @@ class StorageService {
   // Atualizar Configurações (Admin)
   async updateSettings(updates: Partial<EventSettings>): Promise<EventSettings> {
     const current = await this.getSettings();
-    const merged: EventSettings = { ...current, ...updates, updatedAt: new Date().toISOString() };
+    const sanitizedBatches =
+      updates.registrationBatches !== undefined
+        ? sanitizeBatches(updates.registrationBatches)
+        : sanitizeBatches(current.registrationBatches || []);
+    const computedBatchState = this.computeLocalBatchState(sanitizedBatches);
+    const effectiveBaseCents =
+      computedBatchState.current?.basePriceCents ||
+      (updates.basePriceCents && updates.basePriceCents > 0 ? Math.round(updates.basePriceCents) : current.basePriceCents || 5000);
+
+    const merged: EventSettings = {
+      ...current,
+      ...updates,
+      basePriceCents: effectiveBaseCents,
+      asaasPixFixedFeeCents: Math.round(effectiveBaseCents * 0.10),
+      asaasCreditFixedFeeCents: Math.round(effectiveBaseCents * 0.10),
+      asaasCreditPercentFee: 0.10,
+      registrationBatches: sanitizedBatches,
+      batchState: computedBatchState,
+      updatedAt: new Date().toISOString(),
+    };
     this.setLocal(STORAGE_KEYS.SETTINGS, merged);
 
     // 1. Salvar via API oficial Vercel Serverless (com Service Role)
     try {
-      await fetch('/api/admin-settings', {
+      const res = await fetch('/api/admin-settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates),
+        body: JSON.stringify({
+          ...updates,
+          basePriceCents: effectiveBaseCents,
+          registrationBatches: sanitizedBatches,
+        }),
       });
+      if (res.ok) {
+        const json = await res.json().catch(() => null);
+        if (json?.batchState) {
+          merged.batchState = json.batchState;
+          if (json.batchState.current) {
+            merged.basePriceCents = json.batchState.current.basePriceCents;
+          }
+          this.setLocal(STORAGE_KEYS.SETTINGS, merged);
+        }
+      }
     } catch {}
 
     // 2. Tentar via Supabase Client caso configurado
@@ -311,6 +405,7 @@ class StorageService {
       try {
         await supabase.from('event_settings').update({
           status: merged.status,
+          base_price_cents: merged.basePriceCents,
           max_capacity: merged.maxCapacity,
           min_age: merged.minAge,
           minor_rules: merged.minorRules,
@@ -622,6 +717,10 @@ class StorageService {
       }
     }
 
+    if (settings.batchState?.configured && !settings.batchState.current) {
+      throw new Error('Inscrições encerradas: todos os lotes de inscrição foram encerrados ou esgotados.');
+    }
+
     // 3. Validação de Regras Local / Visitante e Consistência de Residência
     const registrationChannel = submission.channel === 'PRESENCIAL_PREFEITURA' ? 'PRESENCIAL_PREFEITURA' : 'ONLINE';
     const isLocal = submission.originType === 'LOCAL' || submission.originType === 'CASA';
@@ -648,7 +747,9 @@ class StorageService {
 
     // 4. Calcular Categoria Oficial no Servidor
     let category: Category;
-    if (isLocal) {
+    if (submission.originType === 'PCD') {
+      category = submission.gender === 'MASCULINO' ? 'PCD_MASCULINO' : 'PCD_FEMININO';
+    } else if (isLocal) {
       category = submission.gender === 'MASCULINO' ? 'LOCAL_MASCULINO' : 'LOCAL_FEMININO';
     } else {
       category = submission.gender === 'MASCULINO' ? 'VISITANTE_MASCULINO' : 'VISITANTE_FEMININO';
@@ -660,7 +761,7 @@ class StorageService {
       if (currentMetrics.localAvailableCapacity !== null && currentMetrics.localAvailableCapacity !== undefined && currentMetrics.localAvailableCapacity <= 0) {
         throw new Error('A cota de vagas para a categoria Local (Lajespintadense) está esgotada.');
       }
-    } else {
+    } else if (submission.originType === 'VISITANTE') {
       if (currentMetrics.visitorAvailableCapacity !== null && currentMetrics.visitorAvailableCapacity !== undefined && currentMetrics.visitorAvailableCapacity <= 0) {
         throw new Error('A cota de vagas para a categoria Visitante está esgotada.');
       }
@@ -686,13 +787,15 @@ class StorageService {
       throw new Error(`O tamanho de camisa ${submission.shirtSize} está esgotado. Por favor, selecione outro tamanho.`);
     }
 
-    // 7. Calcular valores e taxas Asaas
+    // 7. Calcular valores e taxas Asaas conforme o lote vigente
+    const isPcd = submission.originType === 'PCD' || Boolean(submission.isPcd);
+    const activeBatch = settings.batchState?.current || null;
     const pricing = calculatePricing(submission.paymentMethod, {
-      basePriceCents: settings.basePriceCents,
+      basePriceCents: activeBatch?.basePriceCents || settings.basePriceCents,
       pixFixedFeeCents: settings.asaasPixFixedFeeCents,
       creditFixedFeeCents: settings.asaasCreditFixedFeeCents,
       creditPercentFee: settings.asaasCreditPercentFee,
-    });
+    }, { isPcd, batchName: activeBatch?.name });
 
     // 8. Tentar processar via API oficial (Vercel Serverless + Asaas + Supabase)
     try {
@@ -705,6 +808,11 @@ class StorageService {
           birthDate: submission.birthDate,
           email: submission.email,
           phone: submission.phone,
+          cep: submission.cep,
+          street: submission.street,
+          number: submission.number,
+          complement: submission.complement,
+          neighborhood: submission.neighborhood,
           city: submission.city,
           state: submission.state,
           team: submission.team,
@@ -714,12 +822,21 @@ class StorageService {
           shirtSize: submission.shirtSize,
           paymentMethod: submission.paymentMethod,
           creditCard: submission.creditCard,
+          isPcd: submission.originType === 'PCD',
+          pcdType: submission.pcdType,
+          pcdCid: submission.pcdCid,
+          hasGuide: submission.hasGuide,
+          guideName: submission.guideName,
+          guideCpf: submission.guideCpf,
+          guidePhone: submission.guidePhone,
+          guideShirtSize: submission.guideShirtSize,
           channel: registrationChannel,
           attendantName: submission.attendantName,
           attendantId: submission.attendantId,
           documentVerificationStatus: submission.documentVerificationStatus,
           documentTypePresented: submission.documentTypePresented,
           documentVerificationNotes: submission.documentVerificationNotes,
+          expectedTotalAmountCents: pricing.totalAmountCents,
         }),
       });
 
@@ -739,15 +856,25 @@ class StorageService {
           gender: submission.gender,
           casaProofType: submission.casaProofType || null,
           shirtSize: submission.shirtSize,
+          isPcd: submission.originType === 'PCD',
+          pcdType: submission.pcdType,
+          pcdCid: submission.pcdCid || null,
+          hasGuide: submission.hasGuide,
+          guideName: submission.guideName || null,
+          guideCpf: submission.guideCpf || null,
+          guidePhone: submission.guidePhone || null,
+          guideShirtSize: submission.guideShirtSize || null,
           status: isPaid ? 'CONFIRMED' : 'RESERVED',
           financialStatus: isPaid ? 'CONFIRMED' : 'PENDING',
           paidAt: isPaid ? (data.paid_at || new Date().toISOString()) : undefined,
           creditCardBrand: data.credit_card_brand || (submission.creditCard ? 'CARTÃO DE CRÉDITO' : undefined),
           creditCardLastDigits: data.credit_card_last_digits || (submission.creditCard?.number ? submission.creditCard.number.replace(/\D/g, '').slice(-4) : undefined),
           paymentMethod: submission.paymentMethod,
-          baseAmountCents: pricing.baseAmountCents,
-          processingFeeCents: pricing.feeCents,
-          totalAmountCents: pricing.totalAmountCents, // Sempre R$ 55,00 (R$ 50,00 base + 10% de taxa)
+          baseAmountCents: data.base_amount_cents ?? pricing.baseAmountCents,
+          processingFeeCents: data.fee_cents ?? pricing.feeCents,
+          totalAmountCents: data.total_amount_cents ?? pricing.totalAmountCents,
+          batchId: data.batch_id || activeBatch?.id || null,
+          batchName: data.batch_name || activeBatch?.name || null,
           asaasPaymentId: data.asaas_payment_id,
           asaasInvoiceUrl: data.invoice_url,
           asaasPixQrCode: data.pix_qr_code,
@@ -770,6 +897,11 @@ class StorageService {
             birthDate: submission.birthDate,
             email: submission.email.trim().toLowerCase(),
             phone: submission.phone.trim(),
+            cep: submission.cep?.trim() || undefined,
+            street: submission.street?.trim() || undefined,
+            number: submission.number?.trim() || undefined,
+            complement: submission.complement?.trim() || undefined,
+            neighborhood: submission.neighborhood?.trim() || undefined,
             city: submission.city.trim(),
             state: submission.state.trim().toUpperCase(),
             team: submission.team?.trim() || undefined,
@@ -837,6 +969,14 @@ class StorageService {
       gender: submission.gender,
       casaProofType: submission.casaProofType || null,
       shirtSize: submission.shirtSize,
+      isPcd: submission.originType === 'PCD',
+      pcdType: submission.pcdType,
+      pcdCid: submission.pcdCid || null,
+      hasGuide: submission.hasGuide,
+      guideName: submission.guideName || null,
+      guideCpf: submission.guideCpf || null,
+      guidePhone: submission.guidePhone || null,
+      guideShirtSize: submission.guideShirtSize || null,
       status: isPaid ? 'CONFIRMED' : 'RESERVED',
       financialStatus: isPaid ? 'CONFIRMED' : 'PENDING',
       paidAt: isPaid ? new Date().toISOString() : undefined,
@@ -846,6 +986,8 @@ class StorageService {
       baseAmountCents: pricing.baseAmountCents,
       processingFeeCents: pricing.feeCents,
       totalAmountCents: pricing.totalAmountCents,
+      batchId: activeBatch?.id || null,
+      batchName: activeBatch?.name || null,
       asaasPaymentId: fakeAsaasId,
       asaasInvoiceUrl: invoiceUrl,
       asaasPixCopyPaste: submission.paymentMethod === 'PIX' ? fakePixQrCode : undefined,
@@ -867,6 +1009,11 @@ class StorageService {
         birthDate: submission.birthDate,
         email: submission.email.trim().toLowerCase(),
         phone: submission.phone.trim(),
+        cep: submission.cep?.trim() || undefined,
+        street: submission.street?.trim() || undefined,
+        number: submission.number?.trim() || undefined,
+        complement: submission.complement?.trim() || undefined,
+        neighborhood: submission.neighborhood?.trim() || undefined,
         city: submission.city.trim(),
         state: submission.state.trim().toUpperCase(),
         team: submission.team?.trim() || undefined,
@@ -1061,6 +1208,8 @@ class StorageService {
       CASA_FEMININO: 0,
       VISITANTE_MASCULINO: 0,
       VISITANTE_FEMININO: 0,
+      PCD_MASCULINO: 0,
+      PCD_FEMININO: 0,
     };
 
     let grossRevenueCents = 0;
@@ -1171,23 +1320,97 @@ class StorageService {
     if (!ops || ops.length === 0) {
       ops = INITIAL_OPERATORS;
       this.setLocal(STORAGE_KEYS.OPERATORS, INITIAL_OPERATORS);
+      return ops;
     }
+
+    // Normalização defensiva: cura dados legados do LocalStorage sem senhas
+    let modified = false;
+    const defaultPasswords: Record<string, string> = {
+      admin: 'admin123',
+      atendimento: 'atendimento123',
+      financeiro: 'financeiro123',
+      kit: 'kit123',
+    };
+
+    ops = ops.map((op) => {
+      const u = op.username.toLowerCase();
+      let updatedOp = { ...op };
+      if (!updatedOp.password && defaultPasswords[u]) {
+        updatedOp.password = defaultPasswords[u];
+        modified = true;
+      }
+      if (u === 'admin' && !updatedOp.isActive) {
+        updatedOp.isActive = true;
+        modified = true;
+      }
+      return updatedOp;
+    });
+
+    // Garantir que os 4 operadores padrão sempre existam
+    for (const initOp of INITIAL_OPERATORS) {
+      if (!ops.some((o) => o.username.toLowerCase() === initOp.username.toLowerCase())) {
+        ops.push(initOp);
+        modified = true;
+      }
+    }
+
+    if (modified) {
+      this.setLocal(STORAGE_KEYS.OPERATORS, ops);
+    }
+
     return ops;
   }
 
   saveAdminOperator(operator: AdminOperator): void {
     const ops = this.getAdminOperators();
-    const idx = ops.findIndex((o) => o.id === operator.id || o.username.toLowerCase() === operator.username.toLowerCase());
+    const cleanUser = operator.username.trim().toLowerCase();
+    const idx = ops.findIndex(
+      (o) => o.id === operator.id || o.username.toLowerCase() === cleanUser
+    );
+
+    let finalOp: AdminOperator;
+
     if (idx >= 0) {
-      ops[idx] = { ...ops[idx], ...operator };
+      const existing = ops[idx];
+      // Preservar a senha existente caso não tenha sido informada uma nova na edição
+      const passwordToKeep = operator.password && operator.password.trim() !== '' 
+        ? operator.password.trim() 
+        : existing.password || 'admin123';
+
+      finalOp = {
+        ...existing,
+        ...operator,
+        username: cleanUser,
+        name: operator.name.trim(),
+        email: operator.email?.trim() || existing.email,
+        password: passwordToKeep,
+        isActive: operator.isActive !== undefined ? operator.isActive : existing.isActive,
+      };
+      ops[idx] = finalOp;
     } else {
-      ops.push({ 
-        ...operator, 
-        id: operator.id || `op-${Date.now()}`, 
-        createdAt: new Date().toISOString() 
-      });
+      finalOp = {
+        ...operator,
+        id: operator.id || `op-${Date.now()}`,
+        username: cleanUser,
+        name: operator.name.trim(),
+        email: operator.email?.trim() || '',
+        password: operator.password?.trim() || 'admin123',
+        isActive: operator.isActive !== undefined ? operator.isActive : true,
+        createdAt: operator.createdAt || new Date().toISOString(),
+      };
+      ops.push(finalOp);
     }
+
     this.setLocal(STORAGE_KEYS.OPERATORS, ops);
+
+    // Sincronizar de forma transparente com o backend serverless (/api/admin-operators)
+    try {
+      fetch('/api/admin-operators', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'save', operator: finalOp }),
+      }).catch(() => {});
+    } catch {}
   }
 
   deleteAdminOperator(id: string): void {
@@ -1195,8 +1418,51 @@ class StorageService {
     if (ops.length <= 1) {
       throw new Error('Não é permitido remover o último operador do sistema.');
     }
+    const target = ops.find((o) => o.id === id);
+    if (target && target.username.toLowerCase() === 'admin') {
+      throw new Error('Não é permitido excluir o Administrador Geral principal.');
+    }
     const filtered = ops.filter((o) => o.id !== id);
     this.setLocal(STORAGE_KEYS.OPERATORS, filtered);
+
+    // Sincronizar exclusão com o backend serverless
+    try {
+      fetch('/api/admin-operators', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'delete', id }),
+      }).catch(() => {});
+    } catch {}
+  }
+
+  // Sincronizar operadores locais com o servidor Vercel / Supabase
+  async syncOperatorsWithServer(): Promise<AdminOperator[]> {
+    try {
+      const res = await fetch('/api/admin-operators');
+      if (res.ok) {
+        const json = await res.json();
+        if (json.operators && Array.isArray(json.operators) && json.operators.length > 0) {
+          const current = this.getAdminOperators();
+          const map = new Map<string, AdminOperator>();
+          for (const op of current) {
+            map.set(op.username.toLowerCase(), op);
+          }
+          for (const op of json.operators) {
+            const key = op.username.toLowerCase();
+            const existing = map.get(key);
+            map.set(key, {
+              ...existing,
+              ...op,
+              password: op.password || existing?.password || 'admin123',
+            });
+          }
+          const merged = Array.from(map.values());
+          this.setLocal(STORAGE_KEYS.OPERATORS, merged);
+          return merged;
+        }
+      }
+    } catch {}
+    return this.getAdminOperators();
   }
 
   // Diagnóstico e Teste de Conexão com o Gateway Asaas
@@ -1219,7 +1485,7 @@ class StorageService {
           environment: data.asaas?.environment || 'sandbox',
           status: 'CONECTADO',
           latencyMs: Math.max(35, latency),
-          webhookUrl: 'https://corrida-lajes-pintadas-rn.vercel.app/api/webhook-asaas',
+          webhookUrl: 'https://corridadeemancipacao.lajespintadas.rn.gov.br/api/webhook-asaas',
           message: 'Comunicação oficial com Asaas estabelecida com sucesso.',
         };
       }
@@ -1230,7 +1496,7 @@ class StorageService {
       environment: 'sandbox',
       status: 'CONECTADO (SANDBOX)',
       latencyMs: Math.max(48, latency),
-      webhookUrl: 'https://corrida-lajes-pintadas-rn.vercel.app/api/webhook-asaas',
+      webhookUrl: 'https://corridadeemancipacao.lajespintadas.rn.gov.br/api/webhook-asaas',
       message: 'Gateway Asaas ativo em ambiente de testes homologado.',
     };
   }
@@ -1277,6 +1543,8 @@ class StorageService {
             documentCheckedAt: d.document_checked_at || null,
             attendantName: d.attendant_name || null,
             attendantId: d.attendant_id || null,
+            batchId: d.batch_id || (extractBatchId(d) !== LEGACY_BATCH_ID ? extractBatchId(d) : null),
+            batchName: d.batch_name || null,
             athlete: d.athlete ? {
               fullName: d.athlete.full_name,
               cpf: d.athlete.cpf,

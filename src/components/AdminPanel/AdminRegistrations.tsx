@@ -156,8 +156,8 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
       const matchesGender =
         genderFilter === 'ALL' ||
         (genderFilter === 'MASCULINO'
-          ? ['CASA_MASCULINO', 'VISITANTE_MASCULINO'].includes(reg.category) || reg.gender === 'MASCULINO'
-          : ['CASA_FEMININO', 'VISITANTE_FEMININO'].includes(reg.category) || reg.gender === 'FEMININO');
+          ? ['CASA_MASCULINO', 'LOCAL_MASCULINO', 'VISITANTE_MASCULINO', 'PCD_MASCULINO'].includes(reg.category) || reg.gender === 'MASCULINO'
+          : ['CASA_FEMININO', 'LOCAL_FEMININO', 'VISITANTE_FEMININO', 'PCD_FEMININO'].includes(reg.category) || reg.gender === 'FEMININO');
 
       const matchesVerification =
         verificationFilter === 'ALL' ||
@@ -261,9 +261,22 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
           protocol: selectedReg.protocol,
           accessCode: reissuedCodeResult,
           category: selectedReg.category,
+          originType: selectedReg.originType,
           gender: selectedReg.gender,
           shirtSize: selectedReg.shirtSize,
           status: selectedReg.status,
+          totalAmountCents: selectedReg.totalAmountCents,
+          baseAmountCents: selectedReg.baseAmountCents,
+          feeCents: selectedReg.processingFeeCents,
+          paymentMethod: selectedReg.paymentMethod,
+          isPcd: selectedReg.isPcd,
+          pcdType: selectedReg.pcdType,
+          pcdCid: selectedReg.pcdCid,
+          hasGuide: selectedReg.hasGuide,
+          guideName: selectedReg.guideName,
+          guideCpf: selectedReg.guideCpf,
+          guidePhone: selectedReg.guidePhone,
+          guideShirtSize: selectedReg.guideShirtSize,
         }),
       });
       const data = await res.json();
@@ -390,6 +403,37 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
     CASA_FEMININO: 'Local Fem.',
     VISITANTE_MASCULINO: 'Visit. Masc.',
     VISITANTE_FEMININO: 'Visit. Fem.',
+    PCD_MASCULINO: '♿ PCD Masc.',
+    PCD_FEMININO: '♿ PCD Fem.',
+  };
+
+  const handleOpenDetails = (reg: Registration) => {
+    let enriched = { ...reg };
+    if (enriched.kitNotes && typeof enriched.kitNotes === 'string') {
+      const matchPcd = enriched.kitNotes.match(/PCD_META:(\{.*?\})/);
+      if (matchPcd) {
+        try {
+          const pcdMeta = JSON.parse(matchPcd[1]);
+          enriched = {
+            ...enriched,
+            isPcd: pcdMeta.isPcd,
+            pcdType: pcdMeta.pcdType,
+            pcdCid: pcdMeta.pcdCid,
+            hasGuide: pcdMeta.hasGuide,
+            guideName: pcdMeta.guideName,
+            guideCpf: pcdMeta.guideCpf,
+            guidePhone: pcdMeta.guidePhone,
+            guideShirtSize: pcdMeta.guideShirtSize,
+          };
+          if (pcdMeta.isPcd && !enriched.category.startsWith('PCD_')) {
+            enriched.category = enriched.gender === 'FEMININO' ? 'PCD_FEMININO' : 'PCD_MASCULINO';
+          }
+        } catch {}
+      }
+    }
+    setSelectedReg(enriched);
+    setActionMessage(null);
+    setReissuedCodeResult(null);
   };
 
   const casaProofLabels: Record<CasaProofType, string> = {
@@ -489,6 +533,8 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
               <option value="CASA_FEMININO">Casa Fem.</option>
               <option value="VISITANTE_MASCULINO">Visit. Masc.</option>
               <option value="VISITANTE_FEMININO">Visit. Fem.</option>
+              <option value="PCD_MASCULINO">♿ PCD Masc.</option>
+              <option value="PCD_FEMININO">♿ PCD Fem.</option>
             </select>
           </div>
 
@@ -654,10 +700,19 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
                       </td>
                       <td className="py-3 px-4 whitespace-nowrap">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                          isCasa ? 'bg-orange-100 text-orange-800 border border-orange-200' : 'bg-blue-100 text-blue-800 border border-blue-200'
+                          reg.originType === 'PCD' || reg.category.startsWith('PCD_')
+                            ? 'bg-purple-100 text-purple-800 border border-purple-200'
+                            : isCasa 
+                            ? 'bg-orange-100 text-orange-800 border border-orange-200' 
+                            : 'bg-blue-100 text-blue-800 border border-blue-200'
                         }`}>
                           {categoryLabels[reg.category] || reg.category}
                         </span>
+                        {(reg.hasGuide || (reg.kitNotes && reg.kitNotes.includes('"hasGuide":true'))) && (
+                          <div className="text-[10px] font-bold text-orange-600 mt-0.5">
+                            🏃 Com Guia ({reg.guideShirtSize || 'M'})
+                          </div>
+                        )}
                         {isCasa && (
                           <div className="mt-0.5">
                             {reg.documentVerificationStatus === 'APROVADO' ? (
@@ -722,11 +777,7 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
                       <td className="py-3 px-4 text-center whitespace-nowrap">
                         <div className="flex items-center justify-center gap-1.5">
                           <button
-                            onClick={() => {
-                              setSelectedReg(reg);
-                              setActionMessage(null);
-                              setReissuedCodeResult(null);
-                            }}
+                            onClick={() => handleOpenDetails(reg)}
                             className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg border border-slate-200 font-bold transition flex items-center gap-1"
                             title="Ver detalhes da inscrição"
                           >
@@ -823,8 +874,16 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
                     <span className="text-slate-400 block text-[11px]">Cidade / UF:</span>
                     <span className="font-semibold text-slate-800">{selectedReg.athlete?.city}/{selectedReg.athlete?.state}</span>
                   </div>
+                  <div className="col-span-2 sm:col-span-3">
+                    <span className="text-slate-400 block text-[11px]">Endereço Completo:</span>
+                    <span className="font-semibold text-slate-800">
+                      {selectedReg.athlete?.street
+                        ? `${selectedReg.athlete.street}, ${selectedReg.athlete.number || 'S/N'}${selectedReg.athlete.complement ? ` (${selectedReg.athlete.complement})` : ''} - ${selectedReg.athlete.neighborhood || ''}, ${selectedReg.athlete.city}/${selectedReg.athlete.state}${selectedReg.athlete.cep ? ` • CEP ${selectedReg.athlete.cep}` : ''}`
+                        : `${selectedReg.athlete?.city}/${selectedReg.athlete?.state}`}
+                    </span>
+                  </div>
                   {selectedReg.athlete?.team && (
-                    <div className="col-span-2">
+                    <div className="col-span-2 sm:col-span-3">
                       <span className="text-slate-400 block text-[11px]">Equipe/Assessoria:</span>
                       <span className="font-semibold text-slate-800">{selectedReg.athlete.team}</span>
                     </div>
@@ -849,7 +908,60 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
                   </div>
                 </div>
 
-                {selectedReg.originType === 'CASA' ? (
+                {selectedReg.originType === 'PCD' || selectedReg.isPcd || selectedReg.category.startsWith('PCD_') ? (
+                  <div className="space-y-3 text-xs">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-purple-50/80 p-3 rounded-lg border border-purple-200">
+                      <div>
+                        <span className="text-purple-700 block text-[10px] font-bold">Tipo de Deficiência:</span>
+                        <strong className="text-purple-950 font-bold">
+                          {selectedReg.pcdType || 'Não informado'}
+                        </strong>
+                      </div>
+                      <div>
+                        <span className="text-purple-700 block text-[10px] font-bold">CID / Laudo / CIPTEA:</span>
+                        <strong className="text-purple-950 font-mono font-bold">
+                          {selectedReg.pcdCid || 'Apresentar no kit'}
+                        </strong>
+                      </div>
+                      <div>
+                        <span className="text-purple-700 block text-[10px] font-bold">Atleta-Guia Oficial:</span>
+                        <strong className="text-purple-950 font-bold">
+                          {selectedReg.hasGuide ? 'Sim (Cadastrado)' : 'Não'}
+                        </strong>
+                      </div>
+                    </div>
+
+                    {selectedReg.hasGuide && (
+                      <div className="bg-white p-3 rounded-lg border border-purple-200 space-y-1.5 text-xs">
+                        <div className="font-bold text-orange-600 uppercase text-[11px] tracking-wide flex items-center justify-between">
+                          <span>🏃‍♂️ Dados do Atleta-Guia Oficial (Inscrição Gratuita)</span>
+                          <span className="text-[10px] bg-orange-100 text-orange-800 px-2 py-0.5 rounded-full font-bold">
+                            Camiseta Laranja Gratuita
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-slate-700">
+                          <div>
+                            <span className="text-slate-400 block text-[10px]">Nome do Guia:</span>
+                            <strong className="text-slate-900">{selectedReg.guideName || '-'}</strong>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 block text-[10px]">CPF do Guia:</span>
+                            <strong className="font-mono">{selectedReg.guideCpf ? formatCPF(selectedReg.guideCpf) : '-'}</strong>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 block text-[10px]">Camiseta do Guia:</span>
+                            <strong className="text-orange-600 font-black">Tamanho {selectedReg.guideShirtSize || '-'}</strong>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="p-2.5 bg-purple-100/70 rounded-lg text-purple-900 text-[11px]">
+                      📋 <strong>Regulamento PCD:</strong> Conferir laudo comprobatório com CID ou CIPTEA na entrega do kit.
+                      {selectedReg.hasGuide && ' Entregar 2 camisetas oficiais (Atleta + Guia) e 2 números de peito.'}
+                    </div>
+                  </div>
+                ) : selectedReg.originType === 'CASA' ? (
                   <div className="space-y-3 text-xs">
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-white/70 p-3 rounded-lg border border-orange-200/80">
                       <div>
@@ -1245,6 +1357,8 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
                         <option value="CASA_FEMININO">Local Fem. (Vínculo Casa)</option>
                         <option value="VISITANTE_MASCULINO">Visitante Masculino (5 km)</option>
                         <option value="VISITANTE_FEMININO">Visitante Feminino (5 km)</option>
+                        <option value="PCD_MASCULINO">♿ PCD Masculino (5 km)</option>
+                        <option value="PCD_FEMININO">♿ PCD Feminino (5 km)</option>
                       </select>
                     </div>
 

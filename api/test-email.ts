@@ -38,16 +38,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const sampleAccessCode = Math.random().toString(36).substring(2, 8).toUpperCase();
 
+    const isPcd = Boolean(req.body?.isPcd);
+
     const success = await sendConfirmationEmail({
       athleteName: name,
       athleteEmail: cleanEmail,
       athleteCpf: '12345678900',
       protocol,
       accessCode: sampleAccessCode,
-      category: 'VISITANTE_MASCULINO',
+      category: isPcd ? 'PCD_MASCULINO' : 'VISITANTE_MASCULINO',
       gender: 'MASCULINO',
       shirtSize: 'M',
       status: 'CONFIRMED',
+      paymentMethod: 'PIX',
+      totalAmountCents: isPcd ? 2750 : 5500,
+      baseAmountCents: isPcd ? 2500 : 5000,
+      feeCents: isPcd ? 250 : 500,
+      isPcd,
+      pcdType: isPcd ? 'Deficiência Visual' : undefined,
+      pcdCid: isPcd ? 'H54.0' : undefined,
+      hasGuide: isPcd,
+      guideName: isPcd ? 'Carlos Alberto (Atleta-Guia)' : undefined,
+      guideCpf: isPcd ? '98765432100' : undefined,
+      guidePhone: isPcd ? '(84) 99999-8888' : undefined,
+      guideShirtSize: isPcd ? 'G' : undefined,
     });
 
     if (success) {

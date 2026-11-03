@@ -278,7 +278,19 @@ export const AthleteArea: React.FC<AthleteAreaProps> = ({ isOpen, onClose }) => 
                   <div>
                     <span className="text-slate-400 block">Categoria:</span>
                     <span className="font-bold text-slate-800 text-sm">
-                      {result.registration.category.replace('_', ' ')}
+                      {result.registration.category === 'PCD_MASCULINO'
+                        ? '♿ PCD Masculino (5 km)'
+                        : result.registration.category === 'PCD_FEMININO'
+                        ? '♿ PCD Feminino (5 km)'
+                        : result.registration.category === 'CASA_MASCULINO'
+                        ? 'Local Masculino (5 km)'
+                        : result.registration.category === 'CASA_FEMININO'
+                        ? 'Local Feminino (5 km)'
+                        : result.registration.category === 'VISITANTE_MASCULINO'
+                        ? 'Visitante Masculino (5 km)'
+                        : result.registration.category === 'VISITANTE_FEMININO'
+                        ? 'Visitante Feminino (5 km)'
+                        : result.registration.category.replace('_', ' ')}
                     </span>
                   </div>
 
@@ -322,6 +334,56 @@ export const AthleteArea: React.FC<AthleteAreaProps> = ({ isOpen, onClose }) => 
                     {result.registration.casaProofType === 'NATURAL' && 'Natural de Lajes Pintadas/RN'}
                     {result.registration.casaProofType === 'RESIDENTE' && 'Morador Atual de Lajes Pintadas/RN'}
                     {result.registration.casaProofType === 'NATURAL_E_RESIDENTE' && 'Natural e Morador Atual'}
+                  </div>
+                )}
+
+                {/* Bloco Exclusivo PCD / Inclusão e Atleta-Guia */}
+                {(result.registration.isPcd || result.registration.category.startsWith('PCD_')) && (
+                  <div className="p-4 rounded-xl bg-purple-50/80 border border-purple-200 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="p-1 rounded-md bg-purple-600 text-white text-[10px] font-black uppercase tracking-wider">
+                          PCD
+                        </span>
+                        <span className="text-xs font-bold text-purple-950">
+                          Inscrição Categoria PCD / Inclusão
+                        </span>
+                      </div>
+                      <span className="text-[11px] font-bold text-purple-700">
+                        Tipo: {result.registration.pcdType || 'Não especificado'}
+                      </span>
+                    </div>
+
+                    {result.registration.pcdCid && (
+                      <div className="text-xs text-purple-900 bg-white/70 p-2.5 rounded-lg border border-purple-100 flex items-center justify-between">
+                        <span>CID / Laudo / CIPTEA:</span>
+                        <strong className="font-mono text-purple-950">{result.registration.pcdCid}</strong>
+                      </div>
+                    )}
+
+                    {result.registration.hasGuide && (
+                      <div className="p-3 bg-white rounded-lg border border-purple-200 space-y-1 text-xs">
+                        <div className="font-bold text-orange-600 flex items-center gap-1.5 uppercase text-[11px] tracking-wide">
+                          🏃‍♂️ Atleta-Guia Oficial (Inscrição Gratuita)
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-slate-700">
+                          <div>
+                            <span className="text-slate-400">Nome:</span>{' '}
+                            <strong>{result.registration.guideName || 'Informado na inscrição'}</strong>
+                          </div>
+                          <div>
+                            <span className="text-slate-400">Camiseta do Guia:</span>{' '}
+                            <strong className="text-orange-600">
+                              Tamanho {result.registration.guideShirtSize || 'M'} (Oficial Laranja)
+                            </strong>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <p className="text-[11px] text-purple-700 italic">
+                      ⚠️ Obrigatório apresentar laudo médico comprobatório (ou carteira oficial PCD/CIPTEA) na retirada do kit.
+                    </p>
                   </div>
                 )}
 

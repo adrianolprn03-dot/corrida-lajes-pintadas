@@ -5,6 +5,7 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { getBatchState, saveBatches } from './lib/batches.js';
 
 function normalizeSupabaseUrl(rawUrl?: string): string {
   if (!rawUrl) return '';
@@ -58,10 +59,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'POST') {
     const updates = req.body || {};
 
+    // Lotes de inscrição (persistência própria, independente das demais colunas)
+    if (updates.registrationBatches !== undefined) {
+      try {
+        await saveBatches(supabase, updates.registrationBatches, updates.updatedBy);
+      } catch (err: any) {
+        return res.status(500).json({ error: err.message || 'Erro ao salvar os lotes de inscrição.' });
+      }
+    }
+
     if (supabase) {
       try {
         const dbUpdates: any = { updated_at: new Date().toISOString() };
         if (updates.status) dbUpdates.status = updates.status;
+        if (updates.basePriceCents !== undefined && Number(updates.basePriceCents) > 0) {
+          dbUpdates.base_price_cents = Math.round(Number(updates.basePriceCents));
+        }
         if (updates.maxCapacity !== undefined) dbUpdates.max_capacity = updates.maxCapacity;
         if (updates.localMaxCapacity !== undefined) dbUpdates.local_max_capacity = updates.localMaxCapacity;
         if (updates.visitorMaxCapacity !== undefined) dbUpdates.visitor_max_capacity = updates.visitorMaxCapacity;
@@ -121,13 +134,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (error) {
           return res.status(500).json({ error: error.message });
         }
-        return res.status(200).json({ success: true });
+        let batchState = null;
+        try {
+          batchState = await getBatchState(supabase);
+        } catch {}
+        return res.status(200).json({ success: true, batchState });
       } catch (err: any) {
         return res.status(500).json({ error: err.message });
       }
     }
 
-    return res.status(200).json({ success: true, localOnly: true });
+    let localBatchState = null;
+    try {
+      localBatchState = await getBatchState(null);
+    } catch {}
+    return res.status(200).json({ success: true, localOnly: true, batchState: localBatchState });
   }
 
   // GET: Obter configurações direto do Supabase
@@ -152,22 +173,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         data.status = 'OPEN';
       }
 
-      // Se valor base no banco for diferente de R$ 50,00 (5000 centavos), auto-atualizar
-      if (data && data.base_price_cents !== 5000) {
-        await supabase
-          .from('event_settings')
-          .update({
-            base_price_cents: 5000,
-            asaas_pix_fixed_fee_cents: 500,
-            asaas_credit_fixed_fee_cents: 500,
-            asaas_credit_percent_fee: 0.10,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('is_singleton', true);
+      // Garantir que valor base no banco seja válido (> 0)
+      if (data && (!data.base_price_cents || data.base_price_cents <= 0)) {
         data.base_price_cents = 5000;
-        data.asaas_pix_fixed_fee_cents = 500;
-        data.asaas_credit_fixed_fee_cents = 500;
-        data.asaas_credit_percent_fee = 0.10;
       }
 
       // Se cotas não vierem na tabela event_settings, carregar do audit_logs
@@ -192,11 +200,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       }
 
-      return res.status(200).json({ settings: data });
+      let batchState = null;
+      try {
+        batchState = await getBatchState(supabase, data);
+        if (data && batchState?.current) {
+          data.base_price_cents = batchState.current.basePriceCents;
+        }
+      } catch (batchErr) {
+        console.warn('[admin-settings] Falha ao calcular lotes:', batchErr);
+      }
+
+      return res.status(200).json({ settings: data, batchState });
     } catch (err: any) {
       return res.status(500).json({ error: err.message });
     }
   }
 
-  return res.status(200).json({ settings: null });
+  // Sem Supabase: lotes mantidos no motor em memória
+  let memoryBatchState = null;
+  try {
+    memoryBatchState = await getBatchState(null);
+  } catch {}
+  return res.status(200).json({ settings: null, batchState: memoryBatchState });
 }

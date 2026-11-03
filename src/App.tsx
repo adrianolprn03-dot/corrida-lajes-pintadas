@@ -112,12 +112,23 @@ export default function App() {
   };
 
   const handleOpenRegister = async () => {
+    let activeSettings = settings;
     try {
-      const freshShirts = await storageService.getShirtInventory();
+      const [freshSettings, freshShirts] = await Promise.all([
+        storageService.getSettings(),
+        storageService.getShirtInventory(),
+      ]);
+      activeSettings = freshSettings;
+      setSettings(freshSettings);
       setShirts(freshShirts);
     } catch {}
 
-    if (settings.status === 'PREPARATION') {
+    if (activeSettings.batchState?.configured && !activeSettings.batchState.current) {
+      showToast('Todos os lotes de inscrição disponíveis estão encerrados ou esgotados.', 'warning');
+      return;
+    }
+
+    if (activeSettings.status === 'PREPARATION') {
       showToast(
         'Inscrições em preparação! A organização está finalizando a grade oficial antes da abertura.',
         'warning'
@@ -209,7 +220,7 @@ export default function App() {
         />
 
         {/* Categories (Local vs Visitante) & Podium Awards */}
-        <CategoriesSection />
+        <CategoriesSection settings={settings} />
 
         {/* Official Race Day Morning Schedule */}
         <ScheduleSection />
@@ -218,7 +229,7 @@ export default function App() {
         <EventOverview settings={settings} />
 
         {/* Frequently Asked Questions */}
-        <FaqSection />
+        <FaqSection settings={settings} />
       </main>
 
       {/* Floating Sticky Conversion Bar */}
@@ -230,6 +241,7 @@ export default function App() {
 
       {/* Institutional Footer & Pre-Footer CTA */}
       <Footer
+        settings={settings}
         onOpenRegulation={handleOpenRegulation}
         onOpenAthleteArea={() => setIsAthleteAreaOpen(true)}
         onOpenAdmin={handleOpenAdmin}

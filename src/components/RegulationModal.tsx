@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, FileText, Shield, Download, Printer } from 'lucide-react';
 import { EventSettings } from '../types';
+import { formatCentsToBRL, getActiveBatchLabel, getActiveBasePriceCents } from '../lib/pricing';
 
 interface RegulationModalProps {
   isOpen: boolean;
@@ -98,7 +99,7 @@ export const RegulationModal: React.FC<RegulationModalProps> = ({
                   <strong>Percurso:</strong> {settings.distanceKm} km • <strong>Local:</strong> {settings.startLocation}
                 </p>
                 <p>
-                  <strong>Inscrição:</strong> R$ 50,00 (+ taxa de serviço de 10%) com direito à Camisa Oficial Laranja.
+                  <strong>Inscrição Geral ({getActiveBatchLabel(settings)}):</strong> {formatCentsToBRL(getActiveBasePriceCents(settings))} (+ taxa de serviço de 10% = {formatCentsToBRL(Math.round(getActiveBasePriceCents(settings) * 1.1))}) • <strong>PCD / Inclusão (50% Meia):</strong> {formatCentsToBRL(Math.round(getActiveBasePriceCents(settings) / 2))} (+ taxa de serviço de 10% = {formatCentsToBRL(Math.round(Math.round(getActiveBasePriceCents(settings) / 2) * 1.1))}) • <strong>Atleta-Guia:</strong> Gratuito (R$ 0,00).
                 </p>
               </div>
 

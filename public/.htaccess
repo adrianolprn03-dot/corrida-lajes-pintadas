@@ -3,9 +3,13 @@
 # CONFIGURAÇÃO APACHE (HOSTGATOR / CPANEL)
 # ==============================================================================
 
-# Forçar HTTPS
+# Forçar HTTPS e Domínio Oficial (corridadeemancipacao.lajespintadas.rn.gov.br)
 <IfModule mod_rewrite.c>
   RewriteEngine On
+  RewriteCond %{HTTP_HOST} !^corridadeemancipacao\.lajespintadas\.rn\.gov\.br$ [NC]
+  RewriteCond %{HTTP_HOST} !^localhost [NC]
+  RewriteRule ^(.*)$ https://corridadeemancipacao.lajespintadas.rn.gov.br/$1 [L,R=301]
+
   RewriteCond %{HTTPS} !=on
   RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 </IfModule>

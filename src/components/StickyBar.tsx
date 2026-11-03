@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowRight, Ticket, Zap } from 'lucide-react';
 import { EventSettings } from '../types';
+import { formatCentsToBRL, getActiveBatchLabel, getActiveBasePriceCents } from '../lib/pricing';
 
 interface StickyBarProps {
   settings: EventSettings;
@@ -53,7 +54,7 @@ export const StickyBar: React.FC<StickyBarProps> = ({
               </span>
             </div>
             <p className="font-sans text-[11px] text-slate-500 hidden xs:block mt-0.5">
-              1º Lote Oficial: <strong className="text-slate-900">R$ 50,00</strong> (+ 10% taxa) com Camisa e Medalha
+              {getActiveBatchLabel(settings)}: <strong className="text-slate-900">{formatCentsToBRL(getActiveBasePriceCents(settings))}</strong> (+ 10% taxa) com Camisa e Medalha
             </p>
           </div>
         </div>

@@ -1,8 +1,17 @@
 import React, { useState } from 'react';
 import { Home, Globe, Award, ChevronDown, ChevronUp, CheckCircle2, FileText, AlertCircle, Medal, Trophy, Building2 } from 'lucide-react';
+import { EventSettings } from '../types';
+import { formatCentsToBRL, getActiveBasePriceCents } from '../lib/pricing';
 
-export const CategoriesSection: React.FC = () => {
+interface CategoriesSectionProps {
+  settings?: EventSettings;
+}
+
+export const CategoriesSection: React.FC<CategoriesSectionProps> = ({ settings }) => {
   const [showProofGuide, setShowProofGuide] = useState(false);
+  const baseCents = getActiveBasePriceCents(settings);
+  const pcdBaseCents = Math.round(baseCents / 2);
+  const pcdTotalCents = pcdBaseCents + Math.round(pcdBaseCents * 0.10);
 
   return (
     <section id="categorias" className="bg-[#F8FAFC] text-slate-900 py-16 sm:py-24 border-b border-slate-200">
@@ -139,13 +148,13 @@ export const CategoriesSection: React.FC = () => {
             </div>
 
             {/* COLUMN 3: PCD / INCLUSÃO */}
-            <div className="p-6 sm:p-8 flex flex-col justify-between hover:bg-slate-50/60 transition">
+            <div className="p-6 sm:p-8 flex flex-col justify-between hover:bg-slate-50/60 transition bg-purple-50/20">
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <span className="font-sans text-[11px] font-bold uppercase tracking-wider text-sky-700 bg-sky-50 border border-sky-200 px-2.5 py-1 rounded">
-                    Divisão Inclusão
+                  <span className="font-sans text-[11px] font-bold uppercase tracking-wider text-purple-700 bg-purple-100 border border-purple-200 px-2.5 py-1 rounded">
+                    50% OFF • Meia-Inscrição
                   </span>
-                  <Award className="w-4 h-4 text-sky-600" />
+                  <Award className="w-4 h-4 text-purple-600" />
                 </div>
 
                 <h3 className="font-condensed font-extrabold text-2xl sm:text-3xl uppercase text-slate-900 leading-none">
@@ -153,39 +162,43 @@ export const CategoriesSection: React.FC = () => {
                 </h3>
 
                 <p className="font-sans text-xs text-slate-600 mt-2 leading-relaxed">
-                  Destinada a pessoas com deficiência física, visual ou auditiva, assegurando suporte prioritário no percurso.
+                  Destinada a pessoas com deficiência física, visual, auditiva ou intelectual, assegurando suporte prioritário no percurso e meia-inscrição de {formatCentsToBRL(pcdBaseCents)} (+ taxa de 10%).
                 </p>
 
                 {/* Subdivisões de Pódio */}
                 <div className="mt-6 pt-5 border-t border-slate-200 space-y-3">
-                  <div className="font-sans text-xs font-bold uppercase tracking-wider text-sky-700">
+                  <div className="font-sans text-xs font-bold uppercase tracking-wider text-purple-700">
                     Subdivisões de Pódio:
                   </div>
-                  <div className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded text-xs font-sans">
+                  <div className="flex items-center justify-between p-3 bg-white border border-purple-200 rounded text-xs font-sans shadow-xs">
                     <span className="font-semibold text-slate-900">PCD Masculino</span>
-                    <span className="text-sky-700 font-mono font-bold">Pódio & Homenagem</span>
+                    <span className="text-purple-700 font-mono font-bold">1º ao 3º Lugar</span>
                   </div>
-                  <div className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded text-xs font-sans">
+                  <div className="flex items-center justify-between p-3 bg-white border border-purple-200 rounded text-xs font-sans shadow-xs">
                     <span className="font-semibold text-slate-900">PCD Feminino</span>
-                    <span className="text-sky-700 font-mono font-bold">Pódio & Homenagem</span>
+                    <span className="text-purple-700 font-mono font-bold">1º ao 3º Lugar</span>
                   </div>
                 </div>
 
                 {/* Eligibility checklist */}
                 <div className="mt-5 space-y-2 text-xs font-sans text-slate-600">
                   <div className="flex items-start gap-2">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-sky-600 shrink-0 mt-0.5" />
-                    <span>Apoio logístico e área de largada prioritária</span>
+                    <CheckCircle2 className="w-3.5 h-3.5 text-purple-600 shrink-0 mt-0.5" />
+                    <span><strong>50% de Desconto:</strong> {formatCentsToBRL(pcdBaseCents)} + taxa de 10% ({formatCentsToBRL(pcdTotalCents)} total no lote atual)</span>
                   </div>
                   <div className="flex items-start gap-2">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-sky-600 shrink-0 mt-0.5" />
-                    <span>Apresentação de laudo comprobatório</span>
+                    <CheckCircle2 className="w-3.5 h-3.5 text-purple-600 shrink-0 mt-0.5" />
+                    <span><strong>Atleta-Guia Gratuito:</strong> Inscrição e camisa 100% grátis (R$ 0,00)</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-purple-600 shrink-0 mt-0.5" />
+                    <span>Apresentação de laudo comprobatório ou carteira CIPTEA</span>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-6 pt-4 border-t border-slate-200 text-[11px] font-sans text-sky-700">
-                Direito a atleta-guia conforme o regulamento oficial
+              <div className="mt-6 pt-4 border-t border-purple-200 text-[11px] font-sans text-purple-700 font-medium">
+                Largada prioritária e suporte especializado no percurso
               </div>
             </div>
 

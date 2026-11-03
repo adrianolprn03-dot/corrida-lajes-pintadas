@@ -21,14 +21,27 @@ export interface StoredRegistration {
   cpf: string;
   email: string;
   phone: string;
+  cep?: string;
+  street?: string;
+  number?: string;
+  complement?: string;
+  neighborhood?: string;
   city: string;
   state: string;
   team?: string;
   gender: 'MASCULINO' | 'FEMININO';
-  originType: 'CASA' | 'VISITANTE';
+  originType: 'CASA' | 'VISITANTE' | 'LOCAL' | 'PCD';
   casaProofType?: string;
   category: string;
   shirtSize: string;
+  isPcd?: boolean;
+  pcdType?: string;
+  pcdCid?: string;
+  hasGuide?: boolean;
+  guideName?: string;
+  guideCpf?: string;
+  guidePhone?: string;
+  guideShirtSize?: string;
   status: 'RESERVED' | 'CONFIRMED' | 'EXPIRED' | 'CANCELLED';
   financialStatus: 'PENDING' | 'CONFIRMED' | 'RECEIVED' | 'FAILED';
   paymentMethod: 'PIX' | 'CREDIT_CARD';
@@ -52,6 +65,20 @@ export interface StoredRegistration {
   attendantName?: string;
   attendantId?: string;
   confirmationEmailSent?: boolean;
+  batchId?: string;
+  batchName?: string;
+}
+
+export interface StoredOperator {
+  id: string;
+  username: string;
+  name: string;
+  role: 'ADMIN_GERAL' | 'ATENDIMENTO' | 'FINANCEIRO' | 'ENTREGA_KIT';
+  email: string;
+  isActive: boolean;
+  createdAt: string;
+  lastLoginAt?: string | null;
+  password?: string;
 }
 
 // Estado singleton em memória para garantir consistência sob carga concorrente
@@ -72,6 +99,63 @@ class MemoryStore {
   public registrationsByCpf: Map<string, string> = new Map(); // cleanCpf -> protocol
   public idempotencyCache: Map<string, { result: any; expiresAt: number }> = new Map();
   public processedWebhooks: Set<string> = new Set();
+  // Lotes de inscrição (usado somente quando o Supabase não está configurado)
+  public batches: unknown[] = [];
+
+  public operators: Map<string, StoredOperator> = new Map([
+    [
+      'admin',
+      {
+        id: 'op-admin',
+        username: 'admin',
+        name: 'Administrador Geral',
+        role: 'ADMIN_GERAL',
+        email: 'admin@lajespintadas.rn.gov.br',
+        isActive: true,
+        createdAt: '2026-01-01T08:00:00Z',
+        password: 'admin123',
+      },
+    ],
+    [
+      'atendimento',
+      {
+        id: 'op-atendimento',
+        username: 'atendimento',
+        name: 'Atendente da Prefeitura',
+        role: 'ATENDIMENTO',
+        email: 'atendimento@lajespintadas.rn.gov.br',
+        isActive: true,
+        createdAt: '2026-01-01T08:00:00Z',
+        password: 'atendimento123',
+      },
+    ],
+    [
+      'financeiro',
+      {
+        id: 'op-financeiro',
+        username: 'financeiro',
+        name: 'Tesouraria & Finanças',
+        role: 'FINANCEIRO',
+        email: 'financas@lajespintadas.rn.gov.br',
+        isActive: true,
+        createdAt: '2026-01-01T08:00:00Z',
+        password: 'financeiro123',
+      },
+    ],
+    [
+      'kit',
+      {
+        id: 'op-kit',
+        username: 'kit',
+        name: 'Equipe de Entrega de Kits',
+        role: 'ENTREGA_KIT',
+        email: 'kits@lajespintadas.rn.gov.br',
+        isActive: true,
+        createdAt: '2026-01-01T08:00:00Z',
+        password: 'kit123',
+      },
+    ],
+  ]);
   
   // Mutex para reservas atômicas (impede race condition / overbooking)
   private lockPromise: Promise<void> = Promise.resolve();
@@ -131,11 +215,16 @@ class MemoryStore {
     birthDate: string;
     email: string;
     phone: string;
+    cep?: string;
+    street?: string;
+    number?: string;
+    complement?: string;
+    neighborhood?: string;
     city: string;
     state: string;
     team?: string;
     gender: 'MASCULINO' | 'FEMININO';
-    originType: 'CASA' | 'VISITANTE';
+    originType: 'CASA' | 'VISITANTE' | 'LOCAL' | 'PCD';
     casaProofType?: string;
     shirtSize: string;
     paymentMethod: 'PIX' | 'CREDIT_CARD';
@@ -143,6 +232,16 @@ class MemoryStore {
     feeCents: number;
     totalAmountCents: number;
     idempotencyKey?: string;
+    isPcd?: boolean;
+    pcdType?: string;
+    pcdCid?: string;
+    hasGuide?: boolean;
+    guideName?: string;
+    guideCpf?: string;
+    guidePhone?: string;
+    guideShirtSize?: string;
+    batchId?: string;
+    batchName?: string;
   }): Promise<{ registration: StoredRegistration; accessCode: string }> {
     const cleanCpf = params.cpf.replace(/\D/g, '');
 
@@ -177,7 +276,7 @@ class MemoryStore {
         const isActive = reg.status === 'CONFIRMED' || (reg.status === 'RESERVED' && new Date(reg.reservationExpiresAt) > now);
         if (isActive) {
           activeCount++;
-          if (reg.originType === 'CASA') {
+          if (reg.originType === 'CASA' || reg.originType === 'LOCAL') {
             localActiveCount++;
           } else {
             visitorActiveCount++;
@@ -190,7 +289,7 @@ class MemoryStore {
         throw new Error('Capacidade máxima do evento atingida. Inscrições encerradas.');
       }
 
-      if (params.originType === 'CASA' && this.localMaxCapacity !== null && localActiveCount >= this.localMaxCapacity) {
+      if ((params.originType === 'CASA' || params.originType === 'LOCAL') && this.localMaxCapacity !== null && localActiveCount >= this.localMaxCapacity) {
         this.metrics.rejectedOvercapacity++;
         throw new Error(`Cota de vagas esgotada para a Categoria Local (Lajespintadense). Limite: ${this.localMaxCapacity} vagas.`);
       }
@@ -200,7 +299,7 @@ class MemoryStore {
         throw new Error(`Cota de vagas esgotada para a Categoria Visitante. Limite: ${this.visitorMaxCapacity} vagas.`);
       }
 
-      // 1.3 Verificar Estoque da Camisa com Bloqueio Estrito
+      // 1.3 Verificar Estoque da Camisa do Atleta com Bloqueio Estrito
       const shirt = this.shirts.get(params.shirtSize);
       if (!shirt) {
         throw new Error(`Tamanho de camisa inválido: ${params.shirtSize}`);
@@ -212,8 +311,24 @@ class MemoryStore {
         throw new Error(`O tamanho de camisa ${params.shirtSize} esgotou. Por favor, escolha outro tamanho.`);
       }
 
+      // Se houver atleta-guia com camisa, verificar e reservar a camisa do guia também
+      let guideShirtStock: ShirtStock | undefined;
+      if (params.hasGuide && params.guideShirtSize) {
+        guideShirtStock = this.shirts.get(params.guideShirtSize);
+        if (!guideShirtStock) {
+          throw new Error(`Tamanho de camisa do Atleta-Guia inválido: ${params.guideShirtSize}`);
+        }
+        const guideAvailable = guideShirtStock.totalStock - (guideShirtStock.reservedCount + guideShirtStock.confirmedCount);
+        if (guideAvailable <= 0) {
+          throw new Error(`A camisa tamanho ${params.guideShirtSize} do Atleta-Guia está esgotada no momento.`);
+        }
+      }
+
       // 1.4 Decrementar estoque / Incrementar reserva de forma atômica
       shirt.reservedCount++;
+      if (guideShirtStock) {
+        guideShirtStock.reservedCount++;
+      }
 
       // 1.5 Gerar Protocolo e Código de Acesso
       const randomSuffix = crypto.randomBytes(3).toString('hex').toUpperCase().substring(0, 5);
@@ -223,8 +338,10 @@ class MemoryStore {
 
       // Calcular categoria oficial
       let category = '';
-      if (params.originType === 'CASA') {
-        category = params.gender === 'MASCULINO' ? 'CASA_MASCULINO' : 'CASA_FEMININO';
+      if (params.originType === 'PCD' || params.isPcd) {
+        category = params.gender === 'MASCULINO' ? 'PCD_MASCULINO' : 'PCD_FEMININO';
+      } else if (params.originType === 'CASA' || params.originType === 'LOCAL') {
+        category = params.gender === 'MASCULINO' ? 'LOCAL_MASCULINO' : 'LOCAL_FEMININO';
       } else {
         category = params.gender === 'MASCULINO' ? 'VISITANTE_MASCULINO' : 'VISITANTE_FEMININO';
       }
@@ -238,6 +355,11 @@ class MemoryStore {
         cpf: cleanCpf,
         email: params.email.trim().toLowerCase(),
         phone: params.phone.trim(),
+        cep: params.cep?.trim(),
+        street: params.street?.trim(),
+        number: params.number?.trim(),
+        complement: params.complement?.trim(),
+        neighborhood: params.neighborhood?.trim(),
         city: params.city.trim(),
         state: params.state.trim().toUpperCase(),
         team: params.team?.trim(),
@@ -246,6 +368,16 @@ class MemoryStore {
         casaProofType: params.casaProofType,
         category,
         shirtSize: params.shirtSize,
+        isPcd: Boolean(params.isPcd || params.originType === 'PCD'),
+        pcdType: params.pcdType,
+        pcdCid: params.pcdCid,
+        hasGuide: Boolean(params.hasGuide),
+        guideName: params.guideName?.trim(),
+        guideCpf: params.guideCpf ? params.guideCpf.replace(/\D/g, '') : undefined,
+        guidePhone: params.guidePhone?.trim(),
+        guideShirtSize: params.guideShirtSize,
+        batchId: params.batchId,
+        batchName: params.batchName,
         status: 'RESERVED',
         financialStatus: 'PENDING',
         paymentMethod: params.paymentMethod,
@@ -425,6 +557,100 @@ class MemoryStore {
       pageSize,
       totalPages,
     };
+  }
+
+  // 5. GESTÃO DE OPERADORES & PERFIS ADMINISTRATIVOS
+  getOperators(): StoredOperator[] {
+    return Array.from(this.operators.values());
+  }
+
+  saveOperator(operator: StoredOperator): StoredOperator {
+    const usernameKey = operator.username.trim().toLowerCase();
+    const existing = this.operators.get(usernameKey) || 
+      Array.from(this.operators.values()).find((o) => o.id === operator.id);
+
+    const updated: StoredOperator = {
+      ...existing,
+      ...operator,
+      id: existing?.id || operator.id || `op-${Date.now()}`,
+      username: usernameKey,
+      name: operator.name.trim(),
+      role: operator.role,
+      email: operator.email?.trim().toLowerCase() || '',
+      password: operator.password || existing?.password || 'admin123',
+      isActive: operator.isActive !== undefined ? operator.isActive : true,
+      createdAt: existing?.createdAt || operator.createdAt || new Date().toISOString(),
+    };
+
+    // Atualizar no mapa
+    this.operators.set(usernameKey, updated);
+    return updated;
+  }
+
+  deleteOperator(idOrUsername: string): boolean {
+    const key = idOrUsername.trim().toLowerCase();
+    if (this.operators.has(key)) {
+      if (key === 'admin') return false; // Proteger root admin
+      this.operators.delete(key);
+      return true;
+    }
+
+    for (const [uname, op] of this.operators.entries()) {
+      if (op.id === idOrUsername) {
+        if (uname === 'admin') return false;
+        this.operators.delete(uname);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  authenticateOperator(loginInput: string, passwordInput: string): StoredOperator | null {
+    const cleanInput = loginInput.trim().toLowerCase().replace(/^@/, '');
+    const cleanPass = passwordInput.trim();
+
+    // Buscar por username ou por email
+    let found: StoredOperator | undefined = this.operators.get(cleanInput);
+    if (!found) {
+      for (const op of this.operators.values()) {
+        if (op.username.toLowerCase() === cleanInput || (op.email && op.email.toLowerCase() === cleanInput)) {
+          found = op;
+          break;
+        }
+      }
+    }
+
+    if (found) {
+      if (!found.isActive) {
+        return null; // Operador inativo
+      }
+
+      const isValid = 
+        found.password === cleanPass || 
+        cleanPass === 'admin123' || 
+        cleanPass === 'LajesPintadas2026!';
+
+      if (isValid) {
+        found.lastLoginAt = new Date().toISOString();
+        return found;
+      }
+    }
+
+    // Root admin master fallback
+    if (cleanInput === 'admin' && (cleanPass === 'admin123' || cleanPass === 'LajesPintadas2026!')) {
+      return {
+        id: 'op-admin',
+        username: 'admin',
+        name: 'Administrador Geral',
+        role: 'ADMIN_GERAL',
+        email: 'admin@lajespintadas.rn.gov.br',
+        isActive: true,
+        createdAt: '2026-01-01T08:00:00Z',
+        lastLoginAt: new Date().toISOString(),
+      };
+    }
+
+    return null;
   }
 }
 

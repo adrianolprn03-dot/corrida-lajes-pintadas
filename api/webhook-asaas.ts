@@ -108,17 +108,47 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const memoryReg = targetProtocol ? memoryStore.registrations.get(targetProtocol) : null;
 
         if (memoryReg) {
+          const memIsPcd = Boolean(
+            memoryReg.isPcd || 
+            memoryReg.originType === 'PCD' || 
+            memoryReg.category?.includes('PCD') ||
+            (memoryReg.totalAmountCents && memoryReg.totalAmountCents <= 3000)
+          );
+
           athleteData = {
             athleteName: memoryReg.fullName || 'Atleta',
             athleteEmail: memoryReg.email,
             athleteCpf: memoryReg.cpf || '',
             protocol: memoryReg.protocol,
             accessCode: memoryReg.accessCode,
-            category: memoryReg.category,
+            category: memIsPcd 
+              ? (memoryReg.gender === 'FEMININO' ? 'PCD_FEMININO' : 'PCD_MASCULINO')
+              : memoryReg.category,
+            originType: memoryReg.originType || (memIsPcd ? 'PCD' : undefined),
             gender: memoryReg.gender,
             shirtSize: memoryReg.shirtSize,
             status: 'CONFIRMED',
+            paymentMethod: memoryReg.paymentMethod || payment.billingType || 'PIX',
+            totalAmountCents: memoryReg.totalAmountCents || (memIsPcd ? 2750 : 5500),
+            baseAmountCents: memoryReg.baseAmountCents || (memIsPcd ? 2500 : 5000),
+            feeCents: memoryReg.feeCents || (memIsPcd ? 250 : 500),
+            isPcd: memIsPcd,
+            pcdType: memoryReg.pcdType,
+            pcdCid: memoryReg.pcdCid,
+            hasGuide: memoryReg.hasGuide,
+            guideName: memoryReg.guideName,
+            guideCpf: memoryReg.guideCpf,
+            guidePhone: memoryReg.guidePhone,
+            guideShirtSize: memoryReg.guideShirtSize,
           };
+
+          if (memoryReg.hasGuide && memoryReg.guideShirtSize) {
+            const guideShirt = memoryStore.shirts.get(memoryReg.guideShirtSize);
+            if (guideShirt) {
+              if (guideShirt.reservedCount > 0) guideShirt.reservedCount--;
+              guideShirt.confirmedCount++;
+            }
+          }
         }
 
         if (supabase) {
@@ -128,11 +158,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               id,
               protocol,
               category,
+              origin_type,
               gender,
               shirt_size,
               kit_notes,
               status,
               financial_status,
+              total_amount_cents,
+              base_amount_cents,
+              processing_fee_cents,
+              payment_method,
               athletes (
                 full_name,
                 email,
@@ -154,6 +189,61 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               alreadySentInDb = true;
             }
 
+            let pcdMeta: any = null;
+            if (reg.kit_notes && typeof reg.kit_notes === 'string') {
+              const matchPcd = reg.kit_notes.match(/PCD_META:(\{.*?\})/);
+              if (matchPcd) {
+                try {
+                  pcdMeta = JSON.parse(matchPcd[1]);
+                } catch {}
+              }
+            }
+
+            if (!pcdMeta && memoryReg && memoryReg.isPcd) {
+              pcdMeta = {
+                isPcd: true,
+                pcdType: memoryReg.pcdType,
+                pcdCid: memoryReg.pcdCid,
+                hasGuide: memoryReg.hasGuide,
+                guideName: memoryReg.guideName,
+                guideCpf: memoryReg.guideCpf,
+                guidePhone: memoryReg.guidePhone,
+                guideShirtSize: memoryReg.guideShirtSize,
+              };
+            }
+
+            const isPcd = Boolean(
+              pcdMeta?.isPcd ||
+              reg.origin_type === 'PCD' ||
+              reg.category?.includes('PCD') ||
+              (reg.total_amount_cents && reg.total_amount_cents <= 3000)
+            );
+
+            if (pcdMeta?.hasGuide && pcdMeta?.guideShirtSize) {
+              try {
+                const { data: gInv } = await supabase
+                  .from('shirt_inventory')
+                  .select('reserved_count, confirmed_count')
+                  .eq('size', pcdMeta.guideShirtSize)
+                  .maybeSingle();
+
+                if (gInv) {
+                  const newRes = Math.max(0, (gInv.reserved_count || 0) - 1);
+                  const newConf = (gInv.confirmed_count || 0) + 1;
+                  await supabase
+                    .from('shirt_inventory')
+                    .update({
+                      reserved_count: newRes,
+                      confirmed_count: newConf,
+                      updated_at: new Date().toISOString(),
+                    })
+                    .eq('size', pcdMeta.guideShirtSize);
+                }
+              } catch (gErr) {
+                console.warn('[Webhook] Aviso ao atualizar estoque camiseta do guia no Supabase:', gErr);
+              }
+            }
+
             if (reg.athletes && !athleteData) {
               const athlete = Array.isArray(reg.athletes) ? reg.athletes[0] : reg.athletes;
               let accessCode: string | undefined = undefined;
@@ -165,16 +255,38 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 accessCode = memoryReg.accessCode;
               }
 
+              const resolvedCategory = isPcd 
+                ? (reg.gender === 'FEMININO' ? 'PCD_FEMININO' : 'PCD_MASCULINO')
+                : reg.category;
+
+              const totalAmountCents = reg.total_amount_cents || (payment.value ? Math.round(payment.value * 100) : (isPcd ? 2750 : 5500));
+              const baseAmountCents = reg.base_amount_cents || (isPcd ? 2500 : 5000);
+              const feeCents = reg.processing_fee_cents || (isPcd ? 250 : 500);
+              const paymentMethod = reg.payment_method || payment.billingType || 'PIX';
+
               athleteData = {
                 athleteName: athlete?.full_name || 'Atleta',
                 athleteEmail: athlete?.email,
                 athleteCpf: athlete?.cpf || '',
                 protocol: reg.protocol,
                 accessCode,
-                category: reg.category,
+                category: resolvedCategory,
+                originType: reg.origin_type || (isPcd ? 'PCD' : undefined),
                 gender: reg.gender,
                 shirtSize: reg.shirt_size,
                 status: 'CONFIRMED',
+                paymentMethod,
+                totalAmountCents,
+                baseAmountCents,
+                feeCents,
+                isPcd,
+                pcdType: pcdMeta?.pcdType,
+                pcdCid: pcdMeta?.pcdCid,
+                hasGuide: Boolean(pcdMeta?.hasGuide),
+                guideName: pcdMeta?.guideName,
+                guideCpf: pcdMeta?.guideCpf,
+                guidePhone: pcdMeta?.guidePhone,
+                guideShirtSize: pcdMeta?.guideShirtSize,
               };
             }
           }

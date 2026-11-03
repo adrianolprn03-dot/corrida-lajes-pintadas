@@ -19,6 +19,20 @@ export interface RegistrationEmailData {
   originType?: string;
   pixCopyPaste?: string;
   invoiceUrl?: string;
+  // Financeiro & Valores
+  totalAmountCents?: number;
+  baseAmountCents?: number;
+  feeCents?: number;
+  paidAmountFormatted?: string;
+  // PCD e Atleta-Guia
+  isPcd?: boolean;
+  pcdType?: string;
+  pcdCid?: string;
+  hasGuide?: boolean;
+  guideName?: string;
+  guideCpf?: string;
+  guidePhone?: string;
+  guideShirtSize?: string;
 }
 
 function getTransporter() {
@@ -66,12 +80,52 @@ export async function sendConfirmationEmail(data: RegistrationEmailData): Promis
   const fromEmail = (process.env.SMTP_USER || '').trim().replace(/^["']|["']$/g, '');
   const sender = `"${fromName}" <${fromEmail}>`;
 
-  const categoryName = 
-    data.category === 'CASA_MASCULINO' || data.category === 'LOCAL_MASCULINO' ? 'Atleta Local Masculino (5 km)' :
-    data.category === 'CASA_FEMININO' || data.category === 'LOCAL_FEMININO' ? 'Atleta Local Feminino (5 km)' :
-    data.category === 'VISITANTE_MASCULINO' ? 'Atleta Visitante Geral Masculino (5 km)' :
-    data.category === 'VISITANTE_FEMININO' ? 'Atleta Visitante Geral Feminino (5 km)' :
-    data.category;
+  // Detecção robusta de Categoria PCD
+  const isPcd = Boolean(
+    data.isPcd ||
+    data.originType === 'PCD' ||
+    data.category?.toUpperCase().includes('PCD') ||
+    (typeof data.totalAmountCents === 'number' && data.totalAmountCents > 0 && data.totalAmountCents <= 3000)
+  );
+
+  const categoryName = isPcd
+    ? (data.gender === 'FEMININO' ? 'Atleta PCD / Inclusão Feminino (5 km)' : 'Atleta PCD / Inclusão Masculino (5 km)')
+    : (
+      data.category === 'PCD_MASCULINO' ? 'Atleta PCD / Inclusão Masculino (5 km)' :
+      data.category === 'PCD_FEMININO' ? 'Atleta PCD / Inclusão Feminino (5 km)' :
+      data.category === 'CASA_MASCULINO' || data.category === 'LOCAL_MASCULINO' ? 'Atleta Local Masculino (5 km)' :
+      data.category === 'CASA_FEMININO' || data.category === 'LOCAL_FEMININO' ? 'Atleta Local Feminino (5 km)' :
+      data.category === 'VISITANTE_MASCULINO' ? 'Atleta Visitante Geral Masculino (5 km)' :
+      data.category === 'VISITANTE_FEMININO' ? 'Atleta Visitante Geral Feminino (5 km)' :
+      data.category?.replace(/_/g, ' ') || 'Categoria Geral (5 km)'
+    );
+
+  // Valores financeiros
+  const formatBRL = (cents: number) => {
+    return (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  };
+
+  const totalCents = typeof data.totalAmountCents === 'number' && data.totalAmountCents > 0
+    ? data.totalAmountCents
+    : (isPcd ? 2750 : 5500);
+
+  const baseCents = typeof data.baseAmountCents === 'number' && data.baseAmountCents > 0
+    ? data.baseAmountCents
+    : (isPcd ? 2500 : 5000);
+
+  const feeCents = typeof data.feeCents === 'number' && data.feeCents >= 0
+    ? data.feeCents
+    : (isPcd ? 250 : 500);
+
+  const totalFormatted = data.paidAmountFormatted || formatBRL(totalCents);
+  const baseFormatted = formatBRL(baseCents);
+  const feeFormatted = formatBRL(feeCents);
+
+  const paymentMethodLabel = 
+    data.paymentMethod === 'PIX' ? 'Pix Oficial (Compensação Imediata Asaas)' :
+    data.paymentMethod === 'CREDIT_CARD' ? 'Cartão de Crédito à Vista (1x)' :
+    data.paymentMethod === 'ISENTO' ? 'Isenção Oficial / Cortesia' :
+    data.paymentMethod ? data.paymentMethod.replace(/_/g, ' ') : 'Pix / Cartão de Crédito';
 
   const isReserved = data.status === 'RESERVED';
   const bannerBg = isReserved ? '#fffbeb' : '#f0fdf4';
@@ -187,9 +241,9 @@ export async function sendConfirmationEmail(data: RegistrationEmailData): Promis
               </div>
               ` : ''}
 
-              <!-- Tabela de Dados do Atleta -->
+              <!-- Tabela de Dados do Atleta & Pagamento -->
               <h3 style="margin: 0 0 12px 0; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #0f172a; border-left: 4px solid #ea580c; padding-left: 10px;">
-                Dados da Inscrição
+                Dados da Inscrição & Pagamento
               </h3>
               <table role="presentation" width="100%" cellspacing="0" cellpadding="8" border="0" style="border-collapse: collapse; margin-bottom: 24px;">
                 <tr style="background-color: #f8fafc;">
@@ -202,12 +256,36 @@ export async function sendConfirmationEmail(data: RegistrationEmailData): Promis
                 </tr>
                 <tr style="background-color: #f8fafc;">
                   <td style="border: 1px solid #e2e8f0; font-size: 12px; font-weight: 700; color: #475569;">Modalidade / Categoria:</td>
-                  <td style="border: 1px solid #e2e8f0; font-size: 12px; font-weight: 800; color: #ea580c;">${categoryName}</td>
+                  <td style="border: 1px solid #e2e8f0; font-size: 12px; font-weight: 800; color: #ea580c;">
+                    ${isPcd ? `♿ ${categoryName}` : categoryName}
+                  </td>
                 </tr>
                 <tr>
                   <td style="border: 1px solid #e2e8f0; font-size: 12px; font-weight: 700; color: #475569;">Tamanho da Camiseta:</td>
                   <td style="border: 1px solid #e2e8f0; font-size: 12px; font-weight: 800; color: #0f172a;">
-                    ${data.shirtSize} (Poliamida UV FPU 50+)
+                    ${data.shirtSize} (Poliamida UV FPU 50+ Oficial 68 Anos)
+                  </td>
+                </tr>
+                <tr style="background-color: #f8fafc;">
+                  <td style="border: 1px solid #e2e8f0; font-size: 12px; font-weight: 700; color: #475569;">
+                    ${isReserved ? 'Valor Total a Pagar:' : 'Valor Pago / Quitado:'}
+                  </td>
+                  <td style="border: 1px solid #e2e8f0; font-size: 13px; font-weight: 900; color: #16a34a;">
+                    ${totalFormatted}
+                    <span style="font-size: 11px; font-weight: 600; color: #64748b; margin-left: 4px;">
+                      (${baseFormatted} base + ${feeFormatted} taxa de serviço 10%)
+                    </span>
+                    ${isPcd ? `
+                    <div style="font-size: 11px; font-weight: 700; color: #9333ea; margin-top: 3px;">
+                      ♿ Benefício PCD Aplicado: 50% Meia-Inscrição Oficial
+                    </div>
+                    ` : ''}
+                  </td>
+                </tr>
+                <tr>
+                  <td style="border: 1px solid #e2e8f0; font-size: 12px; font-weight: 700; color: #475569;">Forma de Pagamento:</td>
+                  <td style="border: 1px solid #e2e8f0; font-size: 12px; font-weight: 700; color: #334155;">
+                    ${paymentMethodLabel}
                   </td>
                 </tr>
                 <tr style="background-color: #f0fdf4;">
@@ -217,6 +295,93 @@ export async function sendConfirmationEmail(data: RegistrationEmailData): Promis
                   </td>
                 </tr>
               </table>
+
+              <!-- Informações PCD / Inclusão e Atleta-Guia se aplicável -->
+              ${isPcd ? `
+              <div style="background-color: #faf5ff; border: 2px solid #d8b4fe; border-radius: 14px; padding: 18px; margin-bottom: 24px;">
+                <h4 style="margin: 0 0 10px 0; font-size: 13px; font-weight: 800; text-transform: uppercase; color: #6b21a8; letter-spacing: 0.5px;">
+                  ♿ Categoria Oficial PCD / Inclusão (50% Meia-Inscrição)
+                </h4>
+                <p style="margin: 0 0 12px 0; font-size: 12px; color: #581c87; line-height: 1.5;">
+                  Sua inscrição foi confirmada com sucesso na <strong>Divisão Especial PCD / Inclusão</strong> com o benefício oficial de meia-inscrição (50% de desconto no valor base).
+                </p>
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="6" border="0" style="font-size: 12px; background-color: #ffffff; border-radius: 10px; border: 1px solid #e9d5ff; margin-bottom: 14px;">
+                  <tr>
+                    <td style="color: #6b21a8; font-weight: 700; width: 40%; border-bottom: 1px solid #f3e8ff;">Tipo de Deficiência:</td>
+                    <td style="color: #3b0764; font-weight: 800; border-bottom: 1px solid #f3e8ff;">${data.pcdType || 'Pessoa com Deficiência (Conforme Laudo/CIPTEA)'}</td>
+                  </tr>
+                  <tr>
+                    <td style="color: #6b21a8; font-weight: 700; border-bottom: 1px solid #f3e8ff;">CID / Documento / CIPTEA:</td>
+                    <td style="color: #3b0764; font-weight: 800; font-family: monospace; border-bottom: 1px solid #f3e8ff;">${data.pcdCid || 'Apresentar laudo na retirada do kit'}</td>
+                  </tr>
+                  <tr>
+                    <td style="color: #6b21a8; font-weight: 700; border-bottom: 1px solid #f3e8ff;">Valor Pago (Meia-Inscrição):</td>
+                    <td style="color: #166534; font-weight: 900; font-size: 13px; border-bottom: 1px solid #f3e8ff;">
+                      ${totalFormatted} <span style="font-size: 11px; font-weight: 600; color: #6b21a8;">(${baseFormatted} base + ${feeFormatted} taxa 10%)</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="color: #6b21a8; font-weight: 700;">Atleta-Guia de Apoio:</td>
+                    <td style="color: #3b0764; font-weight: 800;">
+                      ${data.hasGuide && data.guideName ? `Sim — ${data.guideName} (Camisa: ${data.guideShirtSize || 'Grade Conforme Cadastro'}, 100% Gratuito)` : 'Não solicitado / Participação Individual'}
+                    </td>
+                  </tr>
+                </table>
+
+                ${data.hasGuide && data.guideName ? `
+                <div style="background-color: #ffffff; border: 1.5px dashed #c084fc; border-radius: 12px; padding: 14px; margin-bottom: 12px;">
+                  <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #ea580c; display: block; margin-bottom: 8px;">
+                    🏃‍♂️ Atleta-Guia Oficial Cadastrado (100% Gratuito)
+                  </span>
+                  <table role="presentation" width="100%" cellspacing="0" cellpadding="4" border="0" style="font-size: 11px; color: #334155;">
+                    <tr>
+                      <td style="font-weight: 700; width: 35%;">Nome do Guia:</td>
+                      <td style="font-weight: 800; color: #0f172a;">${data.guideName}</td>
+                    </tr>
+                    ${data.guideCpf ? `
+                    <tr>
+                      <td style="font-weight: 700;">CPF do Guia:</td>
+                      <td style="font-weight: 600;">${data.guideCpf.replace(/\D/g, '').length === 11 ? `${data.guideCpf.slice(0, 3)}.***.***-${data.guideCpf.slice(9)}` : data.guideCpf}</td>
+                    </tr>
+                    ` : ''}
+                    ${data.guidePhone ? `
+                    <tr>
+                      <td style="font-weight: 700;">Telefone:</td>
+                      <td style="font-weight: 600;">${data.guidePhone}</td>
+                    </tr>
+                    ` : ''}
+                    <tr>
+                      <td style="font-weight: 700;">Camiseta do Guia:</td>
+                      <td style="font-weight: 800; color: #ea580c;">${data.guideShirtSize || 'Tamanho Cadastrado'} (Camiseta Oficial Laranja de Apoio - R$ 0,00)</td>
+                    </tr>
+                  </table>
+                </div>
+                ` : ''}
+
+                <div style="margin-top: 12px; font-size: 11px; color: #7e22ce; line-height: 1.5; border-top: 1px solid #f3e8ff; padding-top: 8px;">
+                  📋 <strong>Regulamento Oficial PCD:</strong> É obrigatória a apresentação do laudo médico comprobatório original (com indicação do CID emitido nos últimos 12 meses) ou carteira de identificação oficial PCD/CIPTEA no ato da retirada do kit do atleta.
+                </div>
+              </div>
+              ` : `
+              <!-- Resumo Financeiro Oficial Categoria Geral -->
+              <div style="background-color: #f0fdf4; border: 1.5px solid #bbf7d0; border-radius: 14px; padding: 14px 18px; margin-bottom: 24px;">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                  <tr>
+                    <td style="font-size: 12px; color: #166534; font-weight: 700;">
+                      💰 <strong>Valor da Inscrição Processado:</strong>
+                    </td>
+                    <td align="right" style="font-size: 14px; font-weight: 900; color: #15803d;">
+                      ${totalFormatted}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colspan="2" style="font-size: 11px; color: #166534; padding-top: 4px;">
+                      Valor base de ${baseFormatted} acrescido de 10% (${feeFormatted}) de taxa de serviço do gateway Asaas. Quitação bancária confirmada.
+                    </td>
+                  </tr>
+                </table>
+              </div>
+              `}
 
               <!-- Informações Importantes do Evento -->
               <div style="background-color: #fff7ed; border: 1px solid #ffedd5; border-radius: 14px; padding: 18px; margin-bottom: 24px;">
@@ -233,7 +398,7 @@ export async function sendConfirmationEmail(data: RegistrationEmailData): Promis
 
               <!-- Botão de Ação -->
               <div style="text-align: center; margin: 28px 0 10px 0;">
-                <a href="https://corrida-lajes-pintadas-rn.vercel.app/#/atleta" target="_blank" style="display: inline-block; background-color: #ea580c; color: #ffffff; text-decoration: none; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; padding: 14px 28px; border-radius: 12px; box-shadow: 0 4px 12px rgba(234, 88, 12, 0.35);">
+                <a href="https://corridadeemancipacao.lajespintadas.rn.gov.br/#/atleta" target="_blank" style="display: inline-block; background-color: #ea580c; color: #ffffff; text-decoration: none; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; padding: 14px 28px; border-radius: 12px; box-shadow: 0 4px 12px rgba(234, 88, 12, 0.35);">
                   Acessar Área do Atleta & Comprovante
                 </a>
               </div>

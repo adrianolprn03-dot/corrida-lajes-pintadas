@@ -1,7 +1,10 @@
 import React from 'react';
 import { Shield, Lock, MapPin, Mail, ArrowRight, Ticket, CheckCircle2 } from 'lucide-react';
+import { EventSettings } from '../types';
+import { formatCentsToBRL, getActiveBatchLabel, getActiveBasePriceCents } from '../lib/pricing';
 
 interface FooterProps {
+  settings?: EventSettings;
   onOpenRegulation: (tab?: 'terms' | 'privacy') => void;
   onOpenAthleteArea: () => void;
   onOpenAdmin: () => void;
@@ -9,11 +12,14 @@ interface FooterProps {
 }
 
 export const Footer: React.FC<FooterProps> = ({
+  settings,
   onOpenRegulation,
   onOpenAthleteArea,
   onOpenAdmin,
   onOpenRegister,
 }) => {
+  const batchLabel = getActiveBatchLabel(settings);
+  const formattedBase = formatCentsToBRL(getActiveBasePriceCents(settings));
   return (
     <>
       {/* CHAMADA FINAL (PRE-FOOTER CTA): Radiant Orange with Dark Title & Contrast Button */}
@@ -21,7 +27,7 @@ export const Footer: React.FC<FooterProps> = ({
         <div className="max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
           <div>
             <span className="font-sans text-xs font-bold uppercase tracking-widest text-[#070D18]/80 block mb-2">
-              Inscrições Oficiais do 1º Lote
+              Inscrições Oficiais — {batchLabel}
             </span>
             <h2 className="font-condensed font-extrabold text-4xl sm:text-6xl uppercase tracking-tight text-[#070D18] leading-none">
               Garanta sua Vaga na 5ª Corrida
@@ -182,7 +188,7 @@ export const Footer: React.FC<FooterProps> = ({
           <div className="max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-12 flex flex-col sm:flex-row items-center justify-between gap-2 text-center sm:text-left">
             <p>© 2026 Prefeitura Municipal de Lajes Pintadas/RN. Todos os direitos reservados.</p>
             <p className="text-white/80 font-medium">
-              Inscrição: R$ 50,00 (+ 10% taxa) • 5 KM • 26/12/2026
+              {batchLabel}: {formattedBase} (+ 10% taxa) • 5 KM • 26/12/2026
             </p>
           </div>
         </div>

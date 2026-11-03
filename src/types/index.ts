@@ -6,11 +6,13 @@ export type EventStatus = 'PREPARATION' | 'OPEN' | 'SUSPENDED' | 'CLOSED' | 'SOL
 
 export type AthleteGender = 'MASCULINO' | 'FEMININO';
 
-// Categoria Local (anteriormente chamada Casa) e Visitante
-export type OriginType = 'CASA' | 'VISITANTE' | 'LOCAL';
+// Categoria Local (anteriormente chamada Casa), Visitante e PCD (Inclusão)
+export type OriginType = 'CASA' | 'VISITANTE' | 'LOCAL' | 'PCD';
 
 export type CasaProofType = 'NATURAL' | 'RESIDENTE' | 'NATURAL_E_RESIDENTE';
 export type LocalProofType = CasaProofType;
+
+export type PcdType = 'VISUAL' | 'FISICA' | 'AUDITIVA' | 'INTELECTUAL' | 'OUTRA';
 
 export type Category = 
   | 'CASA_MASCULINO' 
@@ -18,7 +20,9 @@ export type Category =
   | 'VISITANTE_MASCULINO' 
   | 'VISITANTE_FEMININO'
   | 'LOCAL_MASCULINO'
-  | 'LOCAL_FEMININO';
+  | 'LOCAL_FEMININO'
+  | 'PCD_MASCULINO'
+  | 'PCD_FEMININO';
 
 export type ShirtSize = 'PP' | 'P' | 'M' | 'G' | 'GG' | 'XG';
 
@@ -100,7 +104,13 @@ export interface EventSettings {
   termsContent: string;
   privacyContent: string;
   updatedAt: string;
+  // Lotes de inscrição (configurados no painel) e situação calculada pelo servidor
+  registrationBatches?: RegistrationBatch[];
+  batchState?: BatchState | null;
 }
+
+export type { RegistrationBatch, ResolvedBatch, BatchState, BatchStatus } from '../lib/batches';
+import type { RegistrationBatch, BatchState } from '../lib/batches';
 
 export interface ShirtInventoryItem {
   id: string;
@@ -133,6 +143,11 @@ export interface AthleteData {
   birthDate: string; // YYYY-MM-DD
   email: string;
   phone: string;
+  cep?: string;
+  street?: string;
+  number?: string;
+  complement?: string;
+  neighborhood?: string;
   city: string;
   state: string;
   team?: string;
@@ -157,6 +172,11 @@ export interface RegistrationSubmission {
   birthDate: string;
   email: string;
   phone: string;
+  cep?: string;
+  street?: string;
+  number?: string;
+  complement?: string;
+  neighborhood?: string;
   city: string;
   state: string;
   team?: string;
@@ -167,6 +187,16 @@ export interface RegistrationSubmission {
   casaProofType?: CasaProofType;
   shirtSize: ShirtSize;
   paymentMethod: PaymentMethod;
+
+  // PCD / Inclusão & Atleta-Guia
+  isPcd?: boolean;
+  pcdType?: PcdType;
+  pcdCid?: string;
+  hasGuide?: boolean;
+  guideName?: string;
+  guideCpf?: string;
+  guidePhone?: string;
+  guideShirtSize?: ShirtSize;
   
   // Step 3 - Agreement
   termsAccepted: boolean;
@@ -220,6 +250,16 @@ export interface Registration {
   updatedAt: string;
   athlete?: AthleteData;
 
+  // PCD / Inclusão & Atleta-Guia
+  isPcd?: boolean;
+  pcdType?: PcdType;
+  pcdCid?: string | null;
+  hasGuide?: boolean;
+  guideName?: string | null;
+  guideCpf?: string | null;
+  guidePhone?: string | null;
+  guideShirtSize?: ShirtSize | null;
+
   // Presential and Document Audit Fields
   channel?: RegistrationChannel;
   documentVerificationStatus?: DocumentVerificationStatus;
@@ -229,6 +269,10 @@ export interface Registration {
   documentCheckedAt?: string | null;
   attendantName?: string | null;
   attendantId?: string | null;
+
+  // Lote de inscrição em que a vaga foi adquirida
+  batchId?: string | null;
+  batchName?: string | null;
 }
 
 export interface PricingBreakdown {

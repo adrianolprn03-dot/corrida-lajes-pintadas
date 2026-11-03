@@ -93,6 +93,8 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
     CASA_FEMININO: 'Local Feminino (5 km)',
     VISITANTE_MASCULINO: 'Visitante Masculino (5 km)',
     VISITANTE_FEMININO: 'Visitante Feminino (5 km)',
+    PCD_MASCULINO: '♿ PCD Masculino (5 km)',
+    PCD_FEMININO: '♿ PCD Feminino (5 km)',
   };
 
   const handleTestAsaas = async () => {
@@ -218,7 +220,7 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
           </div>
           <div className="mt-2 flex items-center gap-1.5 text-xs text-emerald-700 font-medium">
             <ShieldCheck className="w-3.5 h-3.5" />
-            <span>R$ 50,00 integral por atleta confirmado</span>
+            <span>Valor base do lote vigente por atleta confirmado</span>
           </div>
           <div className="absolute -bottom-6 -right-6 w-20 h-20 bg-emerald-50 rounded-full opacity-50 pointer-events-none" />
         </div>
@@ -237,7 +239,7 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
             {formatCurrency(metrics.grossRevenueCents)}
           </div>
           <div className="mt-2 text-xs text-slate-500">
-            Total transacionado via Pix / Asaas (R$ 55,00 por atleta)
+            Total transacionado via Pix / Asaas (lote vigente + 10%)
           </div>
         </div>
 
@@ -255,7 +257,7 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
             {formatCurrency(metrics.processingFeesCents)}
           </div>
           <div className="mt-2 text-xs text-slate-500">
-            Custeadas pelo participante (R$ 5,00 por atleta)
+            Custeadas pelo participante (10% sobre o valor base do lote)
           </div>
         </div>
       </div>
@@ -568,7 +570,7 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
               Inscrições por Categoria Oficial
             </h3>
             <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-bold">
-              4 Categorias
+              {Object.keys(metrics.categories).length} Categorias
             </span>
           </div>
 
