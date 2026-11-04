@@ -1346,12 +1346,10 @@ class StorageService {
       return updatedOp;
     });
 
-    // Garantir que os 4 operadores padrão sempre existam
-    for (const initOp of INITIAL_OPERATORS) {
-      if (!ops.some((o) => o.username.toLowerCase() === initOp.username.toLowerCase())) {
-        ops.push(initOp);
-        modified = true;
-      }
+    // Garantir que pelo menos o Administrador Geral exista para evitar bloqueio total
+    if (!ops.some((o) => o.username.toLowerCase() === 'admin')) {
+      ops.unshift(INITIAL_OPERATORS[0]);
+      modified = true;
     }
 
     if (modified) {
@@ -1361,7 +1359,7 @@ class StorageService {
     return ops;
   }
 
-  saveAdminOperator(operator: AdminOperator): void {
+  async saveAdminOperator(operator: AdminOperator): Promise<AdminOperator[]> {
     const ops = this.getAdminOperators();
     const cleanUser = operator.username.trim().toLowerCase();
     const idx = ops.findIndex(
@@ -1382,7 +1380,7 @@ class StorageService {
         ...operator,
         username: cleanUser,
         name: operator.name.trim(),
-        email: operator.email?.trim() || existing.email,
+        email: operator.email?.trim() !== undefined ? operator.email.trim() : existing.email,
         password: passwordToKeep,
         isActive: operator.isActive !== undefined ? operator.isActive : existing.isActive,
       };
@@ -1403,17 +1401,25 @@ class StorageService {
 
     this.setLocal(STORAGE_KEYS.OPERATORS, ops);
 
-    // Sincronizar de forma transparente com o backend serverless (/api/admin-operators)
+    // Sincronizar e aguardar persistência no backend serverless (/api/admin-operators)
     try {
-      fetch('/api/admin-operators', {
+      const res = await fetch('/api/admin-operators', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'save', operator: finalOp }),
-      }).catch(() => {});
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.operators && Array.isArray(json.operators) && json.operators.length > 0) {
+          this.setLocal(STORAGE_KEYS.OPERATORS, json.operators);
+          return json.operators;
+        }
+      }
     } catch {}
+    return ops;
   }
 
-  deleteAdminOperator(id: string): void {
+  async deleteAdminOperator(id: string): Promise<AdminOperator[]> {
     const ops = this.getAdminOperators();
     if (ops.length <= 1) {
       throw new Error('Não é permitido remover o último operador do sistema.');
@@ -1427,12 +1433,20 @@ class StorageService {
 
     // Sincronizar exclusão com o backend serverless
     try {
-      fetch('/api/admin-operators', {
+      const res = await fetch('/api/admin-operators', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'delete', id }),
-      }).catch(() => {});
+        body: JSON.stringify({ action: 'delete', id, username: target?.username }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.operators && Array.isArray(json.operators)) {
+          this.setLocal(STORAGE_KEYS.OPERATORS, json.operators);
+          return json.operators;
+        }
+      }
     } catch {}
+    return filtered;
   }
 
   // Sincronizar operadores locais com o servidor Vercel / Supabase
@@ -1442,23 +1456,8 @@ class StorageService {
       if (res.ok) {
         const json = await res.json();
         if (json.operators && Array.isArray(json.operators) && json.operators.length > 0) {
-          const current = this.getAdminOperators();
-          const map = new Map<string, AdminOperator>();
-          for (const op of current) {
-            map.set(op.username.toLowerCase(), op);
-          }
-          for (const op of json.operators) {
-            const key = op.username.toLowerCase();
-            const existing = map.get(key);
-            map.set(key, {
-              ...existing,
-              ...op,
-              password: op.password || existing?.password || 'admin123',
-            });
-          }
-          const merged = Array.from(map.values());
-          this.setLocal(STORAGE_KEYS.OPERATORS, merged);
-          return merged;
+          this.setLocal(STORAGE_KEYS.OPERATORS, json.operators);
+          return json.operators;
         }
       }
     } catch {}

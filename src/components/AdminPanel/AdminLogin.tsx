@@ -21,7 +21,7 @@ interface AdminLoginProps {
 }
 
 export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onCancel }) => {
-  const [username, setUsername] = useState('admin');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -46,48 +46,15 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onCancel
       return;
     }
 
-    // 1. Tentar autenticação contra a lista de operadores local
-    const operators = storageService.getAdminOperators();
-    const op = operators.find(
-      (o) =>
-        o.username.toLowerCase() === cleanInput ||
-        (o.email && o.email.toLowerCase() === cleanInput)
-    );
-
-    if (op) {
-      if (!op.isActive) {
-        setError('Este usuário operador foi desativado pela administração.');
-        setIsLoading(false);
-        return;
-      }
-
-      // Validar senha do operador ou senhas mestras de administração
-      const validPass =
-        op.password === cleanPass ||
-        cleanPass === 'admin123' ||
-        cleanPass === 'LajesPintadas2026!';
-
-      if (validPass) {
-        const sessionData = {
-          username: op.username,
-          role: op.role,
-          name: op.name,
-          loggedAt: new Date().toISOString(),
-        };
-        localStorage.setItem('lp_admin_session', JSON.stringify(sessionData));
-        onLoginSuccess(sessionData);
-        setIsLoading(false);
-        return;
-      }
-    }
-
-    // 2. Tentar autenticação via API Serverless (/api/admin-operators)
+    // 1. Autenticação prioritária via API Serverless (/api/admin-operators) sincronizada com o banco
+    let serverResponded = false;
     try {
       const res = await fetch('/api/admin-operators', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'auth', username: cleanInput, password: cleanPass }),
       });
+      serverResponded = true;
       if (res.ok) {
         const json = await res.json();
         if (json.success && json.operator) {
@@ -98,16 +65,48 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onCancel
             loggedAt: new Date().toISOString(),
           };
           localStorage.setItem('lp_admin_session', JSON.stringify(sessionData));
+          storageService.syncOperatorsWithServer().catch(() => {});
           onLoginSuccess(sessionData);
           setIsLoading(false);
           return;
         }
       }
     } catch {
-      // Falha de rede ou offline, continua para fallbacks
+      // Sem conexão com a API: prossegue para validação local
     }
 
-    // 3. Tentar autenticação direta no Supabase Auth caso configurado
+    // 2. Fallback local somente quando a API estiver offline
+    if (!serverResponded) {
+      const operators = storageService.getAdminOperators();
+      const op = operators.find(
+        (o) =>
+          o.username.toLowerCase() === cleanInput ||
+          (o.email && o.email.toLowerCase() === cleanInput)
+      );
+
+      if (op) {
+        if (!op.isActive) {
+          setError('Este usuário operador foi desativado pela administração.');
+          setIsLoading(false);
+          return;
+        }
+
+        if (op.password === cleanPass) {
+          const sessionData = {
+            username: op.username,
+            role: op.role,
+            name: op.name,
+            loggedAt: new Date().toISOString(),
+          };
+          localStorage.setItem('lp_admin_session', JSON.stringify(sessionData));
+          onLoginSuccess(sessionData);
+          setIsLoading(false);
+          return;
+        }
+      }
+    }
+
+    // 3. Tentar autenticação direta no Supabase Auth caso seja conta de e-mail do Supabase
     if (isSupabaseConfigured && supabase && cleanInput.includes('@')) {
       try {
         const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
@@ -130,23 +129,6 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onCancel
       } catch {}
     }
 
-    // 4. Fallback mestre garantido para o Administrador Geral
-    if (
-      cleanInput === 'admin' &&
-      (cleanPass === 'LajesPintadas2026!' || cleanPass === 'admin123')
-    ) {
-      const sessionData = {
-        username: 'admin',
-        role: 'ADMIN_GERAL' as AdminRole,
-        name: 'Administrador Geral',
-        loggedAt: new Date().toISOString(),
-      };
-      localStorage.setItem('lp_admin_session', JSON.stringify(sessionData));
-      onLoginSuccess(sessionData);
-      setIsLoading(false);
-      return;
-    }
-
     setError('Credenciais incorretas. Verifique o usuário/e-mail e a senha digitados.');
     setIsLoading(false);
   };
@@ -156,15 +138,9 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onCancel
     performLogin(username, password);
   };
 
-  const handleQuickLogin = (u: string, p: string) => {
-    setUsername(u);
-    setPassword(p);
-    performLogin(u, p);
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-md p-4">
-      <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         
         {/* Top Header Banner */}
         <div className="bg-gradient-to-r from-orange-600 via-amber-600 to-orange-700 px-6 py-6 text-white text-center relative">
@@ -175,70 +151,6 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onCancel
           <p className="text-orange-100 text-xs mt-1">
             5ª Corrida de Emancipação Política de Lajes Pintadas/RN
           </p>
-        </div>
-
-        {/* Quick Access Badges for Testing & Demo */}
-        <div className="bg-slate-50 border-b border-slate-200/80 px-6 py-3.5">
-          <div className="flex items-center gap-1.5 mb-2">
-            <Sparkles className="w-3.5 h-3.5 text-orange-600" />
-            <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
-              Acesso Rápido por Perfil Funcional:
-            </span>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            <button
-              type="button"
-              onClick={() => handleQuickLogin('admin', 'admin123')}
-              className="p-2 rounded-xl bg-white border border-slate-200 hover:border-orange-500 hover:bg-orange-50/50 transition text-left group shadow-xs"
-              title="Acesso completo a todas as áreas"
-            >
-              <div className="flex items-center gap-1 text-[11px] font-bold text-slate-800 group-hover:text-orange-600">
-                <Shield className="w-3 h-3 text-red-500 shrink-0" />
-                <span>Admin Geral</span>
-              </div>
-              <span className="text-[10px] text-slate-400 block mt-0.5">Acesso total</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleQuickLogin('atendimento', 'atendimento123')}
-              className="p-2 rounded-xl bg-white border border-slate-200 hover:border-orange-500 hover:bg-orange-50/50 transition text-left group shadow-xs"
-              title="Atendimento presencial de moradores locais na Prefeitura"
-            >
-              <div className="flex items-center gap-1 text-[11px] font-bold text-slate-800 group-hover:text-orange-600">
-                <Building2 className="w-3 h-3 text-blue-500 shrink-0" />
-                <span>Atendimento</span>
-              </div>
-              <span className="text-[10px] text-slate-400 block mt-0.5">Inscrição Local</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleQuickLogin('financeiro', 'financeiro123')}
-              className="p-2 rounded-xl bg-white border border-slate-200 hover:border-orange-500 hover:bg-orange-50/50 transition text-left group shadow-xs"
-              title="Indicadores de arrecadação, Asaas e conciliação"
-            >
-              <div className="flex items-center gap-1 text-[11px] font-bold text-slate-800 group-hover:text-orange-600">
-                <DollarSign className="w-3 h-3 text-emerald-500 shrink-0" />
-                <span>Financeiro</span>
-              </div>
-              <span className="text-[10px] text-slate-400 block mt-0.5">Asaas & KPIs</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleQuickLogin('kit', 'kit123')}
-              className="p-2 rounded-xl bg-white border border-slate-200 hover:border-orange-500 hover:bg-orange-50/50 transition text-left group shadow-xs"
-              title="Estação de busca e entrega de camisas"
-            >
-              <div className="flex items-center gap-1 text-[11px] font-bold text-slate-800 group-hover:text-orange-600">
-                <Shirt className="w-3 h-3 text-amber-500 shrink-0" />
-                <span>Entrega Kit</span>
-              </div>
-              <span className="text-[10px] text-slate-400 block mt-0.5">Baixa rápida</span>
-            </button>
-          </div>
         </div>
 
         {/* Form Body */}
@@ -252,15 +164,16 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onCancel
 
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-              Usuário ou E-mail Cadastrado
+              Usuário ou E-mail Corporativo
             </label>
             <input
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
+              autoComplete="username"
               className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-800 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 font-medium"
-              placeholder="Ex: admin, atendimento ou seu e-mail cadastrado"
+              placeholder="Digite seu usuário ou e-mail"
             />
           </div>
 
@@ -274,6 +187,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onCancel
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                autoComplete="current-password"
                 className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-800 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 font-medium pr-10"
                 placeholder="••••••••••••"
               />
@@ -285,9 +199,6 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onCancel
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
-            <p className="text-[11px] text-slate-400 mt-1">
-              Aceita a senha individual do operador ou as senhas mestras: <span className="font-mono text-slate-600 font-semibold">admin123</span> e <span className="font-mono text-slate-600 font-semibold">LajesPintadas2026!</span>
-            </p>
           </div>
 
           <div className="pt-2 flex gap-3">
@@ -311,7 +222,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onCancel
 
         <div className="bg-slate-50 px-6 py-3 border-t border-slate-100 text-center">
           <p className="text-[10px] text-slate-400 font-medium">
-            Ambiente Seguro • Prefeitura Municipal de Lajes Pintadas / RN
+            Ambiente Restrito e Monitorado • Prefeitura Municipal de Lajes Pintadas / RN
           </p>
         </div>
       </div>

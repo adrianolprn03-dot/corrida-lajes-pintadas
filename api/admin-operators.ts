@@ -40,6 +40,53 @@ function getSupabase(): SupabaseClient | null {
   }
 }
 
+const OPERATORS_AUDIT_RESOURCE = 'ADMIN_OPERATORS_STATE';
+
+async function loadOperatorsFromDb(supabase: SupabaseClient | null): Promise<StoredOperator[]> {
+  if (!supabase) {
+    return memoryStore.getOperators();
+  }
+  try {
+    const { data: logs } = await supabase
+      .from('audit_logs')
+      .select('details')
+      .eq('resource_type', OPERATORS_AUDIT_RESOURCE)
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (logs && logs.length > 0 && logs[0].details && Array.isArray((logs[0].details as any).operators)) {
+      const dbOps = (logs[0].details as any).operators as StoredOperator[];
+      if (dbOps.length > 0) {
+        memoryStore.operators.clear();
+        for (const op of dbOps) {
+          if (op && op.username) {
+            memoryStore.operators.set(op.username.trim().toLowerCase(), op);
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Falha ao carregar operadores do Supabase, usando memória:', err);
+  }
+  return memoryStore.getOperators();
+}
+
+async function saveOperatorsToDb(supabase: SupabaseClient | null, actor = 'ADMIN'): Promise<StoredOperator[]> {
+  const all = memoryStore.getOperators();
+  if (!supabase) return all;
+  try {
+    await supabase.from('audit_logs').insert({
+      actor_id: actor,
+      action: 'SYNC_OPERATORS',
+      resource_type: OPERATORS_AUDIT_RESOURCE,
+      details: { operators: all },
+    });
+  } catch (err) {
+    console.warn('Falha ao persistir operadores no Supabase:', err);
+  }
+  return all;
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -52,6 +99,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const supabase = getSupabase();
 
   try {
+    // Sempre sincronizar o estado da instância serverless com o banco antes de operar
+    await loadOperatorsFromDb(supabase);
+
     // 1. GET: Retorna lista de operadores cadastrados
     if (req.method === 'GET') {
       const ops = memoryStore.getOperators();
@@ -73,42 +123,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           return res.status(400).json({ success: false, error: 'Usuário e senha são obrigatórios.' });
         }
 
-        // Tentar autenticação via Supabase Auth se configurado
-        if (supabase && cleanUser.includes('@')) {
-          try {
-            const { data: authData, error: authErr } = await supabase.auth.signInWithPassword({
-              email: cleanUser,
-              password: cleanPass,
-            });
-            if (!authErr && authData?.user) {
-              // Buscar perfil em admin_users se existir
-              const { data: adminUser } = await supabase
-                .from('admin_users')
-                .select('*')
-                .eq('id', authData.user.id)
-                .maybeSingle();
-
-              const sessionData = {
-                username: adminUser?.email?.split('@')[0] || cleanUser.split('@')[0],
-                name: adminUser?.full_name || authData.user.email?.split('@')[0] || 'Administrador',
-                role: (adminUser?.role === 'OPERATOR' ? 'ATENDIMENTO' : 'ADMIN_GERAL'),
-                email: authData.user.email || cleanUser,
-                loggedAt: new Date().toISOString(),
-              };
-
-              return res.status(200).json({
-                success: true,
-                operator: sessionData,
-              });
-            }
-          } catch (e) {
-            // Continua para o fallback de operadores em memória
-          }
-        }
-
-        // Autenticar com o mapa de operadores do sistema
+        // Autenticar com o mapa de operadores persistido do sistema
         const authenticated = memoryStore.authenticateOperator(cleanUser, cleanPass);
         if (authenticated) {
+          await saveOperatorsToDb(supabase, authenticated.username);
           return res.status(200).json({
             success: true,
             operator: {
@@ -127,29 +145,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
       }
 
-      // 3. Ação de Salvar / Criar Operador
+      // 3. Ação de Salvar / Criar / Editar Operador
       if (action === 'save') {
         if (!operator || !operator.name || !operator.username) {
           return res.status(400).json({ success: false, error: 'Nome e usuário são obrigatórios.' });
         }
 
-        const saved = memoryStore.saveOperator(operator as StoredOperator);
-
-        // Se Supabase estiver ativo e a tabela admin_users existir, tentar sincronizar
-        if (supabase && saved.email) {
-          try {
-            await supabase.from('admin_users').upsert({
-              email: saved.email,
-              full_name: saved.name,
-              role: saved.role === 'ADMIN_GERAL' ? 'ADMIN' : 'OPERATOR',
-              is_active: saved.isActive,
-            }, { onConflict: 'email' });
-          } catch {}
+        // Se o username mudou durante edição (mesmo id, outro username), remover chave antiga
+        if (operator.id) {
+          for (const [k, existingOp] of memoryStore.operators.entries()) {
+            if (existingOp.id === operator.id && k !== operator.username.trim().toLowerCase()) {
+              memoryStore.operators.delete(k);
+            }
+          }
         }
+
+        const saved = memoryStore.saveOperator(operator as StoredOperator);
+        const operators = await saveOperatorsToDb(supabase, saved.username);
 
         return res.status(200).json({
           success: true,
           operator: saved,
+          operators,
         });
       }
 
@@ -161,9 +178,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         const deleted = memoryStore.deleteOperator(targetId);
+        const operators = deleted ? await saveOperatorsToDb(supabase, 'ADMIN') : memoryStore.getOperators();
         return res.status(200).json({
           success: deleted,
-          message: deleted ? 'Operador excluído com sucesso.' : 'Não foi possível excluir o operador.',
+          operators,
+          message: deleted ? 'Operador excluído com sucesso.' : 'Não foi possível excluir o operador principal.',
         });
       }
 

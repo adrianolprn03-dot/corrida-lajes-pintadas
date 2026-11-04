@@ -626,29 +626,10 @@ class MemoryStore {
         return null; // Operador inativo
       }
 
-      const isValid = 
-        found.password === cleanPass || 
-        cleanPass === 'admin123' || 
-        cleanPass === 'LajesPintadas2026!';
-
-      if (isValid) {
+      if (found.password === cleanPass) {
         found.lastLoginAt = new Date().toISOString();
         return found;
       }
-    }
-
-    // Root admin master fallback
-    if (cleanInput === 'admin' && (cleanPass === 'admin123' || cleanPass === 'LajesPintadas2026!')) {
-      return {
-        id: 'op-admin',
-        username: 'admin',
-        name: 'Administrador Geral',
-        role: 'ADMIN_GERAL',
-        email: 'admin@lajespintadas.rn.gov.br',
-        isActive: true,
-        createdAt: '2026-01-01T08:00:00Z',
-        lastLoginAt: new Date().toISOString(),
-      };
     }
 
     return null;

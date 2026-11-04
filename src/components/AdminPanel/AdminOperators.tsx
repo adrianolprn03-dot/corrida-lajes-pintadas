@@ -83,9 +83,15 @@ export const AdminOperators: React.FC<AdminOperatorsProps> = ({ currentUsername 
   const [role, setRole] = useState<AdminRole>('ATENDIMENTO');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
+  const [isSaving, setIsSaving] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const togglePasswordVisibility = (id: string) => {
+    setVisiblePasswords((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
 
   const loadOperators = async () => {
     try {
@@ -130,7 +136,7 @@ export const AdminOperators: React.FC<AdminOperatorsProps> = ({ currentUsername 
     setIsModalOpen(true);
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
@@ -169,7 +175,8 @@ export const AdminOperators: React.FC<AdminOperatorsProps> = ({ currentUsername 
     }
 
     try {
-      storageService.saveAdminOperator({
+      setIsSaving(true);
+      const updatedList = await storageService.saveAdminOperator({
         id: editingOperator ? editingOperator.id : `op-${Date.now()}`,
         username: cleanUser,
         name: cleanName,
@@ -180,51 +187,74 @@ export const AdminOperators: React.FC<AdminOperatorsProps> = ({ currentUsername 
         createdAt: editingOperator ? editingOperator.createdAt : new Date().toISOString(),
       });
 
+      setOperators(updatedList);
+
+      // Se o operador editou a própria conta logada, atualizar sessão local
+      if (editingOperator && editingOperator.username === currentUsername) {
+        try {
+          const sessRaw = localStorage.getItem('lp_admin_session');
+          if (sessRaw) {
+            const sess = JSON.parse(sessRaw);
+            localStorage.setItem(
+              'lp_admin_session',
+              JSON.stringify({ ...sess, username: cleanUser, name: cleanName, role })
+            );
+          }
+        } catch {}
+      }
+
       setSuccessMessage(
         editingOperator 
-          ? `Operador "${cleanName}" atualizado com sucesso.` 
+          ? `Operador "${cleanName}" (@${cleanUser}) atualizado com sucesso${cleanPass ? ' (nova senha gravada)' : ''}.` 
           : `Novo operador "${cleanName}" (@${cleanUser}) criado com sucesso com o perfil ${ROLE_DETAILS[role].label}.`
       );
       setTimeout(() => setSuccessMessage(null), 5000);
       setIsModalOpen(false);
-      loadOperators();
     } catch (err: any) {
       setError(err.message || 'Erro ao salvar operador.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleCopyCredentials = (op: AdminOperator) => {
-    const text = `Acesso Painel da Corrida - Lajes Pintadas/RN\nUsuário: ${op.username}\nE-mail: ${op.email || 'Não cadastrado'}\nPerfil: ${ROLE_DETAILS[op.role]?.label || op.role}\nLink: ${window.location.origin}/admin`;
+    const text = `Acesso Painel da Corrida - Lajes Pintadas/RN\nUsuário: ${op.username}\nSenha: ${op.password || '---'}\nE-mail: ${op.email || 'Não cadastrado'}\nPerfil: ${ROLE_DETAILS[op.role]?.label || op.role}\nLink: ${window.location.origin}/admin`;
     navigator.clipboard.writeText(text);
     setCopiedId(op.id);
     setTimeout(() => setCopiedId(null), 2500);
   };
 
-  const handleToggleStatus = (op: AdminOperator) => {
+  const handleToggleStatus = async (op: AdminOperator) => {
     if (op.username === currentUsername) {
       alert('Você não pode desativar seu próprio usuário logado.');
       return;
     }
     try {
-      storageService.saveAdminOperator({
+      const updatedList = await storageService.saveAdminOperator({
         ...op,
         isActive: !op.isActive,
       });
-      loadOperators();
+      setOperators(updatedList);
+      setSuccessMessage(
+        `Status do operador "${op.name}" alterado para ${!op.isActive ? 'Ativo' : 'Inativo'}.`
+      );
+      setTimeout(() => setSuccessMessage(null), 4000);
     } catch (err: any) {
       alert(err.message);
     }
   };
 
-  const handleDelete = (op: AdminOperator) => {
+  const handleDelete = async (op: AdminOperator) => {
     if (op.username === currentUsername) {
       alert('Você não pode excluir seu próprio usuário logado.');
       return;
     }
     if (confirm(`Tem certeza que deseja excluir o operador "${op.name}" (${op.username})?`)) {
       try {
-        storageService.deleteAdminOperator(op.id);
-        loadOperators();
+        const updatedList = await storageService.deleteAdminOperator(op.id);
+        setOperators(updatedList);
+        setSuccessMessage(`Operador "${op.name}" removido com sucesso.`);
+        setTimeout(() => setSuccessMessage(null), 4000);
       } catch (err: any) {
         alert(err.message);
       }
@@ -334,6 +364,7 @@ export const AdminOperators: React.FC<AdminOperatorsProps> = ({ currentUsername 
               <tr>
                 <th className="py-3 px-4">Operador</th>
                 <th className="py-3 px-4">Usuário</th>
+                <th className="py-3 px-4">Senha Atual</th>
                 <th className="py-3 px-4">Perfil Funcional</th>
                 <th className="py-3 px-4">Último Acesso</th>
                 <th className="py-3 px-4">Status</th>
@@ -370,6 +401,26 @@ export const AdminOperators: React.FC<AdminOperatorsProps> = ({ currentUsername 
 
                     <td className="py-3 px-4 font-mono font-semibold text-slate-600">
                       @{op.username}
+                    </td>
+
+                    <td className="py-3 px-4 font-mono text-slate-700">
+                      <div className="inline-flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2 py-1 rounded-lg">
+                        <span className="text-[11px] font-bold tracking-wider">
+                          {visiblePasswords[op.id] ? (op.password || 'admin123') : '••••••••'}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => togglePasswordVisibility(op.id)}
+                          className="text-slate-400 hover:text-orange-600 transition"
+                          title={visiblePasswords[op.id] ? 'Ocultar senha' : 'Revelar senha'}
+                        >
+                          {visiblePasswords[op.id] ? (
+                            <EyeOff className="w-3.5 h-3.5" />
+                          ) : (
+                            <Eye className="w-3.5 h-3.5" />
+                          )}
+                        </button>
+                      </div>
                     </td>
 
                     <td className="py-3 px-4">
