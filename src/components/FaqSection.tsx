@@ -50,19 +50,19 @@ export const FaqSection: React.FC<FaqSectionProps> = ({ settings }) => {
       id: 'faq-pcd',
       category: 'categoria',
       question: 'Como funciona a inscrição para a categoria PCD (Pessoas com Deficiência)?',
-      answer: `A Categoria PCD / Inclusão possui 50% de desconto sobre o lote vigente (${formatCentsToBRL(pcdBaseCents)} + taxa de 10% = ${formatCentsToBRL(pcdTotalCents)} no ${batchLabel}), largada prioritária, suporte especializado e pódio exclusivo masculino e feminino. Caso necessite de Atleta-Guia, a inscrição do guia é totalmente gratuita (R$ 0,00) com camisa oficial inclusa. É obrigatório informar o CID/Laudo no cadastro e apresentar o documento comprobatório na entrega do kit.`,
+      answer: `A Categoria PCD / Inclusão possui 50% de desconto sobre o lote vigente (${formatCentsToBRL(pcdBaseCents)} + taxa de 10% = ${formatCentsToBRL(pcdTotalCents)} no ${batchLabel}), largada prioritária, suporte especializado e premiação própria Masculino e Feminino (1º Lugar: R$ 300,00 + Troféu + Medalha; 2º Lugar: R$ 200,00 + Troféu + Medalha; 3º Lugar: R$ 100,00 + Troféu + Medalha). Caso necessite de Atleta-Guia, a inscrição do guia é totalmente gratuita (R$ 0,00) com camisa oficial inclusa.`,
     },
     {
       id: 'faq-4',
       category: 'pagamento',
       question: 'Quanto tempo tenho para pagar o Pix antes de perder minha vaga?',
-      answer: 'Ao concluir o formulário, o sistema efetua uma reserva em tempo real da sua vaga e do tamanho de camisa escolhido por exatamente 30 minutos. Se o Pix não for compensado dentro desta janela, a reserva expira automaticamente e o tamanho volta a ficar disponível no estoque público para outros corredores.',
+      answer: 'Ao concluir o formulário, o sistema efetua uma reserva em tempo real da sua vaga por exatamente 30 minutos. Se o Pix não for compensado dentro desta janela, a reserva expira automaticamente e a vaga volta a ficar disponível para outros corredores.',
     },
     {
       id: 'faq-5',
       category: 'kit',
-      question: 'O que compõe o kit oficial e posso trocar o tamanho da camisa depois?',
-      answer: 'O kit oficial inclui a Camisa Oficial Laranja de tecido tecnológico em poliamida com proteção UV fator FPU 50+, chip eletrônico descartável, número de peito personalizado com 4 alfinetes e brindes institucionais. Não será permitida a troca de tamanho no ato da retirada do kit, valendo estritamente a grade selecionada no momento da inscrição.',
+      question: 'Como funciona a escolha do tamanho da camisa oficial?',
+      answer: 'As camisas oficiais (tamanhos PP, P, M, G, GG e XG) operam sob demanda: todo atleta inscrito e confirmado tem garantida a entrega da camisa exatamente no tamanho escolhido no ato da inscrição. Por ser produzida conforme a demanda das inscrições, não haverá troca de tamanho na retirada do kit.',
     },
     {
       id: 'faq-6',
@@ -79,8 +79,8 @@ export const FaqSection: React.FC<FaqSectionProps> = ({ settings }) => {
     {
       id: 'faq-8',
       category: 'categoria',
-      question: 'Atletas de outras cidades podem concorrer a troféus?',
-      answer: 'Sim! A Categoria Visitante foi criada especificamente para atletas de outros municípios do Rio Grande do Norte e outros estados. Há troféus oficiais do 1º ao 3º lugar para a categoria Masculino e Feminino na divisão Visitante, além da medalha finisher entregue a todos os concluintes.',
+      question: 'Quais são as categorias e premiações oficiais da prova (incluindo Master +55 e Kids)?',
+      answer: 'As categorias Visitante, Local e PCD (Masculino e Feminino) premiam: 1º Lugar R$ 300,00 + Troféu + Medalha, 2º Lugar R$ 200,00 + Troféu + Medalha e 3º Lugar R$ 100,00 + Troféu + Medalha. A Categoria Master (+55 anos, Masculino e Feminino) premia do 1º ao 3º Lugar com Troféu. A Categoria Kids (Masculino e Feminino) premia do 1º ao 3º Lugar com Medalha — atenção: a Categoria Kids não terá inscrições online, sendo realizadas presencialmente na hora da prova.',
     },
   ], [batchLabel, baseCents, feeCents, totalCents, pcdBaseCents, pcdFeeCents, pcdTotalCents]);
 

@@ -118,14 +118,6 @@ export const Step2CategoryAndShirt: React.FC<Step2CategoryAndShirtProps> = ({
       return;
     }
 
-    // Validação da Camisa do Atleta
-    const selectedShirt = inventory.find((s) => s.size === data.shirtSize);
-    const stockCount = selectedShirt?.visitorAvailableStock !== undefined ? selectedShirt.visitorAvailableStock : selectedShirt?.availableStock;
-    if (!selectedShirt || (stockCount !== undefined && stockCount <= 0)) {
-      setError(`O tamanho de camisa ${data.shirtSize} está esgotado no momento. Escolha outro tamanho disponível.`);
-      return;
-    }
-
     // Validação específica para categoria PCD / Inclusão
     if (data.originType === 'PCD') {
       if (!data.pcdType) {
@@ -157,12 +149,6 @@ export const Step2CategoryAndShirt: React.FC<Step2CategoryAndShirtProps> = ({
         }
         if (!data.guideShirtSize) {
           setError('Selecione o tamanho da camisa oficial gratuita do Atleta-Guia.');
-          return;
-        }
-        const guideShirt = inventory.find((s) => s.size === data.guideShirtSize);
-        const guideStock = guideShirt?.visitorAvailableStock !== undefined ? guideShirt.visitorAvailableStock : guideShirt?.availableStock;
-        if (!guideShirt || (guideStock !== undefined && guideStock <= 0)) {
-          setError(`A camisa tamanho ${data.guideShirtSize} do Atleta-Guia está esgotada no momento. Selecione outro tamanho.`);
           return;
         }
       }
@@ -289,6 +275,16 @@ export const Step2CategoryAndShirt: React.FC<Step2CategoryAndShirtProps> = ({
               </p>
             </div>
           </button>
+        </div>
+
+        {/* Informativo Categorias Master (+55) e Kids */}
+        <div className="mt-2.5 p-3 rounded-xl bg-slate-50 border border-slate-200 text-[11px] text-slate-600 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <strong className="text-slate-800">Categoria Master (+55):</strong> Atletas com 55 anos ou mais concorrem automaticamente ao pódio Master (1º ao 3º Lugar: Troféu — Masc. e Fem.).
+          </div>
+          <div className="text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg font-semibold shrink-0">
+            Categoria Kids: Inscrições na hora da prova
+          </div>
         </div>
       </div>
 
@@ -443,25 +439,19 @@ export const Step2CategoryAndShirt: React.FC<Step2CategoryAndShirtProps> = ({
 
                   <div>
                     <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">
-                      Camisa Oficial do Guia (Grátis) <span className="text-red-500">*</span>
+                      Camisa Oficial do Guia (Grátis • Sob Demanda) <span className="text-red-500">*</span>
                     </label>
                     <div className="grid grid-cols-6 gap-1">
                       {(['PP', 'P', 'M', 'G', 'GG', 'XG'] as ShirtSize[]).map((sz) => {
-                        const item = inventory.find((s) => s.size === sz);
-                        const stock = item?.visitorAvailableStock !== undefined ? item.visitorAvailableStock : item?.availableStock;
-                        const isAvailable = (stock || 0) > 0;
                         const isSelected = data.guideShirtSize === sz;
 
                         return (
                           <button
                             key={sz}
                             type="button"
-                            disabled={!isAvailable}
                             onClick={() => onChange({ guideShirtSize: sz })}
                             className={`p-1.5 rounded-lg border text-center transition-all cursor-pointer ${
-                              !isAvailable
-                                ? 'border-slate-200 bg-slate-100 text-slate-400 opacity-50 cursor-not-allowed'
-                                : isSelected
+                              isSelected
                                 ? 'border-purple-600 bg-purple-600 text-white font-bold'
                                 : 'border-slate-200 bg-slate-50 text-slate-800 hover:border-purple-400'
                             }`}
@@ -525,9 +515,9 @@ export const Step2CategoryAndShirt: React.FC<Step2CategoryAndShirtProps> = ({
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide">
-                3. Camisa Oficial do Kit <span className="text-red-500">*</span>
+                3. Camisa Oficial do Kit (Sob Demanda) <span className="text-red-500">*</span>
               </label>
-              <span className="text-xs text-orange-600 font-semibold">Cor única oficial: Laranja</span>
+              <span className="text-xs text-emerald-700 font-semibold">✓ Garantida no tamanho escolhido</span>
             </div>
 
             {/* Mini Preview do Kit Oficial: Camiseta + Fita/Medalha 68 Anos */}
@@ -547,35 +537,30 @@ export const Step2CategoryAndShirt: React.FC<Step2CategoryAndShirtProps> = ({
               <div className="text-xs">
                 <span className="font-extrabold text-slate-900 block">Kit Oficial do Atleta • Edição 68 Anos</span>
                 <span className="text-slate-500 block mt-0.5">
-                  Camiseta Poliamida FPU 50+ Laranja 68 Anos + Medalha Finisher com Fita Sublimada.
+                  Camiseta Poliamida FPU 50+ Laranja 68 Anos + Medalha Finisher com Fita Sublimada (entregue conforme o tamanho selecionado).
                 </span>
               </div>
             </div>
 
-            {/* Grade de Tamanhos */}
+            {/* Grade de Tamanhos (Sob Demanda) */}
             <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-              {inventory.map((item) => {
-                const stockCount = item.visitorAvailableStock !== undefined ? item.visitorAvailableStock : item.availableStock;
-                const isAvailable = stockCount > 0;
-                const isSelected = data.shirtSize === item.size;
+              {(['PP', 'P', 'M', 'G', 'GG', 'XG'] as ShirtSize[]).map((sz) => {
+                const isSelected = data.shirtSize === sz;
 
                 return (
                   <button
-                    key={item.size}
+                    key={sz}
                     type="button"
-                    disabled={!isAvailable}
-                    onClick={() => onChange({ shirtSize: item.size })}
-                    className={`p-3 rounded-xl border-2 text-center transition-all ${
-                      !isAvailable
-                        ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed opacity-60'
-                        : isSelected
+                    onClick={() => onChange({ shirtSize: sz })}
+                    className={`p-3 rounded-xl border-2 text-center transition-all cursor-pointer ${
+                      isSelected
                         ? 'border-orange-500 bg-orange-500 text-white font-extrabold shadow-sm'
                         : 'border-slate-200 bg-white text-slate-800 hover:border-orange-400'
                     }`}
                   >
-                    <div className="font-display text-base uppercase">{item.size}</div>
-                    <div className={`text-[10px] mt-0.5 ${isSelected ? 'text-white' : isAvailable ? 'text-emerald-600' : 'text-red-500'}`}>
-                      {isAvailable ? `${stockCount} disp.` : 'Esgotado'}
+                    <div className="font-display text-base uppercase">{sz}</div>
+                    <div className={`text-[10px] mt-0.5 ${isSelected ? 'text-white' : 'text-emerald-600 font-semibold'}`}>
+                      Disponível
                     </div>
                   </button>
                 );

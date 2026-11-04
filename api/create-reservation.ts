@@ -293,6 +293,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         console.warn('Verificação de cota falhou, prosseguindo com rpc:', quotaErr);
       }
 
+      // Garantir que as camisas operem sob demanda (sem bloqueio por tamanho na RPC do Supabase)
+      try {
+        await supabase
+          .from('shirt_inventory')
+          .update({ total_stock: 9999, is_active: true })
+          .lt('total_stock', 9999);
+      } catch {}
+
       // 4.1 Via Supabase RPC com SELECT FOR UPDATE no PostgreSQL
       // Mapeamento seguro para o enum origin_type_enum existente ('CASA' ou 'VISITANTE')
       const rpcOriginType = (originType === 'CASA' || originType === 'LOCAL') ? 'CASA' : 'VISITANTE';
@@ -321,7 +329,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
       reservationResult = data;
 
-      // Se houver atleta-guia com camisa, reservar a camisa do guia no Supabase
+      // Se houver atleta-guia com camisa, contabilizar a demanda da camisa do guia no Supabase
       if (hasGuide && guideShirtSize) {
         const { data: guideStockRow } = await supabase
           .from('shirt_inventory')
@@ -329,15 +337,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           .eq('size', guideShirtSize)
           .single();
         if (guideStockRow) {
-          const avail = guideStockRow.total_stock - (guideStockRow.reserved_count + guideStockRow.confirmed_count);
-          if (avail <= 0) {
-            await supabase.from('registrations').delete().eq('id', reservationResult.registration_id);
-            return res.status(400).json({ error: `A camisa tamanho ${guideShirtSize} do Atleta-Guia está esgotada no momento.` });
-          }
           await supabase
             .from('shirt_inventory')
             .update({
-              reserved_count: guideStockRow.reserved_count + 1,
+              total_stock: Math.max(9999, guideStockRow.total_stock || 9999),
+              reserved_count: (guideStockRow.reserved_count || 0) + 1,
               updated_at: new Date().toISOString(),
             })
             .eq('size', guideShirtSize);

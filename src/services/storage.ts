@@ -152,14 +152,14 @@ A Prefeitura Municipal de Lajes Pintadas e a Comissão Organizadora da 5ª Corri
   batchState: null,
 };
 
-// Grade e Estoque de Camisas com separação estrita: Local (Lajespintadense) vs Visitante (Geral)
+// Grade de Camisas Oficial (Operação Sob Demanda — sem bloqueio por tamanho)
 export const INITIAL_SHIRTS: ShirtInventoryItem[] = [
-  { id: 'shirt-1', size: 'PP', displayOrder: 1, totalStock: 30, reservedCount: 0, confirmedCount: 0, isActive: true, availableStock: 30, localTotalStock: 15, localReservedCount: 0, localConfirmedCount: 0, localAvailableStock: 15, visitorTotalStock: 15, visitorReservedCount: 0, visitorConfirmedCount: 0, visitorAvailableStock: 15 },
-  { id: 'shirt-2', size: 'P',  displayOrder: 2, totalStock: 50, reservedCount: 0, confirmedCount: 0, isActive: true, availableStock: 50, localTotalStock: 25, localReservedCount: 0, localConfirmedCount: 0, localAvailableStock: 25, visitorTotalStock: 25, visitorReservedCount: 0, visitorConfirmedCount: 0, visitorAvailableStock: 25 },
-  { id: 'shirt-3', size: 'M',  displayOrder: 3, totalStock: 100, reservedCount: 0, confirmedCount: 0, isActive: true, availableStock: 100, localTotalStock: 50, localReservedCount: 0, localConfirmedCount: 0, localAvailableStock: 50, visitorTotalStock: 50, visitorReservedCount: 0, visitorConfirmedCount: 0, visitorAvailableStock: 50 },
-  { id: 'shirt-4', size: 'G',  displayOrder: 4, totalStock: 80, reservedCount: 0, confirmedCount: 0, isActive: true, availableStock: 80, localTotalStock: 40, localReservedCount: 0, localConfirmedCount: 0, localAvailableStock: 40, visitorTotalStock: 40, visitorReservedCount: 0, visitorConfirmedCount: 0, visitorAvailableStock: 40 },
-  { id: 'shirt-5', size: 'GG', displayOrder: 5, totalStock: 40, reservedCount: 0, confirmedCount: 0, isActive: true, availableStock: 40, localTotalStock: 20, localReservedCount: 0, localConfirmedCount: 0, localAvailableStock: 20, visitorTotalStock: 20, visitorReservedCount: 0, visitorConfirmedCount: 0, visitorAvailableStock: 20 },
-  { id: 'shirt-6', size: 'XG', displayOrder: 6, totalStock: 20, reservedCount: 0, confirmedCount: 0, isActive: true, availableStock: 20, localTotalStock: 10, localReservedCount: 0, localConfirmedCount: 0, localAvailableStock: 10, visitorTotalStock: 10, visitorReservedCount: 0, visitorConfirmedCount: 0, visitorAvailableStock: 10 },
+  { id: 'shirt-1', size: 'PP', displayOrder: 1, totalStock: 9999, reservedCount: 0, confirmedCount: 0, isActive: true, availableStock: 9999, localTotalStock: 9999, localReservedCount: 0, localConfirmedCount: 0, localAvailableStock: 9999, visitorTotalStock: 9999, visitorReservedCount: 0, visitorConfirmedCount: 0, visitorAvailableStock: 9999 },
+  { id: 'shirt-2', size: 'P',  displayOrder: 2, totalStock: 9999, reservedCount: 0, confirmedCount: 0, isActive: true, availableStock: 9999, localTotalStock: 9999, localReservedCount: 0, localConfirmedCount: 0, localAvailableStock: 9999, visitorTotalStock: 9999, visitorReservedCount: 0, visitorConfirmedCount: 0, visitorAvailableStock: 9999 },
+  { id: 'shirt-3', size: 'M',  displayOrder: 3, totalStock: 9999, reservedCount: 0, confirmedCount: 0, isActive: true, availableStock: 9999, localTotalStock: 9999, localReservedCount: 0, localConfirmedCount: 0, localAvailableStock: 9999, visitorTotalStock: 9999, visitorReservedCount: 0, visitorConfirmedCount: 0, visitorAvailableStock: 9999 },
+  { id: 'shirt-4', size: 'G',  displayOrder: 4, totalStock: 9999, reservedCount: 0, confirmedCount: 0, isActive: true, availableStock: 9999, localTotalStock: 9999, localReservedCount: 0, localConfirmedCount: 0, localAvailableStock: 9999, visitorTotalStock: 9999, visitorReservedCount: 0, visitorConfirmedCount: 0, visitorAvailableStock: 9999 },
+  { id: 'shirt-5', size: 'GG', displayOrder: 5, totalStock: 9999, reservedCount: 0, confirmedCount: 0, isActive: true, availableStock: 9999, localTotalStock: 9999, localReservedCount: 0, localConfirmedCount: 0, localAvailableStock: 9999, visitorTotalStock: 9999, visitorReservedCount: 0, visitorConfirmedCount: 0, visitorAvailableStock: 9999 },
+  { id: 'shirt-6', size: 'XG', displayOrder: 6, totalStock: 9999, reservedCount: 0, confirmedCount: 0, isActive: true, availableStock: 9999, localTotalStock: 9999, localReservedCount: 0, localConfirmedCount: 0, localAvailableStock: 9999, visitorTotalStock: 9999, visitorReservedCount: 0, visitorConfirmedCount: 0, visitorAvailableStock: 9999 },
 ];
 
 class StorageService {
@@ -434,7 +434,7 @@ class StorageService {
     return merged;
   }
 
-  // Obter Camisas e Estoque
+  // Obter Camisas e Demanda por Tamanho (Sob Demanda)
   async getShirtInventory(): Promise<ShirtInventoryItem[]> {
     // 1. Tentar via API oficial Vercel Serverless (com Service Role para bypass seguro de RLS)
     try {
@@ -442,19 +442,20 @@ class StorageService {
       if (apiRes.ok) {
         const json = await apiRes.json();
         if (json.items && json.items.length > 0) {
-          const hasConfiguredStock = json.items.some((d: any) => d.total_stock > 0);
-          if (hasConfiguredStock) {
-            return json.items.map((d: any) => ({
-              id: d.id,
-              size: d.size as ShirtSize,
-              displayOrder: d.display_order,
-              totalStock: d.total_stock,
-              reservedCount: d.reserved_count,
-              confirmedCount: d.confirmed_count,
-              isActive: d.is_active,
-              availableStock: Math.max(0, d.total_stock - (d.reserved_count + d.confirmed_count)),
-            }));
-          }
+          return json.items.map((d: any) => ({
+            id: d.id,
+            size: d.size as ShirtSize,
+            displayOrder: d.display_order,
+            totalStock: 9999,
+            reservedCount: d.reserved_count || 0,
+            confirmedCount: d.confirmed_count || 0,
+            isActive: true,
+            availableStock: 9999,
+            localTotalStock: 9999,
+            localAvailableStock: 9999,
+            visitorTotalStock: 9999,
+            visitorAvailableStock: 9999,
+          }));
         }
       }
     } catch {}
@@ -468,59 +469,56 @@ class StorageService {
           .order('display_order', { ascending: true });
 
         if (!error && data && data.length > 0) {
-          const hasConfiguredStock = data.some((d) => d.total_stock > 0);
-          if (hasConfiguredStock) {
-            return data.map((d) => ({
-              id: d.id,
-              size: d.size as ShirtSize,
-              displayOrder: d.display_order,
-              totalStock: d.total_stock,
-              reservedCount: d.reserved_count,
-              confirmedCount: d.confirmed_count,
-              isActive: d.is_active,
-              availableStock: Math.max(0, d.total_stock - (d.reserved_count + d.confirmed_count)),
-            }));
-          }
+          return data.map((d) => ({
+            id: d.id,
+            size: d.size as ShirtSize,
+            displayOrder: d.display_order,
+            totalStock: 9999,
+            reservedCount: d.reserved_count || 0,
+            confirmedCount: d.confirmed_count || 0,
+            isActive: true,
+            availableStock: 9999,
+            localTotalStock: 9999,
+            localAvailableStock: 9999,
+            visitorTotalStock: 9999,
+            visitorAvailableStock: 9999,
+          }));
         }
       } catch (err) {
         console.warn('Supabase shirt fetch failed, falling back to local:', err);
       }
     }
 
-    // 3. Fallback Local com estoque garantido e segmentação Local vs Visitante
+    // 3. Fallback Local com disponibilidade ilimitada (Sob Demanda)
     let items = this.getLocal<ShirtInventoryItem[]>(STORAGE_KEYS.SHIRTS, INITIAL_SHIRTS);
-    if (!items || items.length === 0 || items.every((i) => (i.totalStock || 0) === 0)) {
+    if (!items || items.length === 0) {
       items = INITIAL_SHIRTS;
       this.setLocal(STORAGE_KEYS.SHIRTS, INITIAL_SHIRTS);
     }
 
     return items.map((item) => {
-      const initial = INITIAL_SHIRTS.find((s) => s.size === item.size) || item;
-      const localTotal = item.localTotalStock ?? initial.localTotalStock ?? Math.floor((item.totalStock || 30) / 2);
-      const visitorTotal = item.visitorTotalStock ?? initial.visitorTotalStock ?? Math.ceil((item.totalStock || 30) / 2);
       const localRes = item.localReservedCount ?? 0;
       const localConf = item.localConfirmedCount ?? 0;
       const visitorRes = item.visitorReservedCount ?? 0;
       const visitorConf = item.visitorConfirmedCount ?? 0;
-
-      const totalStock = localTotal + visitorTotal;
       const totalRes = item.reservedCount ?? (localRes + visitorRes);
       const totalConf = item.confirmedCount ?? (localConf + visitorConf);
 
       return {
         ...item,
-        totalStock,
+        totalStock: 9999,
         reservedCount: totalRes,
         confirmedCount: totalConf,
-        availableStock: Math.max(0, totalStock - (totalRes + totalConf)),
-        localTotalStock: localTotal,
+        isActive: true,
+        availableStock: 9999,
+        localTotalStock: 9999,
         localReservedCount: localRes,
         localConfirmedCount: localConf,
-        localAvailableStock: Math.max(0, localTotal - (localRes + localConf)),
-        visitorTotalStock: visitorTotal,
+        localAvailableStock: 9999,
+        visitorTotalStock: 9999,
         visitorReservedCount: visitorRes,
         visitorConfirmedCount: visitorConf,
-        visitorAvailableStock: Math.max(0, visitorTotal - (visitorRes + visitorConf)),
+        visitorAvailableStock: 9999,
       };
     });
   }
@@ -780,12 +778,9 @@ class StorageService {
       throw new Error(`Este CPF já possui uma inscrição ativa no evento (Protocolo: ${existing.protocol}).`);
     }
 
-    // 6. Verificar estoque da camisa
+    // 6. Obter grade de camisas (operação sob demanda)
     const shirts = await this.getShirtInventory();
     const shirt = shirts.find((s) => s.size === submission.shirtSize);
-    if (!shirt || shirt.availableStock <= 0) {
-      throw new Error(`O tamanho de camisa ${submission.shirtSize} está esgotado. Por favor, selecione outro tamanho.`);
-    }
 
     // 7. Calcular valores e taxas Asaas conforme o lote vigente
     const isPcd = submission.originType === 'PCD' || Boolean(submission.isPcd);

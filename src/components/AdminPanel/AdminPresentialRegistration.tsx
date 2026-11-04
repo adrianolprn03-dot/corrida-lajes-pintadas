@@ -206,12 +206,6 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
       errors.state = 'UF deve ter 2 letras.';
     }
 
-    const selectedShirt = inventory.find((s) => s.size === formData.shirtSize);
-    const stockCount = selectedShirt?.localAvailableStock !== undefined ? selectedShirt.localAvailableStock : selectedShirt?.availableStock;
-    if (!selectedShirt || (stockCount !== undefined && stockCount <= 0)) {
-      errors.shirtSize = `Camisa ${formData.shirtSize} sem estoque na cota local no momento. Escolha outro tamanho.`;
-    }
-
     if (!formData.athleteConsentGiven) {
       errors.athleteConsentGiven = 'É obrigatório registrar o aceite presencial do atleta ao regulamento.';
     }
@@ -1055,38 +1049,33 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
             </div>
           </div>
 
-          {/* Tamanho da Camisa (Estoque Compartilhado Oficial) */}
+          {/* Tamanho da Camisa (Sob Demanda) */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="block text-xs font-bold text-slate-700 uppercase">
-                Tamanho da Camisa Oficial (Cota Local) <span className="text-red-500">*</span>
+                Tamanho da Camisa Oficial (Sob Demanda) <span className="text-red-500">*</span>
               </label>
               <span className="text-[11px] text-orange-600 font-bold">Laranja Poliamida FPU 50+</span>
             </div>
 
             <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-              {inventory.map((item) => {
-                const stockCount = item.localAvailableStock !== undefined ? item.localAvailableStock : item.availableStock;
-                const isAvailable = stockCount > 0;
-                const isSelected = formData.shirtSize === item.size;
+              {(['PP', 'P', 'M', 'G', 'GG', 'XG'] as ShirtSize[]).map((sz) => {
+                const isSelected = formData.shirtSize === sz;
 
                 return (
                   <button
-                    key={item.size}
+                    key={sz}
                     type="button"
-                    disabled={!isAvailable}
-                    onClick={() => setFormData({ ...formData, shirtSize: item.size })}
-                    className={`p-3 rounded-xl border-2 text-center transition-all ${
-                      !isAvailable
-                        ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed opacity-60'
-                        : isSelected
+                    onClick={() => setFormData({ ...formData, shirtSize: sz })}
+                    className={`p-3 rounded-xl border-2 text-center transition-all cursor-pointer ${
+                      isSelected
                         ? 'border-orange-500 bg-orange-500 text-white font-extrabold shadow-sm'
                         : 'border-slate-200 bg-white text-slate-800 hover:border-orange-400'
                     }`}
                   >
-                    <div className="font-display text-base uppercase">{item.size}</div>
-                    <div className={`text-[10px] mt-0.5 ${isSelected ? 'text-white' : isAvailable ? 'text-emerald-600 font-bold' : 'text-red-500'}`}>
-                      {isAvailable ? `${stockCount} disp.` : 'Esgotado'}
+                    <div className="font-display text-base uppercase">{sz}</div>
+                    <div className={`text-[10px] mt-0.5 ${isSelected ? 'text-white' : 'text-emerald-600 font-bold'}`}>
+                      Disponível
                     </div>
                   </button>
                 );

@@ -107,6 +107,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             await supabase
               .from('shirt_inventory')
               .update({
+                total_stock: 9999,
+                is_active: true,
                 reserved_count: c.reserved,
                 confirmed_count: c.confirmed,
                 updated_at: new Date().toISOString(),
@@ -115,6 +117,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
             const mem = memoryStore.shirts.get(s);
             if (mem) {
+              mem.totalStock = 9999;
               mem.reservedCount = c.reserved;
               mem.confirmedCount = c.confirmed;
             }
@@ -208,7 +211,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({ success: true, localOnly: true });
   }
 
-  // GET: Obter estoque direto do Supabase via Service Role
+  // GET: Obter estoque direto do Supabase via Service Role (garantindo modo Sob Demanda)
   if (supabase) {
     try {
       const { data, error } = await supabase
@@ -221,6 +224,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       if (data && data.length > 0) {
+        const needsOnDemandUpgrade = data.some((row: any) => (row.total_stock || 0) < 9999 || row.is_active === false);
+        if (needsOnDemandUpgrade) {
+          await supabase
+            .from('shirt_inventory')
+            .update({ total_stock: 9999, is_active: true, updated_at: new Date().toISOString() })
+            .lt('total_stock', 9999);
+          for (const row of data) {
+            row.total_stock = 9999;
+            row.is_active = true;
+          }
+        }
         return res.status(200).json({ items: data });
       }
 

@@ -223,7 +223,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
     },
     { 
       id: 'shirts', 
-      label: 'Estoque Local & Kits', 
+      label: 'Camisas (Demanda) & Kits', 
       icon: Shirt, 
       roles: ['ADMIN_GERAL', 'ENTREGA_KIT'] 
     },

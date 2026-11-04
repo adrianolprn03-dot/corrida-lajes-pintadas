@@ -85,12 +85,12 @@ export interface StoredOperator {
 // Estado singleton em memória para garantir consistência sob carga concorrente
 class MemoryStore {
   public shirts: Map<string, ShirtStock> = new Map([
-    ['PP', { size: 'PP', totalStock: 100, reservedCount: 0, confirmedCount: 0 }],
-    ['P',  { size: 'P',  totalStock: 300, reservedCount: 0, confirmedCount: 0 }],
-    ['M',  { size: 'M',  totalStock: 500, reservedCount: 0, confirmedCount: 0 }],
-    ['G',  { size: 'G',  totalStock: 400, reservedCount: 0, confirmedCount: 0 }],
-    ['GG', { size: 'GG', totalStock: 150, reservedCount: 0, confirmedCount: 0 }],
-    ['XG', { size: 'XG', totalStock: 50,  reservedCount: 0, confirmedCount: 0 }],
+    ['PP', { size: 'PP', totalStock: 9999, reservedCount: 0, confirmedCount: 0 }],
+    ['P',  { size: 'P',  totalStock: 9999, reservedCount: 0, confirmedCount: 0 }],
+    ['M',  { size: 'M',  totalStock: 9999, reservedCount: 0, confirmedCount: 0 }],
+    ['G',  { size: 'G',  totalStock: 9999, reservedCount: 0, confirmedCount: 0 }],
+    ['GG', { size: 'GG', totalStock: 9999, reservedCount: 0, confirmedCount: 0 }],
+    ['XG', { size: 'XG', totalStock: 9999, reservedCount: 0, confirmedCount: 0 }],
   ]);
 
   public maxCapacity = 1500;
@@ -300,32 +300,22 @@ class MemoryStore {
         throw new Error(`Cota de vagas esgotada para a Categoria Visitante. Limite: ${this.visitorMaxCapacity} vagas.`);
       }
 
-      // 1.3 Verificar Estoque da Camisa do Atleta com Bloqueio Estrito
+      // 1.3 Contabilizar Demanda da Camisa do Atleta (Sob Demanda - sem bloqueio por tamanho)
       const shirt = this.shirts.get(params.shirtSize);
       if (!shirt) {
         throw new Error(`Tamanho de camisa inválido: ${params.shirtSize}`);
       }
 
-      const availableStock = shirt.totalStock - (shirt.reservedCount + shirt.confirmedCount);
-      if (availableStock <= 0) {
-        this.metrics.rejectedOutOfStock++;
-        throw new Error(`O tamanho de camisa ${params.shirtSize} esgotou. Por favor, escolha outro tamanho.`);
-      }
-
-      // Se houver atleta-guia com camisa, verificar e reservar a camisa do guia também
+      // Se houver atleta-guia com camisa, contabilizar a camisa do guia também
       let guideShirtStock: ShirtStock | undefined;
       if (params.hasGuide && params.guideShirtSize) {
         guideShirtStock = this.shirts.get(params.guideShirtSize);
         if (!guideShirtStock) {
           throw new Error(`Tamanho de camisa do Atleta-Guia inválido: ${params.guideShirtSize}`);
         }
-        const guideAvailable = guideShirtStock.totalStock - (guideShirtStock.reservedCount + guideShirtStock.confirmedCount);
-        if (guideAvailable <= 0) {
-          throw new Error(`A camisa tamanho ${params.guideShirtSize} do Atleta-Guia está esgotada no momento.`);
-        }
       }
 
-      // 1.4 Decrementar estoque / Incrementar reserva de forma atômica
+      // 1.4 Incrementar reserva / demanda de forma atômica
       shirt.reservedCount++;
       if (guideShirtStock) {
         guideShirtStock.reservedCount++;

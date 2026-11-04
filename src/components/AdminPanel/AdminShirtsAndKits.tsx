@@ -262,7 +262,7 @@ export const AdminShirtsAndKits: React.FC<AdminShirtsAndKitsProps> = ({
   return (
     <div className="space-y-8 animate-in fade-in duration-200">
       
-      {/* SECTION 1: Shirt Inventory Management (Local vs Visitante) */}
+      {/* SECTION 1: Relatório de Demanda de Camisas por Tamanho (Sob Demanda) */}
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
           <div className="flex items-center gap-3">
@@ -272,14 +272,14 @@ export const AdminShirtsAndKits: React.FC<AdminShirtsAndKitsProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-base font-bold text-slate-800 uppercase tracking-tight">
-                  Gestão do Estoque de Camisas
+                  Demanda de Camisas por Tamanho (Sob Demanda)
                 </h3>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-100 text-orange-700">
-                  Grade Oficial
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">
+                  Produção por Demanda
                 </span>
               </div>
               <p className="text-xs text-slate-500">
-                Controle individual de cotas para atletas Locais (Lajes Pintadas) e Visitantes, garantindo que inscrições online não esgotem as vagas da cidade.
+                As camisas são contabilizadas sob demanda conforme as inscrições realizadas (sem trava de estoque por tamanho). Abaixo está a relação exata por tamanho para confecção e entrega.
               </p>
             </div>
           </div>
@@ -293,16 +293,7 @@ export const AdminShirtsAndKits: React.FC<AdminShirtsAndKitsProps> = ({
               title="Auditar inscrições confirmadas e pendentes no banco e sincronizar contadores reais"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isReconciling ? 'animate-spin text-orange-600' : 'text-slate-600'}`} />
-              <span>{isReconciling ? 'Sincronizando...' : 'Sincronizar Banco'}</span>
-            </button>
-
-            <button
-              onClick={handleOpenBatchModal}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold transition shadow-sm"
-              title="Ajustar todas as cotas da grade de uma só vez"
-            >
-              <SlidersHorizontal className="w-3.5 h-3.5" />
-              <span>Ajuste em Lote</span>
+              <span>{isReconciling ? 'Sincronizando...' : 'Sincronizar Demanda'}</span>
             </button>
 
             {/* Sub-Tabs: Local vs Visitante vs Consolidado */}
@@ -316,7 +307,7 @@ export const AdminShirtsAndKits: React.FC<AdminShirtsAndKitsProps> = ({
                 }`}
               >
                 <Building2 className="w-3.5 h-3.5" />
-                <span>Estoque Local</span>
+                <span>Local (Prefeitura)</span>
               </button>
 
               <button
@@ -328,7 +319,7 @@ export const AdminShirtsAndKits: React.FC<AdminShirtsAndKitsProps> = ({
                 }`}
               >
                 <Globe className="w-3.5 h-3.5" />
-                <span>Estoque Visitantes</span>
+                <span>Visitantes (Online)</span>
               </button>
 
               <button
@@ -340,252 +331,167 @@ export const AdminShirtsAndKits: React.FC<AdminShirtsAndKitsProps> = ({
                 }`}
               >
                 <Layers className="w-3.5 h-3.5" />
-                <span>Consolidado</span>
+                <span>Consolidado Geral</span>
               </button>
             </div>
           </div>
         </div>
 
-        {/* Global Stock Metric Summary Cards */}
+        {/* Cálculo de Demanda Real por Tamanho a partir das Inscrições */}
         {(() => {
-          const sumTotal = shirts.reduce((acc, s) => acc + (
-            stockView === 'local' ? (s.localTotalStock ?? Math.round(s.totalStock / 2)) :
-            stockView === 'visitor' ? (s.visitorTotalStock ?? Math.round(s.totalStock / 2)) :
-            s.totalStock
-          ), 0);
-          const sumConfirmed = shirts.reduce((acc, s) => acc + (
-            stockView === 'local' ? (s.localConfirmedCount || 0) :
-            stockView === 'visitor' ? (s.visitorConfirmedCount || 0) :
-            s.confirmedCount
-          ), 0);
-          const sumReserved = shirts.reduce((acc, s) => acc + (
-            stockView === 'local' ? (s.localReservedCount || 0) :
-            stockView === 'visitor' ? (s.visitorReservedCount || 0) :
-            s.reservedCount
-          ), 0);
-          const sumAvailable = Math.max(0, sumTotal - (sumConfirmed + sumReserved));
+          const sizesOrder: ShirtSize[] = ['PP', 'P', 'M', 'G', 'GG', 'XG'];
+          const nowMs = Date.now();
+          const filteredRegs = registrations.filter((r) => {
+            const isLocal = r.originType === 'CASA' || r.originType === 'LOCAL' || r.category?.includes('LOCAL') || r.category?.includes('CASA');
+            if (stockView === 'local') return isLocal;
+            if (stockView === 'visitor') return !isLocal;
+            return true;
+          });
+
+          const demandBySize = sizesOrder.map((sz) => {
+            let confirmed = 0;
+            let reserved = 0;
+            let delivered = 0;
+
+            for (const reg of filteredRegs) {
+              const isConf = reg.status === 'CONFIRMED';
+              const isRes = reg.status === 'RESERVED' && (!reg.reservationExpiresAt || new Date(reg.reservationExpiresAt).getTime() > nowMs);
+              if (reg.shirtSize === sz) {
+                if (isConf) {
+                  confirmed++;
+                  if (reg.kitDelivered) delivered++;
+                } else if (isRes) {
+                  reserved++;
+                }
+              }
+              if (reg.hasGuide && reg.guideShirtSize === sz) {
+                if (isConf) {
+                  confirmed++;
+                  if (reg.kitDelivered) delivered++;
+                } else if (isRes) {
+                  reserved++;
+                }
+              }
+            }
+
+            // Se não houver inscrições filtradas carregadas ainda e a visão for total, usa os contadores do banco
+            if (registrations.length === 0 && stockView === 'total') {
+              const sItem = shirts.find((s) => s.size === sz);
+              if (sItem) {
+                confirmed = sItem.confirmedCount || 0;
+                reserved = sItem.reservedCount || 0;
+              }
+            }
+
+            return {
+              size: sz,
+              confirmed,
+              reserved,
+              totalDemand: confirmed + reserved,
+              delivered,
+              pendingDelivery: Math.max(0, confirmed - delivered),
+            };
+          });
+
+          const sumConfirmed = demandBySize.reduce((acc, d) => acc + d.confirmed, 0);
+          const sumReserved = demandBySize.reduce((acc, d) => acc + d.reserved, 0);
+          const sumTotalDemand = sumConfirmed + sumReserved;
+          const sumDelivered = demandBySize.reduce((acc, d) => acc + d.delivered, 0);
 
           return (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                  {stockView === 'local' ? 'Cota Local Total' : stockView === 'visitor' ? 'Cota Visitante Total' : 'Estoque Total do Evento'}
-                </span>
-                <span className="text-xl font-black text-slate-900">{sumTotal}</span>
-                <span className="text-[10px] text-slate-400 block">camisas configuradas</span>
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-2xl">
+                  <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider block">
+                    Confirmadas (Pagas)
+                  </span>
+                  <span className="text-xl font-black text-emerald-700">{sumConfirmed}</span>
+                  <span className="text-[10px] text-emerald-600 block">camisas para entrega</span>
+                </div>
+                <div className="p-3 bg-amber-50/70 border border-amber-200 rounded-2xl">
+                  <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wider block">
+                    Reservadas (Aguard. Pix)
+                  </span>
+                  <span className="text-xl font-black text-amber-700">{sumReserved}</span>
+                  <span className="text-[10px] text-amber-600 block">em janela de 30 min</span>
+                </div>
+                <div className="p-3 bg-orange-50/70 border border-orange-200 rounded-2xl">
+                  <span className="text-[10px] font-bold text-orange-700 uppercase tracking-wider block">
+                    Demanda Total Solicitada
+                  </span>
+                  <span className="text-xl font-black text-orange-600">{sumTotalDemand}</span>
+                  <span className="text-[10px] text-orange-500 block">confirmadas + reservadas</span>
+                </div>
+                <div className="p-3 bg-blue-50/70 border border-blue-200 rounded-2xl">
+                  <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wider block">
+                    Kits Já Entregues
+                  </span>
+                  <span className="text-xl font-black text-blue-700">{sumDelivered}</span>
+                  <span className="text-[10px] text-blue-600 block">retirados pelos atletas</span>
+                </div>
               </div>
-              <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-2xl">
-                <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider block">
-                  Confirmadas (Pagas)
-                </span>
-                <span className="text-xl font-black text-emerald-700">{sumConfirmed}</span>
-                <span className="text-[10px] text-emerald-600 block">kits assegurados</span>
+
+              {stockSuccess && (
+                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs font-semibold flex items-center justify-between animate-in fade-in">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>{stockSuccess}</span>
+                  </div>
+                  <button onClick={() => setStockSuccess(null)} className="text-emerald-600 hover:text-emerald-800">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 text-slate-600 font-bold uppercase tracking-wider border-b border-slate-200">
+                    <tr>
+                      <th className="py-3 px-4">Tamanho</th>
+                      <th className="py-3 px-4">Confirmadas (Pagas)</th>
+                      <th className="py-3 px-4">Reservadas (Pix)</th>
+                      <th className="py-3 px-4">Demanda Total</th>
+                      <th className="py-3 px-4">Kits Entregues</th>
+                      <th className="py-3 px-4">Faltam Entregar</th>
+                      <th className="py-3 px-4">Modalidade</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {demandBySize.map((row) => (
+                      <tr key={row.size} className="hover:bg-slate-50/70 transition">
+                        <td className="py-3.5 px-4 font-black text-sm text-slate-900">
+                          <span className="w-8 h-8 rounded-xl bg-orange-600 text-white flex items-center justify-center shadow-sm font-bold">
+                            {row.size}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 font-extrabold text-sm text-emerald-700">
+                          {row.confirmed}
+                        </td>
+                        <td className="py-3.5 px-4 font-semibold text-amber-600">
+                          {row.reserved}
+                        </td>
+                        <td className="py-3.5 px-4 font-black text-sm text-slate-900">
+                          {row.totalDemand}
+                        </td>
+                        <td className="py-3.5 px-4 font-semibold text-blue-700">
+                          {row.delivered}
+                        </td>
+                        <td className="py-3.5 px-4 font-semibold text-slate-700">
+                          {row.pendingDelivery}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                            Sob Demanda (Livre)
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-              <div className="p-3 bg-amber-50/70 border border-amber-200 rounded-2xl">
-                <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wider block">
-                  Reservadas (Aguard. Pix)
-                </span>
-                <span className="text-xl font-black text-amber-700">{sumReserved}</span>
-                <span className="text-[10px] text-amber-600 block">em janela de reserva</span>
-              </div>
-              <div className="p-3 bg-orange-50/70 border border-orange-200 rounded-2xl">
-                <span className="text-[10px] font-bold text-orange-700 uppercase tracking-wider block">
-                  Disponíveis para Inscrição
-                </span>
-                <span className="text-xl font-black text-orange-600">{sumAvailable}</span>
-                <span className="text-[10px] text-orange-500 block">vagas restantes</span>
-              </div>
-            </div>
+            </>
           );
         })()}
-
-        {/* View Description Callout */}
-        <div className={`p-3 rounded-2xl border text-xs font-medium flex items-center justify-between ${
-          stockView === 'local'
-            ? 'bg-orange-50/70 border-orange-200 text-orange-800'
-            : stockView === 'visitor'
-            ? 'bg-blue-50/70 border-blue-200 text-blue-800'
-            : 'bg-slate-50 border-slate-200 text-slate-700'
-        }`}>
-          <div className="flex items-center gap-2">
-            {stockView === 'local' ? (
-              <Building2 className="w-4 h-4 text-orange-600 shrink-0" />
-            ) : stockView === 'visitor' ? (
-              <Globe className="w-4 h-4 text-blue-600 shrink-0" />
-            ) : (
-              <Layers className="w-4 h-4 text-slate-600 shrink-0" />
-            )}
-            <span>
-              {stockView === 'local' && 'Visualizando cota exclusiva para moradores de Lajes Pintadas (inscrição presencial na Prefeitura).'}
-              {stockView === 'visitor' && 'Visualizando cota pública para atletas visitantes de outros municípios (inscrição online via site).'}
-              {stockView === 'total' && 'Visualizando capacidade somada do evento (Locais + Visitantes). Alterações persistem diretamente no banco Supabase.'}
-            </span>
-          </div>
-
-          <span className="text-[11px] font-bold hidden sm:inline">
-            Clique em "Editar Cota" para ajustar individualmente
-          </span>
-        </div>
-
-        {stockSuccess && (
-          <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs font-semibold flex items-center justify-between animate-in fade-in">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>{stockSuccess}</span>
-            </div>
-            <button onClick={() => setStockSuccess(null)} className="text-emerald-600 hover:text-emerald-800">
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        )}
-
-        {stockError && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs font-semibold flex items-center justify-between animate-in fade-in">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 shrink-0" />
-              <span>{stockError}</span>
-            </div>
-            <button onClick={() => setStockError(null)} className="text-red-600 hover:text-red-800">
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        )}
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 text-slate-600 font-bold uppercase tracking-wider border-b border-slate-200">
-              <tr>
-                <th className="py-3 px-4">Tamanho</th>
-                <th className="py-3 px-4">
-                  {stockView === 'local' ? 'Cota Local' : stockView === 'visitor' ? 'Cota Visitante' : 'Estoque Total'}
-                </th>
-                <th className="py-3 px-4">Confirmadas</th>
-                <th className="py-3 px-4">Reservadas</th>
-                <th className="py-3 px-4">Disponíveis</th>
-                <th className="py-3 px-4">Situação</th>
-                <th className="py-3 px-4 text-center">Ações</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {shirts.map((item) => {
-                const isEditing = editingSize === item.size;
-
-                // Select metrics according to active view
-                let total = item.totalStock;
-                let confirmed = item.confirmedCount;
-                let reserved = item.reservedCount;
-                let available = item.availableStock;
-
-                if (stockView === 'local') {
-                  total = item.localTotalStock ?? Math.round(item.totalStock / 2);
-                  confirmed = item.localConfirmedCount ?? 0;
-                  reserved = item.localReservedCount ?? 0;
-                  available = item.localAvailableStock ?? Math.max(0, total - (confirmed + reserved));
-                } else if (stockView === 'visitor') {
-                  total = item.visitorTotalStock ?? Math.round(item.totalStock / 2);
-                  confirmed = item.visitorConfirmedCount ?? 0;
-                  reserved = item.visitorReservedCount ?? 0;
-                  available = item.visitorAvailableStock ?? Math.max(0, total - (confirmed + reserved));
-                }
-
-                const minAllowed = confirmed + reserved;
-                const isSoldOut = available <= 0 && total > 0;
-                const isLow = available <= 5 && available > 0;
-
-                return (
-                  <tr key={item.id} className="hover:bg-slate-50/70 transition">
-                    <td className="py-3.5 px-4 font-black text-sm text-slate-900">
-                      <span className="w-8 h-8 rounded-xl bg-orange-600 text-white flex items-center justify-center shadow-sm font-bold">
-                        {item.size}
-                      </span>
-                    </td>
-                    
-                    <td className="py-3.5 px-4">
-                      {isEditing ? (
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="number"
-                            min={minAllowed}
-                            value={newStockValue}
-                            onChange={(e) => setNewStockValue(Math.max(0, parseInt(e.target.value) || 0))}
-                            className="w-20 px-2 py-1 bg-white border border-slate-300 rounded-lg text-xs font-bold focus:outline-none focus:ring-2 focus:ring-orange-500"
-                          />
-                          <span className="text-[10px] text-slate-400">mín: {minAllowed}</span>
-                        </div>
-                      ) : (
-                        <span className="font-bold text-slate-800 text-sm">{total}</span>
-                      )}
-                    </td>
-
-                    <td className="py-3.5 px-4 font-semibold text-emerald-600">
-                      {confirmed}
-                    </td>
-
-                    <td className="py-3.5 px-4 font-semibold text-amber-600">
-                      {reserved}
-                    </td>
-
-                    <td className="py-3.5 px-4">
-                      <span className={`font-black text-sm ${
-                        isSoldOut ? 'text-red-600' : isLow ? 'text-amber-600' : 'text-slate-900'
-                      }`}>
-                        {available}
-                      </span>
-                    </td>
-
-                    <td className="py-3.5 px-4">
-                      {total === 0 ? (
-                        <span className="text-slate-400 font-medium">Não configurado</span>
-                      ) : isSoldOut ? (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-800">
-                          Esgotado
-                        </span>
-                      ) : isLow ? (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
-                          Estoque Baixo
-                        </span>
-                      ) : (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                          Disponível
-                        </span>
-                      )}
-                    </td>
-
-                    <td className="py-3.5 px-4 text-center">
-                      {isEditing ? (
-                        <div className="flex items-center justify-center gap-1.5">
-                          <button
-                            onClick={() => handleSaveStock(item.size)}
-                            disabled={isUpdatingStock}
-                            className="p-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition"
-                            title="Salvar alteração de estoque"
-                          >
-                            <Save className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => { setEditingSize(null); setStockError(null); }}
-                            className="p-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg transition"
-                            title="Cancelar edição"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => handleStartEditStock(item)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 text-slate-600 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition font-semibold"
-                        >
-                          <Edit3 className="w-3 h-3" />
-                          <span>Editar Cota</span>
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
       </div>
 
       {/* SECTION 2: Kit Delivery Station */}
