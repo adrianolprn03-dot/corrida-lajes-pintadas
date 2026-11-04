@@ -223,6 +223,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // 4. Executar Reserva Transacional Atômica
     if (supabase) {
+      // 3.9 Liberar automaticamente reservas Pix expiradas (> 30 min sem pagamento)
+      try {
+        await supabase.rpc('expire_stale_reservations');
+      } catch (expErr) {
+        console.warn('[create-reservation] Aviso ao expirar reservas vencidas:', expErr);
+      }
+
       // 4.0 Validação estrita de cota por categoria (Local vs Visitante)
       try {
         let localMax: number | null = null;
@@ -261,7 +268,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           const { count } = await supabase
             .from('registrations')
             .select('id', { count: 'exact', head: true })
-            .in('origin_type', ['CASA', 'LOCAL'])
+            .eq('origin_type', 'CASA')
             .in('status', ['CONFIRMED', 'RESERVED', 'IN_REVIEW']);
 
           if ((count || 0) >= localMax) {
@@ -500,7 +507,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           reservationResult.pcd = pcdMeta;
         }
 
-        const updatePayload: Record<string, any> = {
+        const nowIso = new Date().toISOString();
+        const coreUpdatePayload: Record<string, any> = {
           asaas_payment_id: payment.id,
           asaas_customer_id: customer.id,
           asaas_invoice_url: payment.invoiceUrl,
@@ -509,22 +517,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           base_amount_cents: pricing.baseAmountCents,
           processing_fee_cents: pricing.feeCents,
           total_amount_cents: pricing.totalAmountCents,
-          channel: registrationChannel,
-          document_verification_status: documentVerificationStatus || (originType === 'CASA' ? 'APROVADO' : 'PENDENTE'),
-          document_type_presented: documentTypePresented || null,
-          document_verification_notes: documentVerificationNotes || null,
-          document_checked_by: attendantName || null,
-          document_checked_at: new Date().toISOString(),
-          attendant_name: attendantName || null,
-          attendant_id: attendantId || null,
-          kit_notes: `ACCESS_CODE:${reservationResult.access_code}${currentBatch ? `|BATCH:${currentBatch.id}` : ''}${pcdMetaStr}${cep ? `|ADDR:${encodeURIComponent(JSON.stringify({ cep, street, number, complement, neighborhood }))}` : ''}${isPaymentConfirmed ? '|CONFIRMATION_EMAIL_SENT:true' : ''}`,
-          updated_at: new Date().toISOString(),
+          kit_notes: `ACCESS_CODE:${reservationResult.access_code}${currentBatch ? `|BATCH:${currentBatch.id}|BATCH_NAME:${encodeURIComponent(currentBatch.name)}` : ''}${pcdMetaStr}${cep ? `|ADDR:${encodeURIComponent(JSON.stringify({ cep, street, number, complement, neighborhood }))}` : ''}|CHANNEL:${registrationChannel}${isPaymentConfirmed ? '|CONFIRMATION_EMAIL_SENT:true' : ''}`,
+          updated_at: nowIso,
         };
 
         if (isPaymentConfirmed) {
-          updatePayload.status = 'CONFIRMED';
-          updatePayload.financial_status = 'CONFIRMED';
-          updatePayload.paid_at = new Date().toISOString();
+          coreUpdatePayload.status = 'CONFIRMED';
+          coreUpdatePayload.financial_status = 'CONFIRMED';
+          coreUpdatePayload.paid_at = nowIso;
 
           // Mover camisa do atleta de reservada para confirmada
           const { data: stockRow } = await supabase
@@ -538,7 +538,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               .update({
                 reserved_count: Math.max(0, stockRow.reserved_count - 1),
                 confirmed_count: stockRow.confirmed_count + 1,
-                updated_at: new Date().toISOString(),
+                updated_at: nowIso,
               })
               .eq('size', shirtSize);
           }
@@ -556,26 +556,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 .update({
                   reserved_count: Math.max(0, guideStockRow.reserved_count - 1),
                   confirmed_count: guideStockRow.confirmed_count + 1,
-                  updated_at: new Date().toISOString(),
+                  updated_at: nowIso,
                 })
                 .eq('size', guideShirtSize);
             }
           }
         }
 
-        // Gravar o lote na coluna dedicada; se a migração ainda não foi executada,
-        // grava sem ela (o lote continua registrado no marcador BATCH: do kit_notes)
-        const { error: regUpdateErr } = await supabase
+        // 1) Atualizar colunas centrais garantidas no banco (payment_id, QR Code Pix, valores e kit_notes)
+        await supabase
           .from('registrations')
-          .update(currentBatch ? { ...updatePayload, batch_id: currentBatch.id, batch_name: currentBatch.name } : updatePayload)
+          .update(coreUpdatePayload)
           .eq('id', reservationResult.registration_id);
 
-        if (regUpdateErr && currentBatch) {
+        // 2) Atualizar colunas estendidas se existirem no schema do Supabase
+        try {
+          const extendedPayload: Record<string, any> = {
+            channel: registrationChannel,
+            document_verification_status: documentVerificationStatus || (originType === 'CASA' ? 'APROVADO' : 'PENDENTE'),
+            document_type_presented: documentTypePresented || null,
+            document_verification_notes: documentVerificationNotes || null,
+            document_checked_by: attendantName || null,
+            document_checked_at: nowIso,
+            attendant_name: attendantName || null,
+            attendant_id: attendantId || null,
+          };
+          if (currentBatch) {
+            extendedPayload.batch_id = currentBatch.id;
+            extendedPayload.batch_name = currentBatch.name;
+          }
           await supabase
             .from('registrations')
-            .update(updatePayload)
+            .update(extendedPayload)
             .eq('id', reservationResult.registration_id);
-        }
+        } catch {}
       } catch (updateErr) {
         console.warn('[create-reservation] Aviso ao atualizar dados no Supabase:', updateErr);
       }

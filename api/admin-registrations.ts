@@ -518,20 +518,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const { error: delErr } = await delQuery;
         if (delErr) throw delErr;
 
-        if (foundReg && foundReg.status === 'RESERVED' && foundReg.shirt_size) {
+        if (foundReg && foundReg.shirt_size) {
           const { data: stock } = await supabase
             .from('shirt_inventory')
-            .select('reserved_count')
+            .select('reserved_count, confirmed_count')
             .eq('size', foundReg.shirt_size)
             .single();
           if (stock) {
-            await supabase
-              .from('shirt_inventory')
-              .update({
-                reserved_count: Math.max(0, stock.reserved_count - 1),
-                updated_at: new Date().toISOString(),
-              })
-              .eq('size', foundReg.shirt_size);
+            if (foundReg.status === 'RESERVED') {
+              await supabase
+                .from('shirt_inventory')
+                .update({
+                  reserved_count: Math.max(0, (stock.reserved_count || 0) - 1),
+                  updated_at: new Date().toISOString(),
+                })
+                .eq('size', foundReg.shirt_size);
+            } else if (foundReg.status === 'CONFIRMED') {
+              await supabase
+                .from('shirt_inventory')
+                .update({
+                  confirmed_count: Math.max(0, (stock.confirmed_count || 0) - 1),
+                  updated_at: new Date().toISOString(),
+                })
+                .eq('size', foundReg.shirt_size);
+            }
           }
         }
 
@@ -584,9 +594,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         throw error;
       }
 
+      const enrichedItems = (data || []).map((row: any) => {
+        const notes = typeof row.kit_notes === 'string' ? row.kit_notes : '';
+        if (!row.access_code && notes) {
+          const m = notes.match(/ACCESS_CODE:([A-Za-z0-9]+)/);
+          if (m) row.access_code = m[1];
+        }
+        if (!row.batch_id && notes) {
+          const m = notes.match(/\|BATCH:([A-Za-z0-9_-]+)/);
+          if (m) row.batch_id = m[1];
+        }
+        if (!row.batch_name && notes) {
+          const m = notes.match(/\|BATCH_NAME:([^|]+)/);
+          if (m) {
+            try { row.batch_name = decodeURIComponent(m[1]); } catch { row.batch_name = m[1]; }
+          }
+        }
+        if (!row.channel && notes) {
+          const m = notes.match(/\|CHANNEL:([A-Za-z0-9_-]+)/);
+          if (m) row.channel = m[1];
+        }
+        return row;
+      });
+
       const durationMs = Date.now() - startTime;
       return res.status(200).json({
-        items: data || [],
+        items: enrichedItems,
         totalCount: count || 0,
         page,
         pageSize,

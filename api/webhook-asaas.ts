@@ -189,6 +189,43 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               alreadySentInDb = true;
             }
 
+            // Garantir confirmação explícita no banco caso a RPC não tenha localizado por payment_id ou tenha divergência de lote/PCD
+            if (reg.status !== 'CONFIRMED') {
+              try {
+                const nowIso = new Date().toISOString();
+                if (reg.shirt_size && (reg.status === 'RESERVED' || reg.status === 'IN_REVIEW')) {
+                  const { data: sInv } = await supabase
+                    .from('shirt_inventory')
+                    .select('reserved_count, confirmed_count')
+                    .eq('size', reg.shirt_size)
+                    .maybeSingle();
+                  if (sInv) {
+                    await supabase
+                      .from('shirt_inventory')
+                      .update({
+                        reserved_count: Math.max(0, (sInv.reserved_count || 0) - 1),
+                        confirmed_count: (sInv.confirmed_count || 0) + 1,
+                        updated_at: nowIso,
+                      })
+                      .eq('size', reg.shirt_size);
+                  }
+                }
+
+                await supabase
+                  .from('registrations')
+                  .update({
+                    status: 'CONFIRMED',
+                    financial_status: eventType === 'PAYMENT_RECEIVED' ? 'RECEIVED' : 'CONFIRMED',
+                    paid_at: nowIso,
+                    asaas_payment_id: payment.id,
+                    updated_at: nowIso,
+                  })
+                  .eq('id', reg.id);
+              } catch (confirmFallbackErr) {
+                console.warn('[Webhook] Aviso ao confirmar inscrição via fallback:', confirmFallbackErr);
+              }
+            }
+
             let pcdMeta: any = null;
             if (reg.kit_notes && typeof reg.kit_notes === 'string') {
               const matchPcd = reg.kit_notes.match(/PCD_META:(\{.*?\})/);
