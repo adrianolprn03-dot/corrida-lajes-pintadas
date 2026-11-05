@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { storageService } from '../../services/storage';
+import { generateKitQrDataUrl } from '../../lib/kitQr';
 import { Step1Data } from './Step1AthleteData';
 import { Step2Data } from './Step2CategoryAndShirt';
 import { EventSettings, Registration, Category, PaymentMethod, CreditCardData } from '../../types';
@@ -99,6 +100,15 @@ export const Step3ReviewAndPayment: React.FC<Step3ReviewAndPaymentProps> = ({
   const [copiedPix, setCopiedPix] = useState(false);
   const [isCheckingPix, setIsCheckingPix] = useState(false);
   const [pixCheckMessage, setPixCheckMessage] = useState<string | null>(null);
+  const [kitQrDataUrl, setKitQrDataUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (successResult && successResult.registration.status === 'CONFIRMED') {
+      generateKitQrDataUrl(successResult.registration.protocol, successResult.accessCode)
+        .then(setKitQrDataUrl)
+        .catch(() => setKitQrDataUrl(null));
+    }
+  }, [successResult]);
 
   const checkPixPaymentNow = useCallback(async (manual = false) => {
     if (!successResult || successResult.registration.status === 'CONFIRMED') return;
@@ -473,6 +483,32 @@ export const Step3ReviewAndPayment: React.FC<Step3ReviewAndPaymentProps> = ({
                   Comprovante oficial e credenciais enviados automaticamente para <strong>{step1.email}</strong>.
                 </span>
               </div>
+
+              {/* QR Code Oficial para Retirada Rápida do Kit */}
+              {kitQrDataUrl && (
+                <div className="mt-3 pt-3 border-t border-slate-700/70 flex flex-col sm:flex-row items-center gap-4 bg-slate-900/90 p-3.5 rounded-xl border border-orange-500/40">
+                  <div className="bg-white p-2 rounded-xl shrink-0 shadow-md">
+                    <img
+                      src={kitQrDataUrl}
+                      alt="QR Code de Retirada do Kit"
+                      className="w-28 h-28 object-contain"
+                    />
+                  </div>
+                  <div className="text-center sm:text-left space-y-1">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-orange-500/20 text-orange-300 border border-orange-500/30">
+                      <QrCode size={12} />
+                      Voucher QR Code • Retirada do Kit
+                    </span>
+                    <p className="text-xs font-bold text-white">
+                      Apresente este QR Code no Centro de Convivência dos Idosos
+                    </p>
+                    <p className="text-[11px] text-slate-300 leading-relaxed">
+                      O atendente fará a leitura pela câmera para liberar imediatamente sua camisa{' '}
+                      <strong className="text-orange-400">Tamanho {reg.shirtSize}</strong> e o número de peito.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             /* Fluxo Pix Instantâneo (se o atleta tiver escolhido Pix) */

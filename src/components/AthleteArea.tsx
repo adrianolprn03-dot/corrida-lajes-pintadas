@@ -25,6 +25,7 @@ import { storageService } from '../services/storage';
 import { AthleteLookupResponse, RegistrationStatus, FinancialStatus } from '../types';
 import { formatCentsToBRL } from '../lib/pricing';
 import { formatDateBR, formatDateTimeBR } from '../lib/masks';
+import { generateKitQrDataUrl, extractBibNumber } from '../lib/kitQr';
 
 interface AthleteAreaProps {
   isOpen: boolean;
@@ -38,6 +39,17 @@ export const AthleteArea: React.FC<AthleteAreaProps> = ({ isOpen, onClose }) => 
   const [error, setError] = React.useState<string | null>(null);
   const [result, setResult] = React.useState<AthleteLookupResponse | null>(null);
   const [copiedPix, setCopiedPix] = React.useState(false);
+  const [kitQrDataUrl, setKitQrDataUrl] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (result?.registration?.status === 'CONFIRMED') {
+      generateKitQrDataUrl(result.registration.protocol, accessCode)
+        .then(setKitQrDataUrl)
+        .catch(() => setKitQrDataUrl(null));
+    } else {
+      setKitQrDataUrl(null);
+    }
+  }, [result, accessCode]);
 
   // Sincronização em tempo real se a inscrição consultada estiver aguardando pagamento Pix
   React.useEffect(() => {
@@ -405,36 +417,71 @@ export const AthleteArea: React.FC<AthleteAreaProps> = ({ isOpen, onClose }) => 
                 )}
 
                 {/* Situação da Retirada do Kit */}
-                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`p-2 rounded-xl ${
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`p-2 rounded-xl ${
+                          result.registration.kitDelivered
+                            ? 'bg-emerald-100 text-emerald-700'
+                            : 'bg-slate-200 text-slate-600'
+                        }`}
+                      >
+                        <Shirt size={22} />
+                      </div>
+                      <div>
+                        <span className="text-xs font-bold text-slate-800 block">Situação do Kit Atleta</span>
+                        <span className="text-xs text-slate-500">
+                          {result.registration.kitDelivered
+                            ? `Entregue em ${formatDateTimeBR(result.registration.kitDeliveredAt)}${
+                                result.registration.kitDeliveredBy ? ` por ${result.registration.kitDeliveredBy}` : ''
+                              }`
+                            : 'Pendente de retirada no Centro de Convivência dos Idosos'}
+                        </span>
+                        {extractBibNumber(result.registration.kitNotes) && (
+                          <span className="text-[11px] font-extrabold text-orange-600 block mt-0.5">
+                            🎽 Número de Peito Oficial: Nº {extractBibNumber(result.registration.kitNotes)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-bold ${
                         result.registration.kitDelivered
-                          ? 'bg-emerald-100 text-emerald-700'
-                          : 'bg-slate-200 text-slate-600'
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : 'bg-amber-100 text-amber-800'
                       }`}
                     >
-                      <Shirt size={22} />
-                    </div>
-                    <div>
-                      <span className="text-xs font-bold text-slate-800 block">Situação do Kit Atleta</span>
-                      <span className="text-xs text-slate-500">
-                        {result.registration.kitDelivered
-                          ? `Entregue em ${formatDateTimeBR(result.registration.kitDeliveredAt)}`
-                          : 'Pendente de retirada no local oficial'}
-                      </span>
-                    </div>
+                      {result.registration.kitDelivered ? 'Kit Entregue' : 'Aguardando Retirada'}
+                    </span>
                   </div>
 
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-bold ${
-                      result.registration.kitDelivered
-                        ? 'bg-emerald-100 text-emerald-800'
-                        : 'bg-amber-100 text-amber-800'
-                    }`}
-                  >
-                    {result.registration.kitDelivered ? 'Kit Entregue' : 'Aguardando Retirada'}
-                  </span>
+                  {/* QR Code Oficial para Retirada do Kit (quando CONFIRMADO) */}
+                  {result.registration.status === 'CONFIRMED' && kitQrDataUrl && !result.registration.kitDelivered && (
+                    <div className="pt-3 border-t border-slate-200 flex flex-col sm:flex-row items-center gap-4 bg-white p-3.5 rounded-xl border border-orange-200">
+                      <div className="bg-white p-1.5 rounded-xl border border-slate-200 shrink-0 shadow-xs">
+                        <img
+                          src={kitQrDataUrl}
+                          alt="QR Code de Retirada do Kit"
+                          className="w-28 h-28 object-contain"
+                        />
+                      </div>
+                      <div className="text-center sm:text-left space-y-1">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-orange-100 text-orange-800">
+                          <QrCode size={12} />
+                          Voucher QR Code • Check-in do Kit
+                        </span>
+                        <p className="text-xs font-bold text-slate-900">
+                          Apresente este QR Code na entrega dos kits
+                        </p>
+                        <p className="text-[11px] text-slate-600 leading-relaxed">
+                          Leitura instantânea na mesa da organização para retirada da sua camisa{' '}
+                          <strong className="text-orange-600">Tamanho {result.registration.shirtSize}</strong> e chip.
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 

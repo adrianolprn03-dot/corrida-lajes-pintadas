@@ -425,9 +425,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ success: true, localOnly: true });
     }
 
-    // 1.3 Entrega de Kit Oficial com baixa no Supabase
+    // 1.3 Entrega de Kit Oficial com baixa segura no Supabase (preservando metadados de kit_notes e suportando Número de Peito)
     if (req.method === 'POST' && req.body?.action === 'deliver-kit') {
-      const { id, registrationId, deliveredBy, notes } = req.body;
+      const { id, registrationId, deliveredBy, notes, bibNumber } = req.body;
       const regId = id || registrationId;
 
       if (!regId) {
@@ -435,14 +435,50 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       if (supabase) {
+        const { data: existingReg, error: findErr } = await supabase
+          .from('registrations')
+          .select('id, protocol, status, kit_delivered, kit_delivered_at, kit_delivered_by, kit_notes, shirt_size')
+          .eq('id', regId)
+          .single();
+
+        if (findErr || !existingReg) {
+          return res.status(404).json({ error: 'Inscrição não encontrada no banco de dados.' });
+        }
+
+        if (existingReg.status !== 'CONFIRMED') {
+          return res.status(400).json({
+            error: `Não é permitido entregar o kit: a inscrição ${existingReg.protocol} está com status "${existingReg.status}" (não quitada).`,
+          });
+        }
+
+        if (existingReg.kit_delivered) {
+          return res.status(409).json({
+            error: `Kit da inscrição ${existingReg.protocol} já foi entregue anteriormente por ${existingReg.kit_delivered_by || 'Atendente'}!`,
+          });
+        }
+
         const now = new Date().toISOString();
+        let preservedNotes = typeof existingReg.kit_notes === 'string' ? existingReg.kit_notes : '';
+        preservedNotes = preservedNotes
+          .replace(/\|?BIB:[^|]+/g, '')
+          .replace(/\|?KIT_DELIVERY_NOTE:[^|]+/g, '');
+
+        if (bibNumber && String(bibNumber).trim()) {
+          const cleanBib = encodeURIComponent(String(bibNumber).trim());
+          preservedNotes = preservedNotes ? `${preservedNotes}|BIB:${cleanBib}` : `BIB:${cleanBib}`;
+        }
+        if (notes && String(notes).trim()) {
+          const cleanNote = encodeURIComponent(String(notes).trim());
+          preservedNotes = preservedNotes ? `${preservedNotes}|KIT_DELIVERY_NOTE:${cleanNote}` : `KIT_DELIVERY_NOTE:${cleanNote}`;
+        }
+
         const { error: kitErr } = await supabase
           .from('registrations')
           .update({
             kit_delivered: true,
             kit_delivered_at: now,
             kit_delivered_by: deliveredBy || 'Mesa Oficial',
-            kit_notes: notes || null,
+            kit_notes: preservedNotes || null,
             updated_at: now,
           })
           .eq('id', regId);
@@ -451,7 +487,55 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         return res.status(200).json({
           success: true,
+          kitDeliveredAt: now,
+          kitDeliveredBy: deliveredBy || 'Mesa Oficial',
+          kitNotes: preservedNotes || null,
           message: 'Baixa de kit registrada no banco com sucesso!',
+        });
+      }
+
+      return res.status(200).json({ success: true, localOnly: true });
+    }
+
+    // 1.3b Estorno / Reversão de Baixa de Kit (caso entregue por engano)
+    if (req.method === 'POST' && req.body?.action === 'undo-deliver-kit') {
+      const { id, registrationId } = req.body;
+      const regId = id || registrationId;
+
+      if (!regId) {
+        return res.status(400).json({ error: 'ID da inscrição é obrigatório.' });
+      }
+
+      if (supabase) {
+        const { data: existingReg } = await supabase
+          .from('registrations')
+          .select('id, kit_notes')
+          .eq('id', regId)
+          .single();
+
+        let preservedNotes = typeof existingReg?.kit_notes === 'string' ? existingReg.kit_notes : '';
+        preservedNotes = preservedNotes
+          .replace(/\|?BIB:[^|]+/g, '')
+          .replace(/\|?KIT_DELIVERY_NOTE:[^|]+/g, '');
+
+        const now = new Date().toISOString();
+        const { error: undoErr } = await supabase
+          .from('registrations')
+          .update({
+            kit_delivered: false,
+            kit_delivered_at: null,
+            kit_delivered_by: null,
+            kit_notes: preservedNotes || null,
+            updated_at: now,
+          })
+          .eq('id', regId);
+
+        if (undoErr) throw undoErr;
+
+        return res.status(200).json({
+          success: true,
+          kitNotes: preservedNotes || null,
+          message: 'Baixa de kit estornada com sucesso. O kit voltou para o status Pendente de Retirada.',
         });
       }
 

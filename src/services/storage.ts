@@ -1038,7 +1038,8 @@ class StorageService {
   }
 
   // Entrega de Kit (Admin)
-  async deliverKit(registrationId: string, deliveredBy: string, notes?: string): Promise<Registration> {
+  async deliverKit(registrationId: string, deliveredBy: string, notes?: string, bibNumber?: string): Promise<Registration> {
+    let serverData: any = null;
     try {
       const res = await fetch('/api/admin-registrations', {
         method: 'POST',
@@ -1048,12 +1049,14 @@ class StorageService {
           id: registrationId,
           deliveredBy,
           notes,
+          bibNumber,
         }),
       });
       if (!res.ok) {
         const errJson = await res.json().catch(() => ({}));
         throw new Error(errJson.error || 'Falha ao registrar entrega do kit no banco.');
       }
+      serverData = await res.json().catch(() => null);
     } catch (e: any) {
       console.warn('Falha na chamada API de entrega de kit:', e);
       if (e.message && !e.message.includes('fetch')) {
@@ -1068,9 +1071,9 @@ class StorageService {
       const updated: Registration = {
         ...reg,
         kitDelivered: true,
-        kitDeliveredAt: new Date().toISOString(),
+        kitDeliveredAt: serverData?.kitDeliveredAt || new Date().toISOString(),
         kitDeliveredBy: deliveredBy,
-        kitNotes: notes || null,
+        kitNotes: serverData?.kitNotes ?? reg.kitNotes ?? notes ?? null,
         updatedAt: new Date().toISOString(),
       };
       all[idx] = updated;
@@ -1078,6 +1081,41 @@ class StorageService {
       return updated;
     }
     return { id: registrationId, kitDelivered: true } as any;
+  }
+
+  // Estornar / Desfazer Entrega de Kit (Admin)
+  async undoDeliverKit(registrationId: string): Promise<void> {
+    try {
+      const res = await fetch('/api/admin-registrations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'undo-deliver-kit',
+          id: registrationId,
+        }),
+      });
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || 'Falha ao estornar baixa do kit.');
+      }
+    } catch (e: any) {
+      if (e.message && !e.message.includes('fetch')) {
+        throw e;
+      }
+    }
+
+    const all = this.getLocal<Registration[]>(STORAGE_KEYS.REGISTRATIONS, []);
+    const idx = all.findIndex((r) => r.id === registrationId);
+    if (idx !== -1) {
+      all[idx] = {
+        ...all[idx],
+        kitDelivered: false,
+        kitDeliveredAt: undefined,
+        kitDeliveredBy: undefined,
+        updatedAt: new Date().toISOString(),
+      };
+      this.setLocal(STORAGE_KEYS.REGISTRATIONS, all);
+    }
   }
 
   // Simulação / Reconciliação Manual do Pagamento (Admin Geral / Financeiro)

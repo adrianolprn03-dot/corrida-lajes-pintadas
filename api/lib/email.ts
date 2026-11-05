@@ -217,9 +217,33 @@ export async function sendConfirmationEmail(data: RegistrationEmailData): Promis
               </table>
 
               <!-- Caixa Informativa de Segurança (LGPD) -->
-              <div style="background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 14px 16px; margin-bottom: 24px; font-size: 12px; color: #1e40af; line-height: 1.5;">
+              <div style="background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 14px 16px; margin-bottom: 20px; font-size: 12px; color: #1e40af; line-height: 1.5;">
                 🔒 <strong>Importante — Guarde este e-mail:</strong> O seu <strong>Número de Protocolo</strong> e o seu <strong>Código de Acesso</strong> acima são as suas credenciais exclusivas para consultar a inscrição, verificar o status e emitir a 2ª via do comprovante no <strong>Portal do Atleta</strong> sem expor seus dados públicos na internet (em total conformidade com a LGPD).
               </div>
+
+              ${!isReserved ? `
+              <!-- QR Code Oficial para Retirada Rápida do Kit -->
+              <div style="background-color: #fff7ed; border: 2px solid #fdba74; border-radius: 16px; padding: 20px; margin-bottom: 24px; text-align: center;">
+                <span style="display: inline-block; background-color: #ea580c; color: #ffffff; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; padding: 4px 12px; border-radius: 9999px; margin-bottom: 8px;">
+                  🎫 Voucher Oficial • Check-in de Entrega do Kit
+                </span>
+                <p style="margin: 0 0 12px 0; font-size: 12px; color: #7c2d12; font-weight: 600;">
+                  Apresente este QR Code na tela do celular (ou impresso) no Centro de Convivência dos Idosos para retirada rápida da sua camisa <strong>Tamanho ${data.shirtSize}</strong>:
+                </p>
+                <div style="display: inline-block; background-color: #ffffff; padding: 12px; border-radius: 14px; border: 1px solid #fed7aa; box-shadow: 0 4px 10px rgba(0,0,0,0.06);">
+                  <img
+                    src="https://api.qrserver.com/v1/create-qr-code/?size=190x190&margin=8&data=${encodeURIComponent(`LP5-KIT:${data.protocol}:${data.accessCode || ''}`)}"
+                    width="180"
+                    height="180"
+                    alt="QR Code de Retirada do Kit - ${data.protocol}"
+                    style="display: block; margin: 0 auto;"
+                  />
+                  <span style="display: block; margin-top: 8px; font-family: monospace, Courier New, monospace; font-size: 12px; font-weight: 900; color: #0f172a; letter-spacing: 1px;">
+                    ${data.protocol} • TAM. ${data.shirtSize}
+                  </span>
+                </div>
+              </div>
+              ` : ''}
 
               <!-- Informações de Pagamento Pix (se houver Copia e Cola) -->
               ${data.pixCopyPaste ? `

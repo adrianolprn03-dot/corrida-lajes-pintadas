@@ -153,8 +153,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
     await loadData();
   };
 
-  const handleDeliverKit = async (regId: string, deliveredBy: string, notes?: string) => {
-    await storageService.deliverKit(regId, deliveredBy, notes);
+  const handleDeliverKit = async (regId: string, deliveredBy: string, notes?: string, bibNumber?: string) => {
+    await storageService.deliverKit(regId, deliveredBy, notes, bibNumber);
     await loadData();
   };
 
@@ -398,6 +398,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
                 onUpdateStock={handleUpdateStock}
                 onDeliverKit={handleDeliverKit}
                 onRefresh={loadData}
+                defaultOperatorName={operator.name}
               />
             )}
 
