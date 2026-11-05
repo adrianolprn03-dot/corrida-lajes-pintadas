@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   ShieldCheck,
   FileText,
@@ -16,8 +16,11 @@ import {
   Shield,
   HelpCircle,
   Wifi,
+  RefreshCw,
+  Mail,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { storageService } from '../../services/storage';
 import { Step1Data } from './Step1AthleteData';
 import { Step2Data } from './Step2CategoryAndShirt';
 import { EventSettings, Registration, Category, PaymentMethod, CreditCardData } from '../../types';
@@ -94,6 +97,65 @@ export const Step3ReviewAndPayment: React.FC<Step3ReviewAndPaymentProps> = ({
   } | null>(null);
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedPix, setCopiedPix] = useState(false);
+  const [isCheckingPix, setIsCheckingPix] = useState(false);
+  const [pixCheckMessage, setPixCheckMessage] = useState<string | null>(null);
+
+  const checkPixPaymentNow = useCallback(async (manual = false) => {
+    if (!successResult || successResult.registration.status === 'CONFIRMED') return;
+    if (manual) {
+      setIsCheckingPix(true);
+      setPixCheckMessage(null);
+    }
+    try {
+      const lookup = await storageService.lookupRegistration(
+        successResult.registration.protocol,
+        successResult.accessCode
+      );
+      if (lookup?.registration?.status === 'CONFIRMED') {
+        setSuccessResult((prev) =>
+          prev
+            ? {
+                ...prev,
+                registration: {
+                  ...prev.registration,
+                  status: 'CONFIRMED',
+                  financialStatus: lookup.registration.financialStatus || 'CONFIRMED',
+                  paidAt: lookup.registration.paidAt || new Date().toISOString(),
+                },
+              }
+            : prev
+        );
+        setPixCheckMessage(null);
+        try {
+          confetti({
+            particleCount: 120,
+            spread: 80,
+            origin: { y: 0.6 },
+            colors: ['#F25807', '#0491D2', '#10B981', '#FFB703'],
+          });
+        } catch {}
+      } else if (manual) {
+        setPixCheckMessage('Ainda aguardando compensação bancária do Pix. Assim que o banco aprovar, a tela atualizará automaticamente.');
+      }
+    } catch {
+      if (manual) {
+        setPixCheckMessage('Verificando com o gateway Asaas... Aguarde alguns segundos.');
+      }
+    } finally {
+      if (manual) {
+        setIsCheckingPix(false);
+      }
+    }
+  }, [successResult]);
+
+  // Monitoramento automático em tempo real do pagamento Pix a cada 3 segundos
+  useEffect(() => {
+    if (!successResult || successResult.registration.status === 'CONFIRMED') return;
+    const interval = setInterval(() => {
+      checkPixPaymentNow(false);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [successResult, checkPixPaymentNow]);
 
   // Calcular Categoria Oficial
   const computedCategory: Category =
@@ -243,16 +305,18 @@ export const Step3ReviewAndPayment: React.FC<Step3ReviewAndPaymentProps> = ({
 
       setSuccessResult(res);
 
-      // Disparar confetes esportivos de vitória
-      try {
-        confetti({
-          particleCount: 120,
-          spread: 80,
-          origin: { y: 0.6 },
-          colors: ['#F25807', '#0491D2', '#10B981', '#FFB703'],
-        });
-      } catch (cErr) {
-        console.warn('Confetti error:', cErr);
+      // Disparar confetes apenas se já estiver confirmado (Cartão aprovado na hora)
+      if (res.registration.status === 'CONFIRMED') {
+        try {
+          confetti({
+            particleCount: 120,
+            spread: 80,
+            origin: { y: 0.6 },
+            colors: ['#F25807', '#0491D2', '#10B981', '#FFB703'],
+          });
+        } catch (cErr) {
+          console.warn('Confetti error:', cErr);
+        }
       }
     } catch (err: any) {
       setError(
@@ -359,26 +423,32 @@ export const Step3ReviewAndPayment: React.FC<Step3ReviewAndPaymentProps> = ({
             </div>
           </div>
 
-          {/* Comprovante de Pagamento do Cartão */}
+          {/* Comprovante de Pagamento Confirmado (Cartão ou Pix Compensado) */}
           {isCreditCardApproved ? (
             <div className="p-4 rounded-xl bg-slate-800/80 border border-slate-700 space-y-2.5 text-xs text-slate-200">
               <div className="flex justify-between items-center text-slate-400 pb-1.5 border-b border-slate-700/60 font-semibold uppercase text-[11px]">
-                <span>Comprovante de Transação</span>
+                <span>Comprovante Oficial de Pagamento</span>
                 <span className="text-emerald-400 font-bold flex items-center gap-1">
                   <CheckCircle2 size={13} />
-                  Transação Aprovada
+                  Pagamento Quitadо
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-400">Forma de Pagamento:</span>
-                <span className="font-bold text-white">Cartão de Crédito (1x à vista)</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Cartão Utilizado:</span>
-                <span className="font-mono font-bold text-white">
-                  {cardBrand.toUpperCase()} •••• {cardLastDigits}
+                <span className="font-bold text-white">
+                  {reg.paymentMethod === 'PIX'
+                    ? 'Pix Oficial (Compensação Instantânea Asaas)'
+                    : 'Cartão de Crédito (1x à vista)'}
                 </span>
               </div>
+              {reg.paymentMethod === 'CREDIT_CARD' && (
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Cartão Utilizado:</span>
+                  <span className="font-mono font-bold text-white">
+                    {cardBrand.toUpperCase()} •••• {cardLastDigits}
+                  </span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span className="text-slate-400">Valor Total Pago:</span>
                 <span className="font-extrabold text-orange-400 text-sm">
@@ -391,11 +461,17 @@ export const Step3ReviewAndPayment: React.FC<Step3ReviewAndPaymentProps> = ({
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-400">Kit Oficial:</span>
-                <span className="font-bold text-white">Camisa Laranja Dry-Fit • Tam. {reg.shirtSize}</span>
+                <span className="font-bold text-white">Camisa Laranja Sob Demanda • Tam. {reg.shirtSize}</span>
               </div>
               <div className="flex justify-between pt-1 border-t border-slate-700/60 text-[11px]">
-                <span className="text-slate-400">Data e Hora:</span>
+                <span className="text-slate-400">Data e Hora da Quitação:</span>
                 <span className="text-slate-300">{formatDateTimeBR(reg.paidAt || new Date().toISOString())}</span>
+              </div>
+              <div className="mt-2 pt-2 border-t border-slate-700/60 flex items-center gap-2 text-emerald-300 text-[11px] font-semibold">
+                <Mail size={14} className="shrink-0 text-emerald-400" />
+                <span>
+                  Comprovante oficial e credenciais enviados automaticamente para <strong>{step1.email}</strong>.
+                </span>
               </div>
             </div>
           ) : (
@@ -410,6 +486,16 @@ export const Step3ReviewAndPayment: React.FC<Step3ReviewAndPaymentProps> = ({
                   <span className="text-white font-black text-sm">
                     {formatCentsToBRL(reg.totalAmountCents)}
                   </span>
+                </div>
+
+                {/* Indicador de Sincronização em Tempo Real */}
+                <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-emerald-950/60 border border-emerald-700/50 text-[11px] text-emerald-200">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping shrink-0" />
+                    <span>
+                      <strong>Sincronização automática ativa:</strong> assim que você pagar no banco, esta tela confirmará sua inscrição sozinha em segundos.
+                    </span>
+                  </div>
                 </div>
 
                 {reg.asaasPixQrCode && (
@@ -457,19 +543,39 @@ export const Step3ReviewAndPayment: React.FC<Step3ReviewAndPaymentProps> = ({
                   </div>
                 )}
 
-                {reg.asaasInvoiceUrl && (
-                  <div className="pt-1">
+                <div className="pt-1 space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => checkPixPaymentNow(true)}
+                    disabled={isCheckingPix}
+                    className="w-full py-2.5 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white font-extrabold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                  >
+                    <RefreshCw size={14} className={isCheckingPix ? 'animate-spin' : ''} />
+                    <span>
+                      {isCheckingPix
+                        ? 'Verificando pagamento no banco...'
+                        : 'Já Paguei o Pix — Confirmar Agora'}
+                    </span>
+                  </button>
+
+                  {pixCheckMessage && (
+                    <p className="text-[11px] text-amber-300 text-center font-medium">
+                      {pixCheckMessage}
+                    </p>
+                  )}
+
+                  {reg.asaasInvoiceUrl && (
                     <a
                       href={reg.asaasInvoiceUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="w-full py-2.5 px-4 rounded-lg bg-slate-700/80 hover:bg-slate-700 text-slate-200 font-bold text-xs flex items-center justify-center gap-2 transition-colors"
+                      className="w-full py-2 px-4 rounded-lg bg-slate-700/80 hover:bg-slate-700 text-slate-200 font-bold text-xs flex items-center justify-center gap-2 transition-colors"
                     >
                       <span>Abrir Fatura Oficial Asaas em Nova Aba</span>
                       <ExternalLink size={13} />
                     </a>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             )
           )}

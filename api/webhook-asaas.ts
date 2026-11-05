@@ -185,8 +185,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
           if (reg) {
             regId = reg.id;
-            if (reg.kit_notes && typeof reg.kit_notes === 'string' && reg.kit_notes.includes('CONFIRMATION_EMAIL_SENT:true')) {
+            const rawNotes = typeof reg.kit_notes === 'string' ? reg.kit_notes : '';
+            if (rawNotes.includes('CONFIRMATION_EMAIL_SENT:true')) {
               alreadySentInDb = true;
+            } else {
+              const sendingMatch = rawNotes.match(/EMAIL_SENDING:(\d+)/);
+              if (sendingMatch && Date.now() - Number(sendingMatch[1]) < 20000) {
+                alreadySentInDb = true;
+              }
             }
 
             // Garantir confirmação explícita no banco caso a RPC não tenha localizado por payment_id ou tenha divergência de lote/PCD
@@ -333,28 +339,66 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         if (!alreadySentInDb && !alreadySentInMemory && athleteData && athleteData.athleteEmail) {
           try {
-            await sendConfirmationEmail(athleteData);
-            console.log(`[Webhook] E-mail institucional de confirmação enviado com sucesso para ${athleteData.athleteEmail}`);
-
-            // Prevenir disparos duplicados
-            if (memoryReg) {
-              memoryReg.confirmationEmailSent = true;
-            }
             if (supabase && regId) {
-              const { data: existingReg } = await supabase
+              const { data: preReg } = await supabase
                 .from('registrations')
                 .select('kit_notes')
                 .eq('id', regId)
                 .single();
+              const preNotes = preReg?.kit_notes || '';
+              if (preNotes.includes('CONFIRMATION_EMAIL_SENT:true')) {
+                return res.status(200).json({
+                  success: true,
+                  action: memResult.action,
+                  processedInMs: Date.now() - startTime,
+                });
+              }
+              const cleanPreNotes = preNotes.replace(/\|?EMAIL_SENDING:\d+/g, '');
+              await supabase
+                .from('registrations')
+                .update({
+                  kit_notes: cleanPreNotes ? `${cleanPreNotes}|EMAIL_SENDING:${Date.now()}` : `EMAIL_SENDING:${Date.now()}`,
+                })
+                .eq('id', regId);
+            }
 
-              const currentNotes = existingReg?.kit_notes || '';
-              if (!currentNotes.includes('CONFIRMATION_EMAIL_SENT:true')) {
+            const emailSent = await sendConfirmationEmail(athleteData);
+
+            if (emailSent) {
+              console.log(`[Webhook] E-mail institucional de confirmação enviado com sucesso para ${athleteData.athleteEmail}`);
+              if (memoryReg) {
+                memoryReg.confirmationEmailSent = true;
+              }
+              if (supabase && regId) {
+                const { data: existingReg } = await supabase
+                  .from('registrations')
+                  .select('kit_notes')
+                  .eq('id', regId)
+                  .single();
+
+                const currentNotes = (existingReg?.kit_notes || '').replace(/\|?EMAIL_SENDING:\d+/g, '');
+                if (!currentNotes.includes('CONFIRMATION_EMAIL_SENT:true')) {
+                  await supabase
+                    .from('registrations')
+                    .update({
+                      kit_notes: currentNotes ? `${currentNotes}|CONFIRMATION_EMAIL_SENT:true` : 'CONFIRMATION_EMAIL_SENT:true',
+                      updated_at: new Date().toISOString(),
+                    })
+                    .eq('id', regId);
+                }
+              }
+            } else {
+              console.warn(`[Webhook] Envio de e-mail para ${athleteData.athleteEmail} retornou false; liberando lock para retentativa automática.`);
+              if (supabase && regId) {
+                const { data: existingReg } = await supabase
+                  .from('registrations')
+                  .select('kit_notes')
+                  .eq('id', regId)
+                  .single();
+                const cleanNotes = (existingReg?.kit_notes || '').replace(/\|?EMAIL_SENDING:\d+/g, '');
                 await supabase
                   .from('registrations')
-                  .update({
-                    kit_notes: currentNotes ? `${currentNotes}|CONFIRMATION_EMAIL_SENT:true` : 'CONFIRMATION_EMAIL_SENT:true',
-                    updated_at: new Date().toISOString(),
-                  })
+                  .update({ kit_notes: cleanNotes })
                   .eq('id', regId);
               }
             }

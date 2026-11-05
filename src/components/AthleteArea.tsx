@@ -39,6 +39,20 @@ export const AthleteArea: React.FC<AthleteAreaProps> = ({ isOpen, onClose }) => 
   const [result, setResult] = React.useState<AthleteLookupResponse | null>(null);
   const [copiedPix, setCopiedPix] = React.useState(false);
 
+  // Sincronização em tempo real se a inscrição consultada estiver aguardando pagamento Pix
+  React.useEffect(() => {
+    if (!isOpen || !result || result.registration.status === 'CONFIRMED') return;
+    const interval = setInterval(async () => {
+      try {
+        const fresh = await storageService.lookupRegistration(protocol, accessCode);
+        if (fresh?.registration?.status === 'CONFIRMED') {
+          setResult(fresh);
+        }
+      } catch {}
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [isOpen, result, protocol, accessCode]);
+
   if (!isOpen) return null;
 
   const handleSearch = async (e: React.FormEvent) => {

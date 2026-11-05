@@ -390,9 +390,9 @@ export async function sendConfirmationEmail(data: RegistrationEmailData): Promis
                 </h4>
                 <ul style="margin: 0; padding-left: 18px; font-size: 12px; line-height: 1.6; color: #7c2d12;">
                   <li><strong>Data da Prova:</strong> Sábado, 26 de Dezembro de 2026.</li>
-                  <li><strong>Horário da Largada:</strong> 17h00 (Concentração na Feira Livre Coberta a partir das 16h00).</li>
-                  <li><strong>Local da Concentração & Largada:</strong> Feira Livre Coberta, Centro, Lajes Pintadas / RN.</li>
-                  <li><strong>Retirada do Kit:</strong> Apresentar documento oficial com foto e este comprovante impresso ou no celular.</li>
+                  <li><strong>Horário da Largada:</strong> 17h00 (Concentração a partir das 16h00).</li>
+                  <li><strong>Local da Concentração & Largada:</strong> Rua João Francisco Borges, Centro, Lajes Pintadas / RN.</li>
+                  <li><strong>Retirada do Kit:</strong> Centro de Convivência dos Idosos — apresentar documento oficial com foto e este comprovante impresso ou no celular.</li>
                 </ul>
               </div>
 
@@ -428,18 +428,52 @@ export async function sendConfirmationEmail(data: RegistrationEmailData): Promis
 </html>
   `;
 
-  try {
-    const info = await transporter.sendMail({
-      from: sender,
-      to: data.athleteEmail,
-      subject,
-      html,
-    });
+  const text = [
+    `5ª CORRIDA DE EMANCIPAÇÃO POLÍTICA DE LAJES PINTADAS/RN`,
+    `${tagText}`,
+    ``,
+    `Olá, ${data.athleteName}!`,
+    `${bannerMsg}`,
+    ``,
+    `DADOS DA SUA INSCRIÇÃO:`,
+    `- Protocolo Oficial: ${data.protocol}`,
+    `- Código de Acesso (PIN): ${data.accessCode || 'Consulte a Organização'}`,
+    `- Atleta: ${data.athleteName} (CPF: ${maskedCpf})`,
+    `- Categoria: ${categoryName}`,
+    `- Tamanho da Camisa: ${data.shirtSize}`,
+    `- Valor Total: ${totalFormatted} (${paymentMethodLabel})`,
+    ``,
+    `CRONOGRAMA E RETIRADA DO KIT:`,
+    `- Data da Prova: 26/12/2026 às 17h00`,
+    `- Local da Largada: Rua João Francisco Borges, Centro, Lajes Pintadas/RN`,
+    `- Retirada do Kit: Centro de Convivência dos Idosos (apresentar documento oficial com foto e este comprovante)`,
+    ``,
+    `Consulte sua inscrição em: https://corridadeemancipacao.lajespintadas.rn.gov.br`,
+  ].join('\n');
 
-    console.log(`[Email] Confirmação enviada com sucesso para ${data.athleteEmail} (ID: ${info.messageId})`);
-    return true;
-  } catch (error) {
-    console.error(`[Email] Erro ao enviar e-mail de confirmação para ${data.athleteEmail}:`, error);
-    return false;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const activeTransporter = attempt === 1 ? transporter : getTransporter();
+      if (!activeTransporter) return false;
+
+      const info = await activeTransporter.sendMail({
+        from: sender,
+        replyTo: fromEmail,
+        to: data.athleteEmail.trim().toLowerCase(),
+        subject,
+        text,
+        html,
+      });
+
+      console.log(`[Email] Confirmação enviada com sucesso para ${data.athleteEmail} na tentativa ${attempt} (ID: ${info.messageId})`);
+      return true;
+    } catch (error) {
+      console.error(`[Email] Erro na tentativa ${attempt} ao enviar e-mail para ${data.athleteEmail}:`, error);
+      if (attempt < 3) {
+        await new Promise((r) => setTimeout(r, 700 * attempt));
+      }
+    }
   }
+
+  return false;
 }

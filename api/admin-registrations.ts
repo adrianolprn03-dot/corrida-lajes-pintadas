@@ -643,6 +643,118 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         throw error;
       }
 
+      // Conciliação automática em tempo real com Asaas para reservas Pix pendentes recentes
+      const asaasKey = normalizeKey(process.env.ASAAS_API_KEY || '');
+      const asaasEnv = normalizeKey(process.env.ASAAS_ENVIRONMENT || '').toLowerCase();
+      const isProdAsaas =
+        asaasEnv === 'production' ||
+        asaasEnv === 'prod' ||
+        asaasKey.startsWith('$aact_prod_');
+      const asaasBaseUrl = isProdAsaas
+        ? 'https://api.asaas.com/v3'
+        : 'https://api-sandbox.asaas.com/v3';
+
+      const pendingRows = (data || [])
+        .filter((r: any) => r.status === 'RESERVED' && r.asaas_payment_id && !String(r.asaas_payment_id).startsWith('pay_mock_'))
+        .slice(0, 8);
+
+      if (asaasKey && pendingRows.length > 0) {
+        await Promise.all(
+          pendingRows.map(async (row: any) => {
+            try {
+              const payRes = await fetch(`${asaasBaseUrl}/payments/${row.asaas_payment_id}`, {
+                headers: {
+                  access_token: asaasKey,
+                  'User-Agent': 'Corrida-LajesPintadas-Backend/1.0',
+                },
+              });
+              if (!payRes.ok) return;
+              const payJson = await payRes.json();
+              if (!['CONFIRMED', 'RECEIVED'].includes(payJson.status)) return;
+
+              const nowIso = new Date().toISOString();
+              row.status = 'CONFIRMED';
+              row.financial_status = payJson.status === 'RECEIVED' ? 'RECEIVED' : 'CONFIRMED';
+              row.paid_at = nowIso;
+
+              await supabase
+                .from('registrations')
+                .update({
+                  status: 'CONFIRMED',
+                  financial_status: row.financial_status,
+                  paid_at: nowIso,
+                  updated_at: nowIso,
+                })
+                .eq('id', row.id);
+
+              if (row.shirt_size) {
+                const { data: sInv } = await supabase
+                  .from('shirt_inventory')
+                  .select('reserved_count, confirmed_count')
+                  .eq('size', row.shirt_size)
+                  .maybeSingle();
+                if (sInv) {
+                  await supabase
+                    .from('shirt_inventory')
+                    .update({
+                      reserved_count: Math.max(0, (sInv.reserved_count || 0) - 1),
+                      confirmed_count: (sInv.confirmed_count || 0) + 1,
+                      updated_at: nowIso,
+                    })
+                    .eq('size', row.shirt_size);
+                }
+              }
+
+              const rawNotes = typeof row.kit_notes === 'string' ? row.kit_notes : '';
+              const sendingMatch = rawNotes.match(/EMAIL_SENDING:(\d+)/);
+              const isSending = sendingMatch && Date.now() - Number(sendingMatch[1]) < 20000;
+              if (!rawNotes.includes('CONFIRMATION_EMAIL_SENT:true') && !isSending && isEmailConfigured() && row.athlete?.email) {
+                const codeMatch = rawNotes.match(/ACCESS_CODE:([A-Za-z0-9]+)/i);
+                const extractedCode = codeMatch ? codeMatch[1].toUpperCase() : 'CONFIRMADO';
+                const cleanNotes = rawNotes.replace(/\|?EMAIL_SENDING:\d+/g, '');
+                await supabase
+                  .from('registrations')
+                  .update({
+                    kit_notes: cleanNotes ? `${cleanNotes}|EMAIL_SENDING:${Date.now()}` : `EMAIL_SENDING:${Date.now()}`,
+                  })
+                  .eq('id', row.id);
+
+                const sentOk = await sendConfirmationEmail({
+                  athleteName: row.athlete.full_name || 'Atleta',
+                  athleteEmail: row.athlete.email,
+                  athleteCpf: row.athlete.cpf || '',
+                  protocol: row.protocol,
+                  accessCode: extractedCode,
+                  category: row.category,
+                  originType: row.origin_type,
+                  gender: row.gender,
+                  shirtSize: row.shirt_size,
+                  status: 'CONFIRMED',
+                  totalAmountCents: row.total_amount_cents,
+                  baseAmountCents: row.base_amount_cents,
+                  feeCents: row.processing_fee_cents,
+                  paymentMethod: row.payment_method,
+                });
+
+                if (sentOk) {
+                  const updatedNotes = cleanNotes ? `${cleanNotes}|CONFIRMATION_EMAIL_SENT:true` : 'CONFIRMATION_EMAIL_SENT:true';
+                  row.kit_notes = updatedNotes;
+                  await supabase
+                    .from('registrations')
+                    .update({ kit_notes: updatedNotes, updated_at: nowIso })
+                    .eq('id', row.id);
+                } else {
+                  await supabase
+                    .from('registrations')
+                    .update({ kit_notes: cleanNotes })
+                    .eq('id', row.id);
+                }
+              }
+            } catch {}
+          })
+        );
+      }
+
       const enrichedItems = (data || []).map((row: any) => {
         const notes = typeof row.kit_notes === 'string' ? row.kit_notes : '';
         if (!row.access_code && notes) {

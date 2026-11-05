@@ -959,12 +959,30 @@ class StorageService {
     const cleanCode = accessCode.trim().toUpperCase();
     const settings = await this.getSettings();
 
-    // 1. Tentar consulta via API oficial (backend com conciliação)
+    // 1. Tentar consulta via API oficial (backend com conciliação em tempo real no Asaas)
     try {
-      const apiRes = await fetch(`/api/lookup?protocol=${encodeURIComponent(cleanProtocol)}&accessCode=${encodeURIComponent(cleanCode)}`);
+      const apiRes = await fetch(
+        `/api/lookup?protocol=${encodeURIComponent(cleanProtocol)}&accessCode=${encodeURIComponent(cleanCode)}&t=${Date.now()}`,
+        { cache: 'no-store' }
+      );
       if (apiRes.ok) {
         const data = await apiRes.json();
         if (data.registration) {
+          // Sincronizar cache local caso o status tenha mudado para CONFIRMED
+          if (data.registration.status === 'CONFIRMED') {
+            const localRegs = this.getLocal<Registration[]>(STORAGE_KEYS.REGISTRATIONS, []);
+            const idx = localRegs.findIndex((r) => r.protocol.toUpperCase() === cleanProtocol);
+            if (idx !== -1 && localRegs[idx].status !== 'CONFIRMED') {
+              localRegs[idx] = {
+                ...localRegs[idx],
+                status: 'CONFIRMED',
+                financialStatus: data.registration.financialStatus || 'CONFIRMED',
+                paidAt: data.registration.paidAt || new Date().toISOString(),
+              };
+              this.setLocal(STORAGE_KEYS.REGISTRATIONS, localRegs);
+            }
+          }
+
           return {
             registration: data.registration,
             athlete: data.athlete,

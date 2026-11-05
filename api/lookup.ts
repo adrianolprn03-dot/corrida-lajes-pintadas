@@ -45,6 +45,7 @@ function getSupabase(): SupabaseClient | null {
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const startTime = Date.now();
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
 
   if (req.method !== 'GET' && req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -86,6 +87,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           return res.status(404).json({ error: 'Protocolo ou Código de Acesso incorreto.' });
         }
 
+        let pcdMeta: any = null;
+        if (notes) {
+          const matchPcd = notes.match(/PCD_META:(\{.*?\})/);
+          if (matchPcd) {
+            try {
+              pcdMeta = JSON.parse(matchPcd[1]);
+            } catch {}
+          }
+        }
+
+        const isPcd = Boolean(
+          pcdMeta?.isPcd ||
+          regData.origin_type === 'PCD' ||
+          (typeof regData.category === 'string' && regData.category.includes('PCD'))
+        );
+
+        const normalizedCategory = isPcd
+          ? regData.gender === 'FEMININO'
+            ? 'PCD_FEMININO'
+            : 'PCD_MASCULINO'
+          : regData.category;
+
         // Conciliação em tempo real com Asaas se ainda estiver RESERVED e possuir asaas_payment_id real
         if (
           regData.status === 'RESERVED' &&
@@ -94,10 +117,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ) {
           const asaasKey = normalizeKey(process.env.ASAAS_API_KEY || '');
           const asaasEnv = normalizeKey(process.env.ASAAS_ENVIRONMENT || '').toLowerCase();
-          const baseUrl =
-            asaasEnv === 'production' || asaasEnv === 'prod'
-              ? 'https://api.asaas.com/v3'
-              : 'https://api-sandbox.asaas.com/v3';
+          const isProdAsaas =
+            asaasEnv === 'production' ||
+            asaasEnv === 'prod' ||
+            asaasKey.startsWith('$aact_prod_');
+          const baseUrl = isProdAsaas
+            ? 'https://api.asaas.com/v3'
+            : 'https://api-sandbox.asaas.com/v3';
 
           if (asaasKey) {
             try {
@@ -112,14 +138,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 if (['CONFIRMED', 'RECEIVED'].includes(payJson.status)) {
                   const nowIso = new Date().toISOString();
                   regData.status = 'CONFIRMED';
-                  regData.financial_status = 'CONFIRMED';
+                  regData.financial_status = payJson.status === 'RECEIVED' ? 'RECEIVED' : 'CONFIRMED';
                   regData.paid_at = nowIso;
 
                   await supabase
                     .from('registrations')
                     .update({
                       status: 'CONFIRMED',
-                      financial_status: 'CONFIRMED',
+                      financial_status: regData.financial_status,
                       paid_at: nowIso,
                       updated_at: nowIso,
                     })
@@ -143,30 +169,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     }
                   }
 
-                  if (!notes.includes('CONFIRMATION_EMAIL_SENT:true') && isEmailConfigured() && regData.athlete?.email) {
-                    await sendConfirmationEmail({
-                      athleteName: regData.athlete.full_name || 'Atleta',
-                      athleteEmail: regData.athlete.email,
-                      athleteCpf: regData.athlete.cpf || '',
-                      protocol: regData.protocol,
-                      accessCode: cleanCode,
-                      category: regData.category,
-                      originType: regData.origin_type,
-                      gender: regData.gender,
-                      shirtSize: regData.shirt_size,
-                      status: 'CONFIRMED',
-                      totalAmountCents: regData.total_amount_cents,
-                      baseAmountCents: regData.base_amount_cents,
-                      feeCents: regData.processing_fee_cents,
-                      paymentMethod: regData.payment_method,
-                    }).catch(() => {});
-
-                    await supabase
-                      .from('registrations')
-                      .update({
-                        kit_notes: notes ? `${notes}|CONFIRMATION_EMAIL_SENT:true` : 'CONFIRMATION_EMAIL_SENT:true',
-                      })
-                      .eq('id', regData.id);
+                  if (pcdMeta?.hasGuide && pcdMeta?.guideShirtSize) {
+                    const { data: gInv } = await supabase
+                      .from('shirt_inventory')
+                      .select('reserved_count, confirmed_count')
+                      .eq('size', pcdMeta.guideShirtSize)
+                      .maybeSingle();
+                    if (gInv) {
+                      await supabase
+                        .from('shirt_inventory')
+                        .update({
+                          reserved_count: Math.max(0, (gInv.reserved_count || 0) - 1),
+                          confirmed_count: (gInv.confirmed_count || 0) + 1,
+                          updated_at: nowIso,
+                        })
+                        .eq('size', pcdMeta.guideShirtSize);
+                    }
                   }
                 }
               }
@@ -174,27 +192,74 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           }
         }
 
-        let pcdMeta: any = null;
-        if (notes) {
-          const matchPcd = notes.match(/PCD_META:(\{.*?\})/);
-          if (matchPcd) {
-            try {
-              pcdMeta = JSON.parse(matchPcd[1]);
-            } catch {}
+        // Garantir disparo automático do e-mail de confirmação sempre que a inscrição estiver CONFIRMED e ainda não tiver recebido o e-mail
+        if (regData.status === 'CONFIRMED' && isEmailConfigured() && regData.athlete?.email) {
+          try {
+            const { data: freshRow } = await supabase
+              .from('registrations')
+              .select('kit_notes')
+              .eq('id', regData.id)
+              .single();
+
+            const latestNotes = typeof freshRow?.kit_notes === 'string' ? freshRow.kit_notes : notes;
+            const sendingMatch = latestNotes.match(/EMAIL_SENDING:(\d+)/);
+            const isCurrentlySending = sendingMatch && Date.now() - Number(sendingMatch[1]) < 20000;
+
+            if (!latestNotes.includes('CONFIRMATION_EMAIL_SENT:true') && !isCurrentlySending) {
+              const cleanNotes = latestNotes.replace(/\|?EMAIL_SENDING:\d+/g, '');
+              await supabase
+                .from('registrations')
+                .update({
+                  kit_notes: cleanNotes ? `${cleanNotes}|EMAIL_SENDING:${Date.now()}` : `EMAIL_SENDING:${Date.now()}`,
+                })
+                .eq('id', regData.id);
+
+              const emailSent = await sendConfirmationEmail({
+                athleteName: regData.athlete.full_name || 'Atleta',
+                athleteEmail: regData.athlete.email,
+                athleteCpf: regData.athlete.cpf || '',
+                protocol: regData.protocol,
+                accessCode: cleanCode,
+                category: normalizedCategory,
+                originType: isPcd ? 'PCD' : regData.origin_type,
+                gender: regData.gender,
+                shirtSize: regData.shirt_size,
+                status: 'CONFIRMED',
+                totalAmountCents: regData.total_amount_cents,
+                baseAmountCents: regData.base_amount_cents,
+                feeCents: regData.processing_fee_cents,
+                paymentMethod: regData.payment_method,
+                isPcd,
+                pcdType: pcdMeta?.pcdType,
+                pcdCid: pcdMeta?.pcdCid,
+                hasGuide: Boolean(pcdMeta?.hasGuide),
+                guideName: pcdMeta?.guideName,
+                guideCpf: pcdMeta?.guideCpf,
+                guidePhone: pcdMeta?.guidePhone,
+                guideShirtSize: pcdMeta?.guideShirtSize,
+              });
+
+              if (emailSent) {
+                const updatedNotes = cleanNotes ? `${cleanNotes}|CONFIRMATION_EMAIL_SENT:true` : 'CONFIRMATION_EMAIL_SENT:true';
+                regData.kit_notes = updatedNotes;
+                await supabase
+                  .from('registrations')
+                  .update({
+                    kit_notes: updatedNotes,
+                    updated_at: new Date().toISOString(),
+                  })
+                  .eq('id', regData.id);
+              } else {
+                await supabase
+                  .from('registrations')
+                  .update({ kit_notes: cleanNotes })
+                  .eq('id', regData.id);
+              }
+            }
+          } catch (e) {
+            console.warn('[lookup] Aviso ao verificar/enviar e-mail de confirmação:', e);
           }
         }
-
-        const isPcd = Boolean(
-          pcdMeta?.isPcd ||
-          regData.origin_type === 'PCD' ||
-          (typeof regData.category === 'string' && regData.category.includes('PCD'))
-        );
-
-        const normalizedCategory = isPcd
-          ? regData.gender === 'FEMININO'
-            ? 'PCD_FEMININO'
-            : 'PCD_MASCULINO'
-          : regData.category;
 
         const a = regData.athlete || {};
         const cpfStr = String(a.cpf || '');
