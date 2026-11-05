@@ -458,8 +458,57 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ success: true, localOnly: true });
     }
 
+    // 1.4 Limpeza completa para início da Fase de Produção Real (zera inscrições de teste, atletas de teste e contadores)
+    if (req.method === 'POST' && req.body?.action === 'reset-production') {
+      if (supabase) {
+        const { data: allRegs } = await supabase.from('registrations').select('id');
+        const regCount = allRegs?.length || 0;
+
+        // 1. Limpar eventos de pagamento se existirem
+        try {
+          await supabase.from('payment_events').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        } catch {}
+
+        // 2. Limpar todas as inscrições de teste
+        await supabase.from('registrations').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+
+        // 3. Limpar todos os atletas de teste
+        await supabase.from('athletes').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+
+        // 4. Zerar contadores de camisas mantendo modo Sob Demanda (9999)
+        const nowIso = new Date().toISOString();
+        await supabase
+          .from('shirt_inventory')
+          .update({
+            total_stock: 9999,
+            reserved_count: 0,
+            confirmed_count: 0,
+            is_active: true,
+            updated_at: nowIso,
+          })
+          .gt('display_order', 0);
+
+        // 5. Limpar estado em memória
+        memoryStore.registrations.clear();
+        memoryStore.registrationsByCpf.clear();
+        for (const s of memoryStore.shirts.values()) {
+          s.totalStock = 9999;
+          s.reservedCount = 0;
+          s.confirmedCount = 0;
+        }
+
+        return res.status(200).json({
+          success: true,
+          clearedRegistrations: regCount,
+          message: 'Base de dados limpa e preparada para produção oficial!',
+        });
+      }
+
+      return res.status(200).json({ success: true, clearedRegistrations: 0 });
+    }
+
     // 1. DELETE: Excluir ou cancelar inscrição específica ou limpar testes
-    if (req.method === 'DELETE' || (req.method === 'POST' && req.body?.action === 'delete')) {
+    if (req.method === 'DELETE' || (req.method === 'POST' && (req.body?.action === 'delete' || req.body?.action === 'clear-tests'))) {
       const id = (req.query.id as string) || req.body?.id;
       const protocol = (req.query.protocol as string) || req.body?.protocol;
       const action = req.body?.action || req.query.action;

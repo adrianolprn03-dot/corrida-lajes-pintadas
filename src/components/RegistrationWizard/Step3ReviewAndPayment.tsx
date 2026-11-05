@@ -268,38 +268,57 @@ export const Step3ReviewAndPayment: React.FC<Step3ReviewAndPaymentProps> = ({
   // ============================================================================
   if (successResult) {
     const reg = successResult.registration;
-    const isCreditCardApproved = reg.paymentMethod === 'CREDIT_CARD' || reg.status === 'CONFIRMED';
+    const isCreditCardApproved = reg.status === 'CONFIRMED';
     const cardLastDigits =
       reg.creditCardLastDigits || (cardNumber ? cardNumber.replace(/\D/g, '').slice(-4) : '••••');
 
     return (
       <div className="space-y-6 text-center py-2 animate-fadeIn">
         {/* Ícone e Header de Confirmação */}
-        <div className="w-20 h-20 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto shadow-md ring-8 ring-emerald-50">
-          <CheckCircle2 size={44} className="stroke-[2.5]" />
+        <div
+          className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto shadow-md ring-8 ${
+            isCreditCardApproved
+              ? 'bg-emerald-100 text-emerald-600 ring-emerald-50'
+              : 'bg-orange-100 text-orange-600 ring-orange-50'
+          }`}
+        >
+          {isCreditCardApproved ? (
+            <CheckCircle2 size={44} className="stroke-[2.5]" />
+          ) : (
+            <QrCode size={44} className="stroke-[2.2]" />
+          )}
         </div>
 
         <div>
-          <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300">
+          <span
+            className={`inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-wider border ${
+              isCreditCardApproved
+                ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                : 'bg-amber-100 text-amber-900 border-amber-300'
+            }`}
+          >
             <Check size={14} className="stroke-[3]" />
             {isCreditCardApproved
               ? 'Pagamento Confirmado • Inscrição Homologada'
-              : 'Código Pix Gerado com Sucesso'}
+              : 'Reserva Registrada • Aguardando Pagamento Pix'}
           </span>
           <h3 className="font-display font-black text-2xl sm:text-3xl text-slate-900 uppercase mt-2">
-            Inscrição Confirmada com Sucesso!
+            {isCreditCardApproved
+              ? 'Inscrição Confirmada com Sucesso!'
+              : 'Falta Só Pagar o Pix para Confirmar!'}
           </h3>
           <p className="text-slate-600 text-xs sm:text-sm mt-1.5 max-w-lg mx-auto leading-relaxed">
-            Parabéns, <strong>{step1.fullName}</strong>!{' '}
+            Olá, <strong>{step1.fullName}</strong>!{' '}
             {isCreditCardApproved ? (
               <>
-                Sua cobrança de <strong>{formatCentsToBRL(reg.totalAmountCents)}</strong> foi{' '}
-                <strong className="text-emerald-700">aprovada imediatamente no cartão de crédito</strong>.
+                Seu pagamento de <strong>{formatCentsToBRL(reg.totalAmountCents)}</strong> foi{' '}
+                <strong className="text-emerald-700">confirmado com sucesso</strong>.
                 Sua vaga oficial e a camisa tamanho <strong>{reg.shirtSize}</strong> estão 100% garantidas.
               </>
             ) : (
               <>
-                Sua inscrição foi registrada. Conclua o pagamento via Pix abaixo para validar sua participação oficial.
+                Sua vaga e camisa tamanho <strong>{reg.shirtSize}</strong> estão reservadas por{' '}
+                <strong>30 minutos</strong>. Escaneie o QR Code ou copie o código <strong>Pix Copia e Cola</strong> abaixo no app do seu banco para confirmar sua inscrição automaticamente.
               </>
             )}
           </p>
@@ -382,31 +401,73 @@ export const Step3ReviewAndPayment: React.FC<Step3ReviewAndPaymentProps> = ({
           ) : (
             /* Fluxo Pix Instantâneo (se o atleta tiver escolhido Pix) */
             reg.paymentMethod === 'PIX' && (
-              <div className="p-4 rounded-xl bg-slate-800/80 border border-slate-700 space-y-3">
-                <div className="flex items-center justify-between text-xs text-slate-300">
-                  <span>Pix Copia e Cola:</span>
-                  <span className="text-orange-400 font-bold">{formatCentsToBRL(reg.totalAmountCents)}</span>
+              <div className="p-4 rounded-xl bg-slate-800/80 border border-slate-700 space-y-4">
+                <div className="flex items-center justify-between text-xs text-slate-300 border-b border-slate-700/60 pb-2">
+                  <span className="font-bold uppercase tracking-wider text-orange-400 flex items-center gap-1.5">
+                    <QrCode size={15} />
+                    Pagamento Instantâneo via Pix
+                  </span>
+                  <span className="text-white font-black text-sm">
+                    {formatCentsToBRL(reg.totalAmountCents)}
+                  </span>
                 </div>
-                {reg.asaasPixCopyPaste && (
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      readOnly
-                      value={reg.asaasPixCopyPaste}
-                      className="w-full text-xs font-mono bg-slate-900 p-2.5 rounded-lg border border-slate-700 text-slate-300 truncate"
+
+                {reg.asaasPixQrCode && (
+                  <div className="flex flex-col items-center justify-center bg-white p-3.5 rounded-xl max-w-[210px] mx-auto shadow-md">
+                    <img
+                      src={
+                        reg.asaasPixQrCode.startsWith('data:image')
+                          ? reg.asaasPixQrCode
+                          : `data:image/png;base64,${reg.asaasPixQrCode}`
+                      }
+                      alt="QR Code Pix Asaas"
+                      className="w-44 h-44 object-contain"
                     />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        navigator.clipboard.writeText(reg.asaasPixCopyPaste!);
-                        setCopiedPix(true);
-                        setTimeout(() => setCopiedPix(false), 2500);
-                      }}
-                      className="px-4 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shrink-0 flex items-center gap-1.5"
+                    <span className="text-[10px] font-bold text-slate-600 mt-1 uppercase tracking-wider">
+                      Aponte a câmera do app do banco
+                    </span>
+                  </div>
+                )}
+
+                {reg.asaasPixCopyPaste && (
+                  <div className="space-y-1.5">
+                    <span className="text-[11px] text-slate-300 font-semibold block">
+                      Ou copie o código Pix Copia e Cola:
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        readOnly
+                        value={reg.asaasPixCopyPaste}
+                        className="w-full text-xs font-mono bg-slate-900 p-2.5 rounded-lg border border-slate-700 text-slate-200 truncate"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(reg.asaasPixCopyPaste!);
+                          setCopiedPix(true);
+                          setTimeout(() => setCopiedPix(false), 2500);
+                        }}
+                        className="px-4 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shrink-0 flex items-center gap-1.5 cursor-pointer"
+                      >
+                        {copiedPix ? <Check size={14} /> : <Copy size={14} />}
+                        <span>{copiedPix ? 'Copiado!' : 'Copiar Pix'}</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {reg.asaasInvoiceUrl && (
+                  <div className="pt-1">
+                    <a
+                      href={reg.asaasInvoiceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full py-2.5 px-4 rounded-lg bg-slate-700/80 hover:bg-slate-700 text-slate-200 font-bold text-xs flex items-center justify-center gap-2 transition-colors"
                     >
-                      {copiedPix ? <Check size={14} /> : <Copy size={14} />}
-                      <span>{copiedPix ? 'Copiado!' : 'Copiar'}</span>
-                    </button>
+                      <span>Abrir Fatura Oficial Asaas em Nova Aba</span>
+                      <ExternalLink size={13} />
+                    </a>
                   </div>
                 )}
               </div>

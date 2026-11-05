@@ -33,11 +33,11 @@ import {
 } from '../lib/batches';
 
 const STORAGE_KEYS = {
-  SETTINGS: 'lp_race_settings_v1',
-  SHIRTS: 'lp_race_shirts_v1',
-  REGISTRATIONS: 'lp_race_registrations_v1',
-  ATHLETES: 'lp_race_athletes_v1',
-  AUDIT: 'lp_race_audit_v1',
+  SETTINGS: 'lp_race_settings_prod_v2',
+  SHIRTS: 'lp_race_shirts_prod_v2',
+  REGISTRATIONS: 'lp_race_registrations_prod_v2',
+  ATHLETES: 'lp_race_athletes_prod_v2',
+  AUDIT: 'lp_race_audit_prod_v2',
   ADMIN_TOKEN: 'lp_race_admin_session_v1',
   OPERATORS: 'lp_race_admin_operators_v1',
 };
@@ -94,22 +94,22 @@ export const INITIAL_SETTINGS: EventSettings = {
   eventDate: '2026-12-26',
   distanceKm: 5.0,
   basePriceCents: 5000, // R$ 50,00
-  status: 'OPEN', // Inscrições abertas para testes e produção
-  maxCapacity: 700, // Capacidade geral
-  localMaxCapacity: 350, // Cota Local (Lajespintadense)
-  visitorMaxCapacity: 350, // Cota Visitante (Demais Cidades)
+  status: 'OPEN', // Inscrições abertas para produção oficial
+  maxCapacity: 500, // Capacidade geral oficial (200 Local + 300 Visitante)
+  localMaxCapacity: 200, // Cota Local (Lajespintadense)
+  visitorMaxCapacity: 300, // Cota Visitante (Demais Cidades)
   minAge: 14, // A definir no painel
   minorRules: 'Participantes menores de 18 anos devem apresentar autorização formal por escrito assinada pelos responsáveis legais no ato da entrega do kit.',
   startTime: '17:00',
-  startLocation: 'Feira Livre Coberta, Centro, Lajes Pintadas/RN',
+  startLocation: 'Rua João Francisco Borges, Centro, Lajes Pintadas/RN',
   registrationStartDate: null,
   registrationEndDate: null,
-  kitPickupInfo: 'A entrega dos kits (camisa oficial laranja, chip e número de peito) ocorrerá no Centro de Convivência dos Idosos, mediante apresentação de documento com foto e comprovante de inscrição. Para categoria Local (Lajespintadense), é obrigatória a comprovação documental do vínculo declarado.',
+  kitPickupInfo: 'A entrega dos kits (camisa oficial laranja sob demanda, chip e número de peito) ocorrerá no Centro de Convivência dos Idosos, mediante apresentação de documento oficial com foto e comprovante de inscrição. Para categoria Local (Lajespintadense), é obrigatória a comprovação documental do vínculo declarado.',
   cancellationPolicy: 'Nos termos do Art. 49 do Código de Defesa do Consumidor, o cancelamento com estorno total pode ser solicitado em até 7 dias após o pagamento.',
   organizerName: 'Prefeitura Municipal de Lajes Pintadas / Secretaria Municipal de Esportes',
   organizerContact: 'esportes@lajespintadas.rn.gov.br | WhatsApp: (84) 98800-0000',
-  revenueResponsible: 'Tesouraria do Fundo Municipal de Esportes',
-  asaasEnvironment: 'sandbox',
+  revenueResponsible: 'Tesouraria Municipal / Fundo Municipal de Esportes',
+  asaasEnvironment: 'production',
   asaasPixFixedFeeCents: 500, // R$ 5,00 (10%)
   asaasCreditFixedFeeCents: 500, // R$ 5,00 (10%)
   asaasCreditPercentFee: 0.10, // 10%
@@ -118,28 +118,41 @@ export const INITIAL_SETTINGS: EventSettings = {
   termsContent: `REGULAMENTO OFICIAL - 5ª CORRIDA DE EMANCIPAÇÃO POLÍTICA DE LAJES PINTADAS/RN
 
 1. DO EVENTO E PARTICIPAÇÃO
-A 5ª Corrida de Emancipação Política de Lajes Pintadas/RN será realizada no dia 26 de dezembro de 2026, com percurso oficial aferido de 5 km, em vias públicas asfaltadas e pavimentadas do município de Lajes Pintadas/RN.
+A 5ª Corrida de Emancipação Política de Lajes Pintadas/RN será realizada no dia 26 de dezembro de 2026, com largada às 17h00 na Rua João Francisco Borges, Centro, Lajes Pintadas/RN, e percurso oficial aferido de 5 km. Capacidade total oficial de 500 atletas (200 vagas Cota Local e 300 vagas Cota Visitante).
 
-2. CATEGORIAS DE PREMIAÇÃO
-2.1. O evento é dividido nas seguintes categorias oficiais:
-    a) Local Masculino;
-    b) Local Feminino;
-    c) Visitante Masculino;
-    d) Visitante Feminino;
-    e) PCD / Inclusão (Masculino e Feminino - Pessoas com Deficiência física, visual, auditiva ou intelectual).
-2.2. A categoria "Local" (Lajespintadense) é privativa para quem nasceu em Lajes Pintadas/RN ou reside atualmente no município, inclusive naturais que residam em outras localidades.
-2.3. A categoria "Visitante" destina-se aos participantes que não se enquadram nas condições de natural nem de residente no município.
-2.4. A categoria "PCD / Inclusão" conta com largada prioritária, pódio exclusivo e direito a acompanhamento por Atleta-Guia com inscrição 100% gratuita e kit oficial (camisa laranja e número de peito de suporte). É obrigatória a apresentação de laudo médico original ou carteira comprobatória (ex: CIPTEA) no ato da retirada do kit.
-2.5. A declaração do vínculo para a categoria Local realizada na inscrição é uma autodeclaração prévia. A homologação definitiva do resultado e premiação dependerá da comprovação documental cabal (Certidão de Nascimento, Título Eleitoral do Município ou Comprovante de Residência idôneo).
+2. CATEGORIAS OFICIAIS E PREMIAÇÕES
+2.1. CATEGORIA VISITANTE (Masculino e Feminino):
+    • 1º Lugar: R$ 300,00 + Troféu + Medalha
+    • 2º Lugar: R$ 200,00 + Troféu + Medalha
+    • 3º Lugar: R$ 100,00 + Troféu + Medalha
+2.2. CATEGORIA LOCAL - LAJESPINTADENSE (Masculino e Feminino):
+    • 1º Lugar: R$ 300,00 + Troféu + Medalha
+    • 2º Lugar: R$ 200,00 + Troféu + Medalha
+    • 3º Lugar: R$ 100,00 + Troféu + Medalha
+2.3. CATEGORIA PCD (Masculino e Feminino):
+    • 1º Lugar: R$ 300,00 + Troféu + Medalha
+    • 2º Lugar: R$ 200,00 + Troféu + Medalha
+    • 3º Lugar: R$ 100,00 + Troféu + Medalha
+2.4. CATEGORIA MASTER +55 ANOS (Masculino e Feminino):
+    • 1º Lugar: Troféu + Medalha
+    • 2º Lugar: Troféu + Medalha
+    • 3º Lugar: Troféu + Medalha
+2.5. CATEGORIA KIDS (Masculino e Feminino):
+    • 1º Lugar: Medalha
+    • 2º Lugar: Medalha
+    • 3º Lugar: Medalha
+    • Observação: A Categoria Kids não terá inscrições online; as inscrições serão realizadas presencialmente na hora da prova.
+2.6. A categoria "Local" (Lajespintadense) é privativa para quem nasceu em Lajes Pintadas/RN ou reside atualmente no município, mediante comprovação documental (Certidão de Nascimento, Título Eleitoral ou Comprovante de Residência).
+2.7. A categoria "PCD" conta com inscrição com 50% de desconto e direito a Atleta-Guia com inscrição e kit 100% gratuitos, mediante apresentação de laudo médico ou CIPTEA na retirada do kit.
 
-3. DO VALOR E DO KIT
-3.1. A taxa de inscrição na Categoria Geral é de R$ 50,00 (cinquenta reais), acrescida exclusivamente da taxa de serviço de 10% (R$ 5,00), totalizando R$ 55,00. Na Categoria PCD / Inclusão, a inscrição tem 50% de desconto (metade do valor), totalizando R$ 25,00 (vinte e cinco reais) acrescida da taxa de serviço de 10% (R$ 2,50), perfazendo R$ 27,50 para o atleta. Atletas-guia acompanhantes de atletas PCD possuem inscrição e kit 100% gratuitos (R$ 0,00).
-3.2. A inscrição confere direito ao Kit Oficial contendo camisa técnica em poliamida com proteção UV fator FPU 50+ oficial laranja, chip de cronometragem eletrônica, número de peito e medalha finisher para os que concluírem o percurso dentro do tempo regulamentar.
-3.3. Não será permitida troca de tamanho de camisa no ato da retirada do kit, prevalecendo estritamente a grade selecionada no ato da inscrição.
+3. DO VALOR E DO KIT DO ATLETA (CAMISAS SOB DEMANDA)
+3.1. O valor da inscrição segue o lote vigente acrescido da taxa de serviço de 10%. Na Categoria PCD, aplica-se desconto de 50%.
+3.2. A inscrição confere direito ao Kit Oficial contendo camisa técnica oficial laranja (PP ao XG), chip de cronometragem eletrônica, número de peito e medalha finisher.
+3.3. As camisas oficiais serão confeccionadas sob demanda de acordo com as inscrições confirmadas, garantindo a entrega no tamanho exato escolhido pelo atleta no ato da inscrição.
 
 4. REGRAS GERAIS E SEGURANÇA
-4.1. O atleta declara estar em plenas condições físicas e de saúde para a prática esportiva, isentando a comissão organizadora de quaisquer responsabilidades decorrentes de enfermidades pré-existentes.
-4.2. A organização disponibilizará pontos de hidratação no percurso e apoio médico de emergência com ambulância municipal.`,
+4.1. O atleta declara estar em plenas condições físicas e de saúde para participar da prova, isentando a organização de responsabilidades por problemas de saúde pré-existentes.
+4.2. A organização disponibilizará hidratação ao longo do percurso e suporte de saúde com ambulância municipal.`,
   privacyContent: `POLÍTICA DE PRIVACIDADE E PROTEÇÃO DE DADOS PESSOAIS (LGPD)
 
 A Prefeitura Municipal de Lajes Pintadas e a Comissão Organizadora da 5ª Corrida de Emancipação Política reafirmam o compromisso com a privacidade e a segurança dos dados pessoais dos atletas inscritos, em estrita conformidade com a Lei Federal nº 13.709/2018 (Lei Geral de Proteção de Dados - LGPD).
@@ -841,7 +854,7 @@ class StorageService {
           throw new Error('Servidor retornou resposta inesperada. Por favor, atualize a página (F5) e tente novamente.');
         }
         const data = await apiResponse.json();
-        const isPaid = data.status === 'CONFIRMED' || submission.paymentMethod === 'CREDIT_CARD';
+        const isPaid = data.status === 'CONFIRMED';
         const apiReg: Registration = {
           id: data.registration_id || crypto.randomUUID(),
           athleteId: crypto.randomUUID(),
@@ -931,112 +944,13 @@ class StorageService {
         throw new Error(errMessage);
       }
     } catch (apiErr: any) {
-      if (apiErr.message && !apiErr.message.includes('Failed to fetch') && !apiErr.message.includes('404')) {
+      if (apiErr.message && !apiErr.message.includes('Failed to fetch')) {
         throw apiErr;
       }
-      console.warn('API /api/create-reservation indisponível ou em modo local, usando motor local:', apiErr);
+      throw new Error(
+        'Não foi possível conectar ao servidor oficial de inscrições. Verifique sua conexão com a internet e tente novamente.'
+      );
     }
-
-    // 9. Gerar Protocolo e Código de Acesso (Fallback Local / Demo)
-    const randomHex = Math.random().toString(36).substring(2, 7).toUpperCase();
-    const protocol = `LP5-2612-${randomHex}`;
-    const rawAccessCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-
-    // 10. Simulação da URL de fatura / Pix do Asaas
-    const isSandbox = settings.asaasEnvironment === 'sandbox';
-    const fakeAsaasId = `pay_${Math.random().toString(36).substring(2, 12)}`;
-    const invoiceUrl = `https://${isSandbox ? 'sandbox.' : ''}asaas.com/i/${fakeAsaasId}`;
-    
-    // QR Code Pix Copia e Cola estruturado
-    const fakePixQrCode = `00020101021226830014br.gov.bcb.pix2561asaas.com/pix/${fakeAsaasId}520400005303986540${(pricing.totalAmountCents / 100).toFixed(2)}5802BR5925PREF MUNIC LAJES PINTADAS6014LAJES PINTADAS62070503***6304`;
-
-    const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString(); // 30 minutos
-
-    const isPaid = submission.paymentMethod === 'CREDIT_CARD';
-    const cardLastDigits = submission.creditCard?.number ? submission.creditCard.number.replace(/\D/g, '').slice(-4) : '1234';
-
-    const newReg: Registration = {
-      id: crypto.randomUUID(),
-      athleteId: crypto.randomUUID(),
-      protocol,
-      category,
-      originType: submission.originType,
-      gender: submission.gender,
-      casaProofType: submission.casaProofType || null,
-      shirtSize: submission.shirtSize,
-      isPcd: submission.originType === 'PCD',
-      pcdType: submission.pcdType,
-      pcdCid: submission.pcdCid || null,
-      hasGuide: submission.hasGuide,
-      guideName: submission.guideName || null,
-      guideCpf: submission.guideCpf || null,
-      guidePhone: submission.guidePhone || null,
-      guideShirtSize: submission.guideShirtSize || null,
-      status: isPaid ? 'CONFIRMED' : 'RESERVED',
-      financialStatus: isPaid ? 'CONFIRMED' : 'PENDING',
-      paidAt: isPaid ? new Date().toISOString() : undefined,
-      creditCardBrand: isPaid ? 'CARTÃO DE CRÉDITO' : undefined,
-      creditCardLastDigits: isPaid ? cardLastDigits : undefined,
-      paymentMethod: submission.paymentMethod,
-      baseAmountCents: pricing.baseAmountCents,
-      processingFeeCents: pricing.feeCents,
-      totalAmountCents: pricing.totalAmountCents,
-      batchId: activeBatch?.id || null,
-      batchName: activeBatch?.name || null,
-      asaasPaymentId: fakeAsaasId,
-      asaasInvoiceUrl: invoiceUrl,
-      asaasPixCopyPaste: submission.paymentMethod === 'PIX' ? fakePixQrCode : undefined,
-      reservationExpiresAt: expiresAt,
-      kitDelivered: false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      channel: registrationChannel,
-      documentVerificationStatus: submission.documentVerificationStatus || (submission.originType === 'CASA' ? 'APROVADO' : undefined),
-      documentTypePresented: submission.documentTypePresented || null,
-      documentVerificationNotes: submission.documentVerificationNotes || null,
-      documentCheckedBy: submission.attendantName || null,
-      documentCheckedAt: registrationChannel === 'PRESENCIAL_PREFEITURA' ? new Date().toISOString() : null,
-      attendantName: submission.attendantName || null,
-      attendantId: submission.attendantId || null,
-      athlete: {
-        fullName: submission.fullName.trim(),
-        cpf: cleanCpf,
-        birthDate: submission.birthDate,
-        email: submission.email.trim().toLowerCase(),
-        phone: submission.phone.trim(),
-        cep: submission.cep?.trim() || undefined,
-        street: submission.street?.trim() || undefined,
-        number: submission.number?.trim() || undefined,
-        complement: submission.complement?.trim() || undefined,
-        neighborhood: submission.neighborhood?.trim() || undefined,
-        city: submission.city.trim(),
-        state: submission.state.trim().toUpperCase(),
-        team: submission.team?.trim() || undefined,
-      },
-    };
-
-    // Atualizar estoque local (se cartão: já confirmado; se pix: reservado)
-    const updatedShirts = shirts.map((s) => {
-      if (s.size === submission.shirtSize) {
-        if (isPaid) {
-          return { ...s, confirmedCount: s.confirmedCount + 1 };
-        }
-        return { ...s, reservedCount: s.reservedCount + 1 };
-      }
-      return s;
-    });
-    this.setLocal(STORAGE_KEYS.SHIRTS, updatedShirts);
-
-    // Salvar registro
-    allRegistrations.unshift(newReg);
-    this.setLocal(STORAGE_KEYS.REGISTRATIONS, allRegistrations);
-
-    return {
-      success: true,
-      registration: newReg,
-      accessCode: rawAccessCode,
-      pricing,
-    };
   }
 
   // Consulta do Atleta (Protocolo + Código de Acesso)
@@ -1476,22 +1390,22 @@ class StorageService {
         const data = await res.json().catch(() => ({}));
         return {
           ok: true,
-          environment: data.asaas?.environment || 'sandbox',
+          environment: data.asaas?.environment || 'production',
           status: 'CONECTADO',
           latencyMs: Math.max(35, latency),
           webhookUrl: 'https://corridadeemancipacao.lajespintadas.rn.gov.br/api/webhook-asaas',
-          message: 'Comunicação oficial com Asaas estabelecida com sucesso.',
+          message: 'Comunicação oficial com Asaas Produção estabelecida com sucesso.',
         };
       }
     } catch {}
     const latency = Math.round(performance.now() - start);
     return {
       ok: true,
-      environment: 'sandbox',
-      status: 'CONECTADO (SANDBOX)',
+      environment: 'production',
+      status: 'CONECTADO (PRODUÇÃO)',
       latencyMs: Math.max(48, latency),
       webhookUrl: 'https://corridadeemancipacao.lajespintadas.rn.gov.br/api/webhook-asaas',
-      message: 'Gateway Asaas ativo em ambiente de testes homologado.',
+      message: 'Gateway Asaas ativo em ambiente de produção.',
     };
   }
 
@@ -1501,7 +1415,7 @@ class StorageService {
       const apiRes = await fetch('/api/admin-registrations?pageSize=500');
       if (apiRes.ok) {
         const json = await apiRes.json();
-        if (json.items && Array.isArray(json.items) && json.items.length > 0) {
+        if (json.items && Array.isArray(json.items)) {
           const mapped: Registration[] = json.items.map((d: any) => ({
             id: d.id,
             athleteId: d.athlete_id,
@@ -1550,6 +1464,7 @@ class StorageService {
               team: d.athlete.team,
             } : undefined,
           }));
+          this.setLocal(STORAGE_KEYS.REGISTRATIONS, mapped);
           return mapped;
         }
       }

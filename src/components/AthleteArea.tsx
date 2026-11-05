@@ -18,6 +18,8 @@ import {
   Mail,
   Shirt,
   Award,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { storageService } from '../services/storage';
 import { AthleteLookupResponse, RegistrationStatus, FinancialStatus } from '../types';
@@ -35,6 +37,7 @@ export const AthleteArea: React.FC<AthleteAreaProps> = ({ isOpen, onClose }) => 
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [result, setResult] = React.useState<AthleteLookupResponse | null>(null);
+  const [copiedPix, setCopiedPix] = React.useState(false);
 
   if (!isOpen) return null;
 
@@ -422,29 +425,69 @@ export const AthleteArea: React.FC<AthleteAreaProps> = ({ isOpen, onClose }) => 
               </div>
 
               {/* Botão de Continuar Pagamento (se RESERVED) */}
-              {result.registration.status === 'RESERVED' && result.registration.asaasInvoiceUrl && (
+              {result.registration.status === 'RESERVED' && (
                 <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 space-y-3">
                   <div className="flex items-center justify-between text-xs">
                     <span className="font-bold text-amber-900 flex items-center gap-1.5">
                       <Clock size={16} />
-                      Pagamento Pendente
+                      Pagamento Pendente via {result.registration.paymentMethod === 'PIX' ? 'Pix' : 'Cartão'}
                     </span>
                     <span className="font-extrabold text-amber-900 text-sm">
                       {formatCentsToBRL(result.registration.totalAmountCents)}
                     </span>
                   </div>
                   <p className="text-xs text-amber-800">
-                    Sua reserva ainda está ativa. Conclua o pagamento via Pix ou Cartão para não perder a vaga e o tamanho da camisa.
+                    Sua reserva ainda está ativa. Conclua o pagamento abaixo para confirmar sua inscrição e garantir sua camisa tamanho <strong>{result.registration.shirtSize}</strong>.
                   </p>
-                  <a
-                    href={result.registration.asaasInvoiceUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full py-3 px-4 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs flex items-center justify-center gap-2"
-                  >
-                    <span>Concluir Pagamento Online</span>
-                    <ExternalLink size={14} />
-                  </a>
+
+                  {result.registration.asaasPixQrCode && (
+                    <div className="flex flex-col items-center justify-center bg-white p-3 rounded-xl border border-amber-200 max-w-[190px] mx-auto">
+                      <img
+                        src={
+                          result.registration.asaasPixQrCode.startsWith('data:image')
+                            ? result.registration.asaasPixQrCode
+                            : `data:image/png;base64,${result.registration.asaasPixQrCode}`
+                        }
+                        alt="QR Code Pix"
+                        className="w-40 h-40 object-contain"
+                      />
+                    </div>
+                  )}
+
+                  {result.registration.asaasPixCopyPaste && (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        readOnly
+                        value={result.registration.asaasPixCopyPaste}
+                        className="w-full text-xs font-mono bg-white p-2.5 rounded-lg border border-amber-300 text-slate-700 truncate"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(result.registration.asaasPixCopyPaste!);
+                          setCopiedPix(true);
+                          setTimeout(() => setCopiedPix(false), 2500);
+                        }}
+                        className="px-3.5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shrink-0 flex items-center gap-1.5 cursor-pointer"
+                      >
+                        {copiedPix ? <Check size={14} /> : <Copy size={14} />}
+                        <span>{copiedPix ? 'Copiado!' : 'Copiar Pix'}</span>
+                      </button>
+                    </div>
+                  )}
+
+                  {result.registration.asaasInvoiceUrl && (
+                    <a
+                      href={result.registration.asaasInvoiceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full py-3 px-4 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs flex items-center justify-center gap-2"
+                    >
+                      <span>Abrir Fatura Oficial Asaas</span>
+                      <ExternalLink size={14} />
+                    </a>
+                  )}
                 </div>
               )}
 

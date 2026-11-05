@@ -480,7 +480,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     reservationResult.pix_qr_code = pixQr;
     reservationResult.pix_copy_paste = pixCopy;
     reservationResult.channel = registrationChannel;
-    reservationResult.status = isPaymentConfirmed ? 'CONFIRMED' : (originType === 'CASA' ? 'CONFIRMED' : 'RESERVED');
+    reservationResult.status = isPaymentConfirmed ? 'CONFIRMED' : 'RESERVED';
     reservationResult.financial_status = isPaymentConfirmed ? 'CONFIRMED' : 'PENDING';
     reservationResult.credit_card_brand = cardBrand;
     reservationResult.credit_card_last_digits = cardLastDigits;

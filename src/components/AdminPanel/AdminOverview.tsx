@@ -182,24 +182,23 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
 
       {/* Callout if empty database */}
       {totalRegistered === 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0">
-              <Sparkles className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0">
+              <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="font-bold text-amber-900 text-sm">O banco de inscrições está vazio no momento</h4>
-              <p className="text-xs text-amber-700">
-                Você pode carregar dados de demonstração com atletas Locais (Lajes Pintadas) e Visitantes para testar os indicadores, filtros e comprovantes.
+              <h4 className="font-bold text-emerald-950 text-sm">
+                Sistema em Produção Oficial — Pronto para Receber Inscrições
+              </h4>
+              <p className="text-xs text-emerald-800">
+                Banco de dados higienizado (0 inscritos). Todas as novas inscrições realizadas pelo site ou pelo balcão presencial serão contabilizadas em tempo real.
               </p>
             </div>
           </div>
-          <button
-            onClick={onSeedSampleData}
-            className="whitespace-nowrap px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl shadow-sm transition"
-          >
-            Carregar Inscrições de Demonstração
-          </button>
+          <span className="whitespace-nowrap px-3.5 py-1.5 bg-emerald-100 border border-emerald-300 text-emerald-900 text-xs font-extrabold rounded-xl">
+            500 Vagas Disponíveis (200 Local • 300 Visitante)
+          </span>
         </div>
       )}
 
