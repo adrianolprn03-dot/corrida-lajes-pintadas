@@ -11,7 +11,8 @@ import {
   ExternalLink,
   CalendarCheck,
   Building2,
-  Car
+  Car,
+  Download
 } from 'lucide-react';
 import { EventSettings } from '../types';
 
@@ -60,10 +61,10 @@ export const EventOverview: React.FC<EventOverviewProps> = ({ settings }) => {
             <div className="p-4 bg-slate-50 border border-slate-200 rounded text-xs font-sans text-slate-800 space-y-1">
               <div className="font-semibold flex items-center gap-1.5 text-slate-900">
                 <Building2 className="w-4 h-4 text-orange-600" />
-                <span>Local Oficial: Centro de Convivência dos Idosos</span>
+                <span>Local Principal: Secretaria Municipal de Turismo, Esporte e Lazer</span>
               </div>
               <p className="text-slate-600">
-                Rua São Francisco, s/n - Centro, Lajes Pintadas - RN, CEP 59230-000 (próximo à Feira Livre Coberta).
+                Rua Gov. Walfredo Gurgel, nº 164 (próximo ao posto de saúde), Lajes Pintadas/RN. Em 22/12 também haverá entrega na Maré Mansa, em Santa Cruz/RN.
               </p>
             </div>
 
@@ -72,26 +73,26 @@ export const EventOverview: React.FC<EventOverviewProps> = ({ settings }) => {
               <div className="p-4 border border-slate-200 bg-slate-50/60 rounded">
                 <div className="flex items-center gap-1.5 font-sans text-xs font-bold uppercase text-orange-700 mb-1">
                   <CalendarCheck className="w-3.5 h-3.5 text-orange-600" />
-                  <span>25/12 (Sexta) • Véspera</span>
+                  <span>21, 22 e 23 de Dezembro</span>
                 </div>
-                <div className="font-condensed font-extrabold text-2xl text-slate-900">
-                  14:00h às 18:00h
+                <div className="font-condensed font-extrabold text-xl text-slate-900">
+                  Sec. de Esporte e Lazer
                 </div>
                 <p className="font-sans text-xs text-slate-500 mt-1">
-                  Recomendado para moradores locais e atletas já na cidade.
+                  Rua Gov. Walfredo Gurgel, nº 164 (Lajes Pintadas) e em 22/12 também na Maré Mansa (Santa Cruz/RN).
                 </p>
               </div>
 
               <div className="p-4 border border-slate-200 bg-slate-50/60 rounded">
                 <div className="flex items-center gap-1.5 font-sans text-xs font-bold uppercase text-slate-700 mb-1">
                   <Clock className="w-3.5 h-3.5 text-orange-600" />
-                  <span>26/12 (Sábado) • Tarde</span>
+                  <span>26/12 (Sábado) • Dia da Prova</span>
                 </div>
-                <div className="font-condensed font-extrabold text-2xl text-slate-900">
-                  14:00h às 16:20h
+                <div className="font-condensed font-extrabold text-xl text-slate-900">
+                  No Local da Prova
                 </div>
                 <p className="font-sans text-xs text-slate-500 mt-1">
-                  Exclusivo para atletas visitantes residentes em outros municípios.
+                  Concentração na Feira Livre Coberta antes da largada oficial às 17h.
                 </p>
               </div>
             </div>
@@ -115,16 +116,26 @@ export const EventOverview: React.FC<EventOverviewProps> = ({ settings }) => {
               </div>
             </div>
 
-            <a
-              href="https://maps.google.com/?q=Lajes+Pintadas+RN"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 w-full py-3 px-4 font-sans font-semibold text-xs text-slate-800 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded transition"
-            >
-              <Navigation className="w-4 h-4 text-orange-600" />
-              <span>Ver Localização no Google Maps</span>
-              <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
-            </a>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <a
+                href="/Regulamento_Corrida_Lajes_Pintadas_2026.pdf"
+                download="Regulamento_Corrida_Lajes_Pintadas_2026.pdf"
+                className="inline-flex items-center justify-center gap-2 w-full py-3 px-4 font-sans font-bold text-xs text-white bg-orange-600 hover:bg-orange-500 rounded transition shadow-xs"
+              >
+                <Download className="w-4 h-4" />
+                <span>Baixar Regulamento Oficial (PDF)</span>
+              </a>
+              <a
+                href="https://maps.google.com/?q=Lajes+Pintadas+RN"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 w-full py-3 px-4 font-sans font-semibold text-xs text-slate-800 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded transition"
+              >
+                <Navigation className="w-4 h-4 text-orange-600" />
+                <span>Ver Localização no Google Maps</span>
+                <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
+              </a>
+            </div>
           </div>
 
           {/* Right Column (5 cols): Arena Services */}

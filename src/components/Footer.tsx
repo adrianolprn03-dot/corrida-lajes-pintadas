@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, Lock, MapPin, Mail, ArrowRight, Ticket, CheckCircle2 } from 'lucide-react';
+import { Shield, Lock, MapPin, Mail, ArrowRight, Ticket, CheckCircle2, Download } from 'lucide-react';
 import { EventSettings } from '../types';
 import { formatCentsToBRL, getActiveBatchLabel, getActiveBasePriceCents } from '../lib/pricing';
 
@@ -118,8 +118,18 @@ export const Footer: React.FC<FooterProps> = ({
                     onClick={() => onOpenRegulation('terms')}
                     className="hover:text-[#FF7A00] transition font-medium text-left"
                   >
-                    Regulamento Oficial da Prova
+                    Regulamento Oficial da Prova (Ler na Tela)
                   </button>
+                </li>
+                <li>
+                  <a
+                    href="/Regulamento_Corrida_Lajes_Pintadas_2026.pdf"
+                    download="Regulamento_Corrida_Lajes_Pintadas_2026.pdf"
+                    className="inline-flex items-center gap-1.5 text-[#FF9D42] hover:text-[#FF7A00] transition font-bold"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Baixar Regulamento em PDF</span>
+                  </a>
                 </li>
                 <li>
                   <button

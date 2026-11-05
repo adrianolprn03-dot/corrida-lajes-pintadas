@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, Clock, ShieldCheck, Ticket, Zap, Award } from 'lucide-react';
+import { ArrowRight, Clock, ShieldCheck, Ticket, Zap, Award, Download, FileText } from 'lucide-react';
 import { EventSettings } from '../types';
 import { formatCentsToBRL, getActiveBatchLabel, getActiveBasePriceCents } from '../lib/pricing';
 
@@ -8,6 +8,7 @@ interface HeroProps {
   onOpenRegister: () => void;
   onOpenLookup: () => void;
   onOpenAdmin?: () => void;
+  onOpenRegulation?: () => void;
   availableCapacity?: number | null;
 }
 
@@ -15,6 +16,7 @@ export const Hero: React.FC<HeroProps> = ({
   settings,
   onOpenRegister,
   onOpenLookup,
+  onOpenRegulation,
   availableCapacity,
 }) => {
   const activeBasePriceCents = getActiveBasePriceCents(settings);
@@ -168,6 +170,16 @@ export const Hero: React.FC<HeroProps> = ({
                 <Ticket className="w-4 h-4 text-orange-600" />
                 <span>Consultar Inscrição</span>
               </button>
+
+              <a
+                href="/Regulamento_Corrida_Lajes_Pintadas_2026.pdf"
+                download="Regulamento_Corrida_Lajes_Pintadas_2026.pdf"
+                className="px-5 py-4 font-sans font-bold text-sm text-orange-700 hover:text-orange-800 bg-orange-50 hover:bg-orange-100/80 border border-orange-200 rounded-xl transition shadow-xs flex items-center justify-center gap-2 cursor-pointer"
+                title="Baixar Regulamento Oficial da Prova em PDF"
+              >
+                <Download className="w-4 h-4 text-orange-600 shrink-0" />
+                <span>Regulamento (PDF)</span>
+              </a>
             </div>
 
             {/* Kit Items Quick Pills */}

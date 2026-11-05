@@ -197,6 +197,7 @@ export default function App() {
         onOpenLookup={() => setIsAthleteAreaOpen(true)}
         onOpenAdmin={handleOpenAdmin}
         onOpenRegister={handleOpenRegister}
+        onOpenRegulation={() => handleOpenRegulation('terms')}
       />
 
       {/* Main Landing Page Content */}
@@ -207,6 +208,7 @@ export default function App() {
           onOpenRegister={handleOpenRegister}
           onOpenLookup={() => setIsAthleteAreaOpen(true)}
           onOpenAdmin={handleOpenAdmin}
+          onOpenRegulation={() => handleOpenRegulation('terms')}
           availableCapacity={metrics?.availableCapacity}
         />
 

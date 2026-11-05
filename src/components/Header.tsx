@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, X, Ticket } from 'lucide-react';
+import { Menu, X, Ticket, FileText, Download } from 'lucide-react';
 import { EventSettings } from '../types';
 
 interface HeaderProps {
@@ -7,6 +7,7 @@ interface HeaderProps {
   onOpenLookup: () => void;
   onOpenAdmin: () => void;
   onOpenRegister: () => void;
+  onOpenRegulation?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -14,6 +15,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenLookup,
   onOpenAdmin,
   onOpenRegister,
+  onOpenRegulation,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -69,6 +71,15 @@ export const Header: React.FC<HeaderProps> = ({
             className="hover:text-orange-600 transition-colors py-1 whitespace-nowrap focus-visible:outline-none focus-visible:text-orange-600"
           >
             Dúvidas
+          </a>
+          <a
+            href="/Regulamento_Corrida_Lajes_Pintadas_2026.pdf"
+            download="Regulamento_Corrida_Lajes_Pintadas_2026.pdf"
+            className="inline-flex items-center gap-1 text-orange-600 hover:text-orange-700 transition-colors py-1 whitespace-nowrap font-bold focus-visible:outline-none"
+            title="Baixar Regulamento Oficial em PDF"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Regulamento PDF</span>
           </a>
         </nav>
 
@@ -145,10 +156,32 @@ export const Header: React.FC<HeaderProps> = ({
             <a
               href="#faq"
               onClick={() => setMobileMenuOpen(false)}
-              className="py-2 hover:text-orange-600"
+              className="py-2 border-b border-slate-100 hover:text-orange-600"
             >
               Dúvidas Frequentes
             </a>
+            <a
+              href="/Regulamento_Corrida_Lajes_Pintadas_2026.pdf"
+              download="Regulamento_Corrida_Lajes_Pintadas_2026.pdf"
+              onClick={() => setMobileMenuOpen(false)}
+              className="py-2 flex items-center gap-2 font-bold text-orange-600 hover:text-orange-700"
+            >
+              <Download className="w-4 h-4" />
+              <span>Baixar Regulamento Oficial (PDF)</span>
+            </a>
+            {onOpenRegulation && (
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  onOpenRegulation();
+                }}
+                className="py-2 flex items-center gap-2 text-left text-slate-700 hover:text-orange-600"
+              >
+                <FileText className="w-4 h-4 text-orange-600" />
+                <span>Ler Regulamento na Tela</span>
+              </button>
+            )}
           </nav>
 
           <div className="pt-2 flex flex-col gap-2">

@@ -1129,8 +1129,17 @@ export const Step3ReviewAndPayment: React.FC<Step3ReviewAndPaymentProps> = ({
             >
               <span>Regulamento Oficial ({settings.termsVersion})</span>
               <FileText size={12} />
-            </button>
-            , declarando estar em plenas condições de saúde para a prova de 5 km e ciente das regras do evento.
+            </button>{' '}
+            (
+            <a
+              href="/Regulamento_Corrida_Lajes_Pintadas_2026.pdf"
+              download="Regulamento_Corrida_Lajes_Pintadas_2026.pdf"
+              onClick={(e) => e.stopPropagation()}
+              className="text-orange-700 font-bold underline hover:text-orange-800"
+            >
+              Baixar PDF
+            </a>
+            ), declarando estar em plenas condições de saúde para a prova de 5 km e ciente das regras do evento.
           </span>
         </label>
 
