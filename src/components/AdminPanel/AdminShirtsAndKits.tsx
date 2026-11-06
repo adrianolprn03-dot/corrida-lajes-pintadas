@@ -34,6 +34,15 @@ import {
   playFeedbackBeep,
 } from '../../lib/kitQr';
 
+function normalizeSearchText(str?: string | null): string {
+  if (!str) return '';
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
 interface AdminShirtsAndKitsProps {
   shirts: ShirtInventoryItem[];
   registrations: Registration[];
@@ -267,12 +276,14 @@ export const AdminShirtsAndKits: React.FC<AdminShirtsAndKitsProps> = ({
   // Filtered registrations for search & queue
   const searchResults = React.useMemo(() => {
     const parsed = parseKitQrPayload(kitSearch);
-    const term = (parsed.protocol || parsed.rawTerm).trim().toLowerCase();
-    const cleanCpf = term.replace(/\D/g, '');
+    const rawTerm = (parsed.protocol || parsed.rawTerm).trim();
+    const normTerm = normalizeSearchText(rawTerm);
+    const cleanCpf = rawTerm.replace(/\D/g, '');
+    const searchWords = normTerm.split(/\s+/).filter(Boolean);
 
     return registrations.filter((reg) => {
       // Queue status filter when search is empty
-      if (!term) {
+      if (!normTerm) {
         if (queueFilterStatus === 'PENDING' && (reg.status !== 'CONFIRMED' || reg.kitDelivered)) return false;
         if (queueFilterStatus === 'DELIVERED' && !reg.kitDelivered) return false;
         if (queueFilterStatus === 'ALL_CONFIRMED' && reg.status !== 'CONFIRMED') return false;
@@ -280,10 +291,17 @@ export const AdminShirtsAndKits: React.FC<AdminShirtsAndKitsProps> = ({
         return true;
       }
 
-      const matchProtocol = reg.protocol.toLowerCase().includes(term);
-      const matchName = reg.athlete?.fullName?.toLowerCase().includes(term);
-      const matchCpf = cleanCpf.length >= 3 && reg.athlete?.cpf?.replace(/\D/g, '').includes(cleanCpf);
-      const matchBib = extractBibNumber(reg.kitNotes)?.toLowerCase() === term;
+      const normProtocol = normalizeSearchText(reg.protocol);
+      const normName = normalizeSearchText(reg.athlete?.fullName);
+      const rawCpf = (reg.athlete?.cpf || '').replace(/\D/g, '');
+      const bibNumber = extractBibNumber(reg.kitNotes);
+      const normBib = bibNumber ? normalizeSearchText(bibNumber) : '';
+
+      const matchProtocol = normProtocol.includes(normTerm);
+      const matchName = searchWords.length > 0 && searchWords.every((word) => normName.includes(word));
+      const matchCpf = cleanCpf.length >= 2 && rawCpf.includes(cleanCpf);
+      const matchBib = normBib ? normBib.includes(normTerm) : false;
+
       return Boolean(matchProtocol || matchName || matchCpf || matchBib);
     });
   }, [registrations, kitSearch, queueFilterStatus, queueFilterSize]);

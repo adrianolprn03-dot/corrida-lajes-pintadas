@@ -28,6 +28,16 @@ import { Registration, RegistrationStatus, Category, ShirtSize, PaymentMethod, C
 import { exportRegistrationsToCSV, exportRegistrationsToExcel } from '../../lib/exportUtils';
 import { formatCPF, formatPhone, formatDateTimeBR } from '../../lib/masks';
 import { storageService } from '../../services/storage';
+import { extractBibNumber } from '../../lib/kitQr';
+
+function normalizeSearchText(str?: string | null): string {
+  if (!str) return '';
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
 
 interface AdminRegistrationsProps {
   registrations: Registration[];
@@ -131,19 +141,48 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
 
   // Filtered registrations
   const filteredRegistrations = useMemo(() => {
-    return registrations.filter((reg) => {
-      const search = searchTerm.trim().toLowerCase();
-      const athleteName = reg.athlete?.fullName.toLowerCase() || '';
-      const cpf = reg.athlete?.cpf || '';
-      const protocol = reg.protocol.toLowerCase();
-      const email = reg.athlete?.email.toLowerCase() || '';
+    const rawSearch = searchTerm.trim();
+    const normSearch = normalizeSearchText(rawSearch);
+    const searchDigits = rawSearch.replace(/\D/g, '');
+    const searchWords = normSearch.split(/\s+/).filter(Boolean);
 
-      const matchesSearch = 
-        !search ||
-        athleteName.includes(search) ||
-        cpf.includes(search.replace(/\D/g, '')) ||
-        protocol.includes(search) ||
-        email.includes(search);
+    return registrations.filter((reg) => {
+      // 1. Filtro de Busca Textual (Nome, CPF, Protocolo, Email, Cidade, Equipe, Número de Peito)
+      if (normSearch) {
+        const normName = normalizeSearchText(reg.athlete?.fullName);
+        const rawCpf = (reg.athlete?.cpf || '').replace(/\D/g, '');
+        const normProtocol = normalizeSearchText(reg.protocol);
+        const normEmail = normalizeSearchText(reg.athlete?.email);
+        const normCity = normalizeSearchText(reg.athlete?.city);
+        const normTeam = normalizeSearchText(reg.athlete?.team);
+        const bibNumber = extractBibNumber(reg.kitNotes);
+        const normBib = bibNumber ? normalizeSearchText(bibNumber) : '';
+
+        // Match por nome: todas as palavras pesquisadas devem constar no nome do atleta
+        // Ex: "leandro araujo" acha "Leandro Araújo de Assunção" mesmo sem acento
+        const matchesName = searchWords.length > 0 && searchWords.every((word) => normName.includes(word));
+
+        // Match por CPF: apenas quando o operador digitar 2 ou mais números
+        // Evita que busca textual ("Adriano", "Silva") gere falso-positivo
+        const matchesCpf = searchDigits.length >= 2 && rawCpf.includes(searchDigits);
+
+        const matchesProtocol = normProtocol.includes(normSearch);
+        const matchesEmail = normEmail.includes(normSearch);
+        const matchesCity = normCity.includes(normSearch);
+        const matchesTeam = normTeam.includes(normSearch);
+        const matchesBib = normBib ? normBib.includes(normSearch) : false;
+
+        const matchesSearch =
+          matchesName ||
+          matchesCpf ||
+          matchesProtocol ||
+          matchesEmail ||
+          matchesCity ||
+          matchesTeam ||
+          matchesBib;
+
+        if (!matchesSearch) return false;
+      }
 
       const matchesChannel =
         channelFilter === 'ALL' ||
@@ -174,7 +213,6 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
         reg.documentCheckedBy === attendantFilter;
 
       return (
-        matchesSearch &&
         matchesChannel &&
         matchesCategory &&
         matchesGender &&
