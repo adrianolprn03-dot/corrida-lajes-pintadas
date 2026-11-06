@@ -436,7 +436,7 @@ export const AthleteArea: React.FC<AthleteAreaProps> = ({ isOpen, onClose }) => 
                             ? `Entregue em ${formatDateTimeBR(result.registration.kitDeliveredAt)}${
                                 result.registration.kitDeliveredBy ? ` por ${result.registration.kitDeliveredBy}` : ''
                               }`
-                            : 'Pendente de retirada no Centro de Convivência dos Idosos'}
+                            : 'Pendente de retirada na Sede da Prefeitura (Rua São Francisco, 275)'}
                         </span>
                         {extractBibNumber(result.registration.kitNotes) && (
                           <span className="text-[11px] font-extrabold text-orange-600 block mt-0.5">

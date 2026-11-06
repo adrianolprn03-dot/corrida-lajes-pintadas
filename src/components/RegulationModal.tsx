@@ -48,7 +48,7 @@ Este regulamento disciplina a inscrição, a participação, a classificação, 
 
 7. CAMISA E RETIRADA DO KIT
 7.1 A inscrição inclui uma camisa laranja com inscrições brancas, emblema comemorativo dos 68 anos e indicação de 5 km na frente, número de peito com quatro alfinetes, chip eletrônico descartável e brindes institucionais. A medalha de conclusão será entregue a quem completar o percurso.
-7.3 Os kits serão entregues em 21, 22 e 23 de dezembro de 2026 na Secretaria Municipal de Turismo, Esporte e Lazer (Rua Gov. Walfredo Gurgel, nº 164, próximo ao posto de saúde, Lajes Pintadas/RN). Em 22 de dezembro também haverá entrega na Maré Mansa, em Santa Cruz/RN. No dia da corrida, 26 de dezembro, haverá entrega no local da prova. Para retirada, apresente documento com foto e comprovante de inscrição (Voucher QR Code).
+7.3 Os kits serão entregues em 21, 22 e 23 de dezembro de 2026 na Sede da Prefeitura (Rua São Francisco, nº 275, Centro, Lajes Pintadas/RN), das 08h às 13h. Em 22 de dezembro também haverá entrega na Maré Mansa, em Santa Cruz/RN. No dia da corrida, 26 de dezembro, haverá entrega no local da prova. Para retirada, apresente documento com foto e comprovante de inscrição (Voucher QR Code).
 
 8. PERCURSO, LARGADA E SEGURANÇA
 8.1 A concentração geral está prevista para 16h15, na Feira Livre Coberta, e a largada geral para 17h.

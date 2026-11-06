@@ -63,7 +63,7 @@ const ROLE_DETAILS: Record<AdminRole, { label: string; badgeColor: string; descr
   ENTREGA_KIT: {
     label: 'Entrega de Kits & Camisas',
     badgeColor: 'bg-amber-50 text-amber-700 border-amber-200',
-    description: 'Estação de trabalho no Centro de Convivência dos Idosos para busca rápida do atleta por CPF ou protocolo e baixa do kit oficial.',
+    description: 'Estação de trabalho na Sede da Prefeitura (Rua São Francisco, 275) para busca rápida do atleta por CPF ou protocolo e baixa do kit oficial.',
     permissions: [
       'Consulta Rápida por CPF e Protocolo',
       'Conferência do Tamanho da Camisa',

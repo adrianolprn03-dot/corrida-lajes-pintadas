@@ -500,7 +500,7 @@ export const Step3ReviewAndPayment: React.FC<Step3ReviewAndPaymentProps> = ({
                       Voucher QR Code • Retirada do Kit
                     </span>
                     <p className="text-xs font-bold text-white">
-                      Apresente este QR Code no Centro de Convivência dos Idosos
+                      Apresente este QR Code na Sede da Prefeitura (Rua São Francisco, 275)
                     </p>
                     <p className="text-[11px] text-slate-300 leading-relaxed">
                       O atendente fará a leitura pela câmera para liberar imediatamente sua camisa{' '}
@@ -619,7 +619,7 @@ export const Step3ReviewAndPayment: React.FC<Step3ReviewAndPaymentProps> = ({
           <div className="flex items-center gap-2.5 text-xs text-amber-200 bg-amber-950/50 p-3 rounded-xl border border-amber-800/50">
             <Shield size={18} className="shrink-0 text-amber-400" />
             <span>
-              <strong>Guarde seu Protocolo e Código de Acesso:</strong> Eles serão solicitados para retirar o Kit Oficial no Centro de Convivência dos Idosos e para emitir segunda via do comprovante.
+              <strong>Guarde seu Protocolo e Código de Acesso:</strong> Eles serão solicitados para retirar o Kit Oficial na Sede da Prefeitura (Rua São Francisco, 275) e para emitir segunda via do comprovante.
             </span>
           </div>
         </div>

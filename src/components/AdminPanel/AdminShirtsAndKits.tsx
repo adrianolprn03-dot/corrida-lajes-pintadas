@@ -481,7 +481,7 @@ export const AdminShirtsAndKits: React.FC<AdminShirtsAndKitsProps> = ({
                 </span>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
-                Centro de Convivência dos Idosos • Escaneie o QR Code do celular/impresso do atleta ou pesquise por CPF, Nome ou Protocolo.
+                Sede da Prefeitura (Rua São Francisco, 275) • Escaneie o QR Code do celular/impresso do atleta ou pesquise por CPF, Nome ou Protocolo.
               </p>
             </div>
           </div>

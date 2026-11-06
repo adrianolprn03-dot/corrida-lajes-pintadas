@@ -61,10 +61,10 @@ export const EventOverview: React.FC<EventOverviewProps> = ({ settings }) => {
             <div className="p-4 bg-slate-50 border border-slate-200 rounded text-xs font-sans text-slate-800 space-y-1">
               <div className="font-semibold flex items-center gap-1.5 text-slate-900">
                 <Building2 className="w-4 h-4 text-orange-600" />
-                <span>Local Principal: Secretaria Municipal de Turismo, Esporte e Lazer</span>
+                <span>Local Principal: Sede da Prefeitura Municipal</span>
               </div>
               <p className="text-slate-600">
-                Rua Gov. Walfredo Gurgel, nº 164 (próximo ao posto de saúde), Lajes Pintadas/RN. Em 22/12 também haverá entrega na Maré Mansa, em Santa Cruz/RN.
+                Rua São Francisco, nº 275, Centro, Lajes Pintadas/RN — Horário: <strong>08h às 13h</strong>. Em 22/12 também haverá entrega na Maré Mansa, em Santa Cruz/RN.
               </p>
             </div>
 
@@ -76,10 +76,10 @@ export const EventOverview: React.FC<EventOverviewProps> = ({ settings }) => {
                   <span>21, 22 e 23 de Dezembro</span>
                 </div>
                 <div className="font-condensed font-extrabold text-xl text-slate-900">
-                  Sec. de Esporte e Lazer
+                  08h às 13h • Prefeitura
                 </div>
                 <p className="font-sans text-xs text-slate-500 mt-1">
-                  Rua Gov. Walfredo Gurgel, nº 164 (Lajes Pintadas) e em 22/12 também na Maré Mansa (Santa Cruz/RN).
+                  Rua São Francisco, 275, Centro (Sede da Prefeitura). Em 22/12 também na Maré Mansa (Santa Cruz/RN).
                 </p>
               </div>
 

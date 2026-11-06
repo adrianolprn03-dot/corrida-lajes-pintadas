@@ -68,7 +68,7 @@ export const FaqSection: React.FC<FaqSectionProps> = ({ settings }) => {
       id: 'faq-6',
       category: 'kit',
       question: 'Onde e quando será realizada a entrega dos kits?',
-      answer: 'A entrega dos kits será realizada no Centro de Convivência dos Idosos (Rua São Francisco, s/n, Centro, Lajes Pintadas/RN). No dia 25/12 (14h às 18h) para atletas locais e antecipados, e no dia 26/12 (14h às 16h20) para atletas visitantes de outros municípios. É indispensável apresentar documento com foto e comprovante de inscrição.',
+      answer: 'A entrega dos kits será realizada na Sede da Prefeitura Municipal (Rua São Francisco, nº 275, Centro, Lajes Pintadas/RN), das 08h às 13h nos dias 21, 22 e 23 de dezembro. No dia 22/12 também haverá entrega na Maré Mansa em Santa Cruz/RN. No dia 26/12 haverá entrega no local da prova antes da largada oficial. É indispensável apresentar documento com foto e comprovante de inscrição com QR Code.',
     },
     {
       id: 'faq-7',

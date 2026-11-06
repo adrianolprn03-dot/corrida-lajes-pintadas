@@ -228,7 +228,7 @@ export async function sendConfirmationEmail(data: RegistrationEmailData): Promis
                   🎫 Voucher Oficial • Check-in de Entrega do Kit
                 </span>
                 <p style="margin: 0 0 12px 0; font-size: 12px; color: #7c2d12; font-weight: 600;">
-                  Apresente este QR Code na tela do celular (ou impresso) no Centro de Convivência dos Idosos para retirada rápida da sua camisa <strong>Tamanho ${data.shirtSize}</strong>:
+                  Apresente este QR Code na tela do celular (ou impresso) na <strong>Sede da Prefeitura (Rua São Francisco, 275, Centro)</strong>, das <strong>08h às 13h</strong> (ou em 22/12 na Maré Mansa em Santa Cruz/RN) para retirada rápida da sua camisa <strong>Tamanho ${data.shirtSize}</strong>:
                 </p>
                 <div style="display: inline-block; background-color: #ffffff; padding: 12px; border-radius: 14px; border: 1px solid #fed7aa; box-shadow: 0 4px 10px rgba(0,0,0,0.06);">
                   <img
@@ -416,7 +416,12 @@ export async function sendConfirmationEmail(data: RegistrationEmailData): Promis
                   <li><strong>Data da Prova:</strong> Sábado, 26 de Dezembro de 2026.</li>
                   <li><strong>Horário da Largada:</strong> 17h00 (Concentração a partir das 16h00).</li>
                   <li><strong>Local da Concentração & Largada:</strong> Rua João Francisco Borges, Centro, Lajes Pintadas / RN.</li>
-                  <li><strong>Retirada do Kit:</strong> Centro de Convivência dos Idosos — apresentar documento oficial com foto e este comprovante impresso ou no celular.</li>
+                  <li><strong>Retirada dos Kits Oficiais:</strong>
+                    <br />• <strong>Sede da Prefeitura Municipal:</strong> Rua São Francisco, nº 275, Centro, Lajes Pintadas/RN — Horário: das <strong>08h às 13h</strong> (dias 21, 22 e 23 de dezembro).
+                    <br />• <strong>Santa Cruz/RN:</strong> Loja Maré Mansa (dia 22 de dezembro).
+                    <br />• <strong>Dia da Prova (26/12):</strong> No local da prova (Feira Livre Coberta) antes da largada oficial.
+                    <br /><em>Apresentar documento oficial com foto e este comprovante com QR Code.</em>
+                  </li>
                 </ul>
               </div>
 
@@ -470,7 +475,7 @@ export async function sendConfirmationEmail(data: RegistrationEmailData): Promis
     `CRONOGRAMA E RETIRADA DO KIT:`,
     `- Data da Prova: 26/12/2026 às 17h00`,
     `- Local da Largada: Rua João Francisco Borges, Centro, Lajes Pintadas/RN`,
-    `- Retirada do Kit: Centro de Convivência dos Idosos (apresentar documento oficial com foto e este comprovante)`,
+    `- Retirada dos Kits: Sede da Prefeitura (Rua São Francisco, nº 275, Centro), das 08h às 13h (dias 21, 22 e 23/12). Em 22/12 também na Maré Mansa (Santa Cruz/RN) e no dia da prova 26/12 no local da prova. Apresentar documento oficial com foto e este comprovante com QR Code.`,
     ``,
     `Consulte sua inscrição em: https://corridadeemancipacao.lajespintadas.rn.gov.br`,
   ].join('\n');
