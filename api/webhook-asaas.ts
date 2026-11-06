@@ -51,8 +51,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     // 1. Validação do Token de Autenticação do Webhook
-    const expectedToken = process.env.ASAAS_WEBHOOK_SECRET;
-    const incomingToken = req.headers['asaas-access-token'] as string;
+    const expectedToken = normalizeKey(process.env.ASAAS_WEBHOOK_SECRET);
+    const incomingToken = normalizeKey(req.headers['asaas-access-token'] as string);
 
     if (expectedToken && incomingToken !== expectedToken) {
       console.warn('[Webhook] Tentativa de webhook com token inválido.');
