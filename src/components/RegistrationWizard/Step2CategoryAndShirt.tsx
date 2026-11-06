@@ -471,39 +471,16 @@ export const Step2CategoryAndShirt: React.FC<Step2CategoryAndShirtProps> = ({
 
       {/* Aviso Obrigatório e Orientação Local */}
       {(data.originType === 'CASA' || data.originType === 'LOCAL') && (
-        <div className="p-5 rounded-2xl bg-amber-50 border-2 border-amber-300 text-amber-950 space-y-3.5 animate-in fade-in duration-150">
+        <div className="p-5 rounded-2xl bg-amber-50 border-2 border-amber-300 text-amber-950 space-y-3">
           <div className="flex items-center gap-2.5 font-bold text-sm text-amber-900">
             <Building2 size={20} className="text-amber-700 shrink-0" />
-            <span>Inscrição Presencial na Prefeitura • Categoria Local (Lajespintadense)</span>
+            <span>Local — Lajespintadense</span>
           </div>
           <p className="text-sm font-semibold leading-relaxed text-amber-950">
-            As inscrições para a Categoria Local (nascidos ou residentes em Lajes Pintadas/RN) são realizadas <strong>exclusivamente de forma presencial</strong> na sede da Prefeitura Municipal.
+            Inscrições exclusivamente presenciais na sede da Prefeitura de Lajes Pintadas/RN. Apresente documento de identificação e comprovação do vínculo exigido pelo regulamento.
           </p>
-          <div className="text-xs text-amber-900 bg-amber-100/70 p-3.5 rounded-xl border border-amber-200 space-y-1.5 leading-relaxed">
-            <p>📍 <strong>Local:</strong> Rua São Francisco, nº 275, Centro, Lajes Pintadas / RN (Secretaria de Esportes e Lazer).</p>
-            <p>⏰ <strong>Horário:</strong> Segunda a Sexta-feira, das 08h às 13h.</p>
-            <p>📄 <strong>Documentos:</strong> Documento com foto (RG/CNH), CPF e comprovação de vínculo (residência atual ou certidão de nascimento em Lajes Pintadas).</p>
-            <p>🎽 <strong>Camisa Oficial:</strong> A reserva do tamanho da sua camisa é feita na hora pelo atendente no sistema oficial.</p>
-          </div>
-          <div className="pt-2 flex flex-wrap items-center gap-2.5">
-            <a
-              href="https://wa.me/5584981858194?text=Ol%C3%A1%2C+Sidcley%21+Gostaria+de+informa%C3%A7%C3%B5es+sobre+a+inscri%C3%A7%C3%A3o+presencial+da+Categoria+Local."
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-xs"
-            >
-              <span>Falar no WhatsApp: (84) 98185-8194 (Sidcley)</span>
-            </a>
-            <button
-              type="button"
-              onClick={() => {
-                onChange({ originType: 'VISITANTE', casaProofType: undefined, isPcd: false });
-                setError(null);
-              }}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold text-xs transition cursor-pointer"
-            >
-              <span>Sou Visitante (Mudar para Online)</span>
-            </button>
+          <div className="text-xs text-amber-800 bg-amber-100/60 p-3 rounded-xl border border-amber-200">
+            A inscrição da categoria Local requer conferência presencial de documentos por servidor autorizado na sede da Prefeitura Municipal. Não é permitida a finalização ou cobrança online para esta categoria.
           </div>
         </div>
       )}

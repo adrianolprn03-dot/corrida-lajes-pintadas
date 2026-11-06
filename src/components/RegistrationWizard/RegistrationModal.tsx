@@ -1,6 +1,5 @@
 import React from 'react';
 import { X, Check } from 'lucide-react';
-import { Step0OriginSelection } from './Step0OriginSelection';
 import { Step1AthleteData, Step1Data } from './Step1AthleteData';
 import { Step2CategoryAndShirt, Step2Data } from './Step2CategoryAndShirt';
 import { Step3ReviewAndPayment } from './Step3ReviewAndPayment';
@@ -37,14 +36,8 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
   onOpenPrivacy,
   initialShirtSize,
 }) => {
-  const [currentStep, setCurrentStep] = React.useState<0 | 1 | 2 | 3>(0);
+  const [currentStep, setCurrentStep] = React.useState<1 | 2 | 3>(1);
   const [liveInventory, setLiveInventory] = React.useState<ShirtInventoryItem[]>(inventory);
-
-  React.useEffect(() => {
-    if (isOpen) {
-      setCurrentStep(0);
-    }
-  }, [isOpen]);
 
   React.useEffect(() => {
     if (inventory && inventory.some((i) => i.availableStock > 0)) {
@@ -148,117 +141,72 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
 
         {/* Steps Progress Indicator */}
         <div className="bg-slate-100 px-6 py-3 border-b border-slate-200 shrink-0">
-          {currentStep === 0 ? (
-            <div className="flex items-center justify-between max-w-md mx-auto text-xs">
-              <span className="font-extrabold uppercase tracking-wider text-orange-700 bg-orange-100/90 border border-orange-200 px-2.5 py-1 rounded-full">
-                Etapa Inicial
-              </span>
-              <span className="font-bold text-slate-700">
-                Seleção de Modalidade (Casa ou Visitante)
+          <div className="flex items-center justify-between max-w-md mx-auto">
+            {/* Step 1 */}
+            <div className="flex items-center gap-2">
+              <div
+                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+                  currentStep > 1
+                    ? 'bg-emerald-600 text-white'
+                    : currentStep === 1
+                    ? 'bg-orange-600 text-white ring-4 ring-orange-100'
+                    : 'bg-slate-300 text-slate-600'
+                }`}
+              >
+                {currentStep > 1 ? <Check size={14} /> : '1'}
+              </div>
+              <span className={`text-xs font-bold hidden sm:inline ${currentStep === 1 ? 'text-slate-900' : 'text-slate-500'}`}>
+                Dados
               </span>
             </div>
-          ) : (
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between max-w-md mx-auto">
-                {/* Step 1 */}
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                      currentStep > 1
-                        ? 'bg-emerald-600 text-white'
-                        : currentStep === 1
-                        ? 'bg-orange-600 text-white ring-4 ring-orange-100'
-                        : 'bg-slate-300 text-slate-600'
-                    }`}
-                  >
-                    {currentStep > 1 ? <Check size={14} /> : '1'}
-                  </div>
-                  <span className={`text-xs font-bold hidden sm:inline ${currentStep === 1 ? 'text-slate-900' : 'text-slate-500'}`}>
-                    Dados
-                  </span>
-                </div>
 
-                <div className={`flex-1 h-0.5 mx-2 ${currentStep >= 2 ? 'bg-orange-500' : 'bg-slate-300'}`}></div>
+            <div className={`flex-1 h-0.5 mx-2 ${currentStep >= 2 ? 'bg-orange-500' : 'bg-slate-300'}`}></div>
 
-                {/* Step 2 */}
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                      currentStep > 2
-                        ? 'bg-emerald-600 text-white'
-                        : currentStep === 2
-                        ? 'bg-orange-600 text-white ring-4 ring-orange-100'
-                        : 'bg-slate-300 text-slate-600'
-                    }`}
-                  >
-                    {currentStep > 2 ? <Check size={14} /> : '2'}
-                  </div>
-                  <span className={`text-xs font-bold hidden sm:inline ${currentStep === 2 ? 'text-slate-900' : 'text-slate-500'}`}>
-                    Categoria & Camisa
-                  </span>
-                </div>
-
-                <div className={`flex-1 h-0.5 mx-2 ${currentStep >= 3 ? 'bg-orange-500' : 'bg-slate-300'}`}></div>
-
-                {/* Step 3 */}
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                      currentStep === 3
-                        ? 'bg-orange-600 text-white ring-4 ring-orange-100'
-                        : 'bg-slate-300 text-slate-600'
-                    }`}
-                  >
-                    3
-                  </div>
-                  <span className={`text-xs font-bold hidden sm:inline ${currentStep === 3 ? 'text-slate-900' : 'text-slate-500'}`}>
-                    Pagamento
-                  </span>
-                </div>
+            {/* Step 2 */}
+            <div className="flex items-center gap-2">
+              <div
+                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+                  currentStep > 2
+                    ? 'bg-emerald-600 text-white'
+                    : currentStep === 2
+                    ? 'bg-orange-600 text-white ring-4 ring-orange-100'
+                    : 'bg-slate-300 text-slate-600'
+                }`}
+              >
+                {currentStep > 2 ? <Check size={14} /> : '2'}
               </div>
-
-              {/* Active Modality Pill with Change button */}
-              <div className="flex items-center justify-center gap-2 text-[11px] text-slate-600">
-                <span>Modalidade:</span>
-                <span className="font-bold text-slate-900">
-                  {step2Data.originType === 'PCD' ? '♿ Atleta PCD / Inclusão (Online)' : '🌐 Atleta Visitante (Online)'}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setCurrentStep(0)}
-                  className="text-orange-600 hover:text-orange-700 font-bold underline cursor-pointer ml-1"
-                >
-                  (Trocar)
-                </button>
-              </div>
+              <span className={`text-xs font-bold hidden sm:inline ${currentStep === 2 ? 'text-slate-900' : 'text-slate-500'}`}>
+                Categoria & Camisa
+              </span>
             </div>
-          )}
+
+            <div className={`flex-1 h-0.5 mx-2 ${currentStep >= 3 ? 'bg-orange-500' : 'bg-slate-300'}`}></div>
+
+            {/* Step 3 */}
+            <div className="flex items-center gap-2">
+              <div
+                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+                  currentStep === 3
+                    ? 'bg-orange-600 text-white ring-4 ring-orange-100'
+                    : 'bg-slate-300 text-slate-600'
+                }`}
+              >
+                3
+              </div>
+              <span className={`text-xs font-bold hidden sm:inline ${currentStep === 3 ? 'text-slate-900' : 'text-slate-500'}`}>
+                Pagamento
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* Modal Scrollable Body */}
         <div className="p-6 overflow-y-auto flex-1">
-          {currentStep === 0 && (
-            <Step0OriginSelection
-              settings={settings}
-              onSelectVisitante={() => {
-                setStep2Data((prev) => ({ ...prev, originType: 'VISITANTE', isPcd: false }));
-                setCurrentStep(1);
-              }}
-              onSelectPcd={() => {
-                setStep2Data((prev) => ({ ...prev, originType: 'PCD', isPcd: true }));
-                setCurrentStep(1);
-              }}
-              onClose={onClose}
-            />
-          )}
-
           {currentStep === 1 && (
             <Step1AthleteData
               data={step1Data}
-              originType={step2Data.originType}
               onChange={handleStep1Change}
               onNext={() => setCurrentStep(2)}
-              onBack={() => setCurrentStep(0)}
             />
           )}
 

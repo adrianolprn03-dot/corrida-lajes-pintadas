@@ -12,13 +12,9 @@ import {
   Navigation,
   ExternalLink,
   Home,
-  ArrowLeft,
-  ArrowRight,
-  Globe,
 } from 'lucide-react';
 import { isValidCPF, formatCPF } from '../../lib/cpf';
 import { maskPhone, maskCEP } from '../../lib/masks';
-import { OriginType } from '../../types';
 
 export interface Step1Data {
   fullName: string;
@@ -38,10 +34,8 @@ export interface Step1Data {
 
 interface Step1AthleteDataProps {
   data: Step1Data;
-  originType?: OriginType;
   onChange: (fields: Partial<Step1Data>) => void;
   onNext: () => void;
-  onBack?: () => void;
 }
 
 const BRAZILIAN_UFS = [
@@ -76,10 +70,8 @@ const BRAZILIAN_UFS = [
 
 export const Step1AthleteData: React.FC<Step1AthleteDataProps> = ({
   data,
-  originType = 'VISITANTE',
   onChange,
   onNext,
-  onBack,
 }) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSearchingCep, setIsSearchingCep] = useState(false);
@@ -257,25 +249,6 @@ export const Step1AthleteData: React.FC<Step1AthleteDataProps> = ({
 
   return (
     <form onSubmit={handleNext} className="space-y-5">
-      {/* Banner de Modalidade Selecionada */}
-      <div className="p-3 rounded-xl bg-sky-50 border border-sky-200 flex items-center justify-between text-xs font-sans">
-        <div className="flex items-center gap-2">
-          <Globe className="w-4 h-4 text-sky-600 shrink-0" />
-          <span className="text-slate-700">
-            Modalidade: <strong className="text-slate-900">{originType === 'PCD' ? 'Atleta PCD / Inclusão (Online)' : 'Atleta Visitante (Inscrição Online)'}</strong>
-          </span>
-        </div>
-        {onBack && (
-          <button
-            type="button"
-            onClick={onBack}
-            className="text-orange-600 hover:text-orange-700 font-bold underline cursor-pointer text-[11px]"
-          >
-            Trocar Modalidade
-          </button>
-        )}
-      </div>
-
       <div className="bg-orange-50/70 p-3.5 rounded-xl border border-orange-200/60 text-xs text-orange-800 flex items-start gap-2">
         <AlertCircle size={16} className="text-orange-600 shrink-0 mt-0.5" />
         <span>
@@ -657,24 +630,13 @@ export const Step1AthleteData: React.FC<Step1AthleteDataProps> = ({
         </div>
       </div>
 
-      {/* Botões de Ação */}
-      <div className="pt-2 flex items-center gap-3">
-        {onBack && (
-          <button
-            type="button"
-            onClick={onBack}
-            className="py-3.5 px-5 rounded-xl text-sm font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-all flex items-center justify-center gap-1.5 shrink-0"
-          >
-            <ArrowLeft size={16} />
-            <span>Voltar</span>
-          </button>
-        )}
+      {/* Botão de Avanço */}
+      <div className="pt-2">
         <button
           type="submit"
-          className="flex-1 py-3.5 px-6 rounded-xl text-sm font-bold text-white bg-orange-600 hover:bg-orange-700 shadow-md shadow-orange-600/20 transition-all active:scale-[0.99] flex items-center justify-center gap-2"
+          className="w-full py-3.5 px-6 rounded-xl text-sm font-bold text-white bg-orange-600 hover:bg-orange-700 shadow-md shadow-orange-600/20 transition-all active:scale-[0.99] flex items-center justify-center gap-2"
         >
           <span>Avançar para Categoria e Camisa</span>
-          <ArrowRight size={16} />
         </button>
       </div>
     </form>
