@@ -162,7 +162,7 @@ export const Footer: React.FC<FooterProps> = ({
               <h4 className="text-xs font-bold uppercase tracking-wider text-white">
                 Realização & Contato
               </h4>
-              <div className="space-y-2 text-xs text-white/70">
+              <div className="space-y-2.5 text-xs text-white/70">
                 <p className="font-semibold text-white">
                   Secretaria Municipal de Esportes e Lazer
                 </p>
@@ -172,12 +172,37 @@ export const Footer: React.FC<FooterProps> = ({
                 </div>
                 <div className="flex items-center gap-2">
                   <Mail className="w-3.5 h-3.5 text-[#FF7A00] shrink-0" />
-                  <a href="mailto:esportes@lajespintadas.rn.gov.br" className="hover:text-white">
+                  <a href="mailto:esportes@lajespintadas.rn.gov.br" className="hover:text-white transition">
                     esportes@lajespintadas.rn.gov.br
                   </a>
                 </div>
+                <div className="flex items-center gap-2">
+                  <svg className="w-3.5 h-3.5 text-[#25D366] shrink-0 fill-current" viewBox="0 0 24 24">
+                    <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0012.04 2m.01 1.67c4.56 0 8.25 3.69 8.25 8.24 0 2.21-.86 4.28-2.42 5.84-1.56 1.56-3.64 2.42-5.84 2.42-1.44 0-2.85-.38-4.08-1.11l-.29-.17-3.04.8 1.02-2.96-.19-.31a8.15 8.15 0 01-1.25-4.51c0-4.55 3.7-8.24 8.25-8.24m4.54 11.66c-.25-.13-1.47-.72-1.7-.81-.23-.08-.39-.13-.56.13-.17.25-.64.81-.79.97-.14.17-.29.19-.54.06-.25-.13-1.06-.39-2.03-1.25-.75-.67-1.26-1.5-1.41-1.75-.15-.25-.02-.39.11-.51.11-.11.25-.29.38-.44.12-.14.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.13-.56-1.34-.76-1.84-.2-.49-.4-.42-.56-.43h-.47c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.1 0 1.24.9 2.44 1.03 2.61.12.17 1.77 2.7 4.29 3.78.6.26 1.07.41 1.43.53.6.19 1.15.16 1.58.1.48-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.15-1.18-.06-.11-.22-.17-.47-.3z"/>
+                  </svg>
+                  <a
+                    href="https://wa.me/5584981858194?text=Ol%C3%A1%2C+Sidcley%21+Gostaria+de+tirar+uma+d%C3%BAvida+sobre+a+5%C2%AA+Corrida+de+Emancipa%C3%A7%C3%A3o+de+Lajes+Pintadas"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-emerald-400 transition font-medium text-white/90 inline-flex items-center gap-1.5"
+                  >
+                    <span>(84) 98185-8194</span>
+                    <span className="text-[10px] text-emerald-400 bg-emerald-950/70 border border-emerald-800/60 px-1.5 py-0.5 rounded font-bold">Sidcley (WhatsApp)</span>
+                  </a>
+                </div>
 
-                <div className="pt-3">
+                <div className="pt-2">
+                  <a
+                    href="https://wa.me/5584981858194?text=Ol%C3%A1%2C+Sidcley%21+Gostaria+de+tirar+uma+d%C3%BAvida+sobre+a+5%C2%AA+Corrida+de+Emancipa%C3%A7%C3%A3o+de+Lajes+Pintadas"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#25D366]/15 hover:bg-[#25D366]/25 border border-[#25D366]/50 text-[#25D366] text-xs font-bold rounded-[2px] transition"
+                  >
+                    <span>Falar no WhatsApp com Sidcley</span>
+                  </a>
+                </div>
+
+                <div className="pt-2">
                   <button
                     id="btn-admin-footer"
                     onClick={onOpenAdmin}

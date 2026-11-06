@@ -107,7 +107,7 @@ export const INITIAL_SETTINGS: EventSettings = {
   kitPickupInfo: 'A entrega dos kits (camisa oficial laranja sob demanda, chip e número de peito) ocorrerá na Sede da Prefeitura (Rua São Francisco, nº 275, Centro, Lajes Pintadas/RN), das 08h às 13h (dias 21, 22 e 23 de dezembro). Em 22 de dezembro também haverá entrega na Maré Mansa em Santa Cruz/RN. No dia da corrida, 26 de dezembro, haverá entrega no local da prova. Obrigatória a apresentação de documento oficial com foto e comprovante de inscrição (Voucher QR Code).',
   cancellationPolicy: 'Nos termos do Art. 49 do Código de Defesa do Consumidor, o cancelamento com estorno total pode ser solicitado em até 7 dias após o pagamento.',
   organizerName: 'Prefeitura Municipal de Lajes Pintadas / Secretaria Municipal de Esportes',
-  organizerContact: 'esportes@lajespintadas.rn.gov.br | WhatsApp: (84) 98800-0000',
+  organizerContact: 'esportes@lajespintadas.rn.gov.br | WhatsApp: (84) 98185-8194 (Sidcley)',
   revenueResponsible: 'Tesouraria Municipal / Fundo Municipal de Esportes',
   asaasEnvironment: 'production',
   asaasPixFixedFeeCents: 500, // R$ 5,00 (10%)

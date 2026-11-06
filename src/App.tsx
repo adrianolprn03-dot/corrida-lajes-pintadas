@@ -8,6 +8,7 @@ import { EventOverview } from './components/EventOverview';
 import { FaqSection } from './components/FaqSection';
 import { Footer } from './components/Footer';
 import { StickyBar } from './components/StickyBar';
+import { FloatingWhatsApp } from './components/FloatingWhatsApp';
 
 // Lazy-loaded on demand to ensure an ultra-light public landing page
 const RegistrationModal = lazy(() =>
@@ -240,6 +241,9 @@ export default function App() {
         onOpenRegister={handleOpenRegister}
         onOpenLookup={() => setIsAthleteAreaOpen(true)}
       />
+
+      {/* Floating Direct WhatsApp Support Button */}
+      <FloatingWhatsApp />
 
       {/* Institutional Footer & Pre-Footer CTA */}
       <Footer

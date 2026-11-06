@@ -436,14 +436,17 @@ export async function sendConfirmationEmail(data: RegistrationEmailData): Promis
 
           <!-- Rodapé Institucional -->
           <tr>
-            <td style="background-color: #0f172a; padding: 24px; text-align: center; color: #94a3b8; font-size: 11px; line-height: 1.5;">
+            <td style="background-color: #0f172a; padding: 24px; text-align: center; color: #94a3b8; font-size: 11px; line-height: 1.6;">
               <p style="margin: 0 0 6px 0; color: #ffffff; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">
                 Prefeitura Municipal de Lajes Pintadas / RN
               </p>
               <p style="margin: 0 0 6px 0;">
-                Secretaria Municipal de Esporte, Lazer e Turismo
+                Secretaria Municipal de Esportes e Lazer
               </p>
-              <p style="margin: 0; color: #64748b;">
+              <p style="margin: 0 0 10px 0; color: #cbd5e1;">
+                Dúvidas ou suporte com a prova: WhatsApp: <a href="https://wa.me/5584981858194" style="color: #22c55e; font-weight: 700; text-decoration: underline;">(84) 98185-8194 (Sidcley)</a> &bull; E-mail: <a href="mailto:esportes@lajespintadas.rn.gov.br" style="color: #f97316; font-weight: 700; text-decoration: underline;">esportes@lajespintadas.rn.gov.br</a>
+              </p>
+              <p style="margin: 0; color: #64748b; font-size: 10px;">
                 Este é um e-mail automático emitido oficialmente pelo sistema de inscrições.
               </p>
             </td>
@@ -476,6 +479,10 @@ export async function sendConfirmationEmail(data: RegistrationEmailData): Promis
     `- Data da Prova: 26/12/2026 às 17h00`,
     `- Local da Largada: Rua João Francisco Borges, Centro, Lajes Pintadas/RN`,
     `- Retirada dos Kits: Sede da Prefeitura (Rua São Francisco, nº 275, Centro), das 08h às 13h (dias 21, 22 e 23/12). Em 22/12 também na Maré Mansa (Santa Cruz/RN) e no dia da prova 26/12 no local da prova. Apresentar documento oficial com foto e este comprovante com QR Code.`,
+    ``,
+    `DÚVIDAS OU SUPORTE:`,
+    `- WhatsApp do Organizador: (84) 98185-8194 (Sidcley)`,
+    `- E-mail Oficial: esportes@lajespintadas.rn.gov.br`,
     ``,
     `Consulte sua inscrição em: https://corridadeemancipacao.lajespintadas.rn.gov.br`,
   ].join('\n');

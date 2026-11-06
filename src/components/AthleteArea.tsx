@@ -563,9 +563,25 @@ export const AthleteArea: React.FC<AthleteAreaProps> = ({ isOpen, onClose }) => 
               </div>
 
               {/* Contato do Atendimento */}
-              <div className="pt-2 text-center text-xs text-slate-500">
-                <span>Dúvidas ou suporte? Contato da organização: </span>
-                <strong className="text-slate-700">{result.event.organizerContact}</strong>
+              <div className="pt-3 pb-1 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
+                <span className="font-medium text-slate-600">Dúvidas ou suporte com sua inscrição?</span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <a
+                    href="https://wa.me/5584981858194?text=Ol%C3%A1%2C+Sidcley%21+Preciso+de+suporte+com+minha+inscri%C3%A7%C3%A3o+na+5%C2%AA+Corrida+de+Emancipa%C3%A7%C3%A3o"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-bold border border-emerald-200 transition"
+                  >
+                    <span>WhatsApp: (84) 98185-8194 (Sidcley)</span>
+                  </a>
+                  <a
+                    href="mailto:esportes@lajespintadas.rn.gov.br"
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition"
+                  >
+                    <Mail size={13} className="text-orange-600" />
+                    <span>esportes@lajespintadas.rn.gov.br</span>
+                  </a>
+                </div>
               </div>
 
             </div>

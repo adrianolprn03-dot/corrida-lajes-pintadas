@@ -13,7 +13,7 @@ Este regulamento disciplina a inscrição, a participação, a classificação, 
 1. IDENTIFICAÇÃO E ORGANIZAÇÃO
 1.1 A 5ª Corrida de Emancipação Política de Lajes Pintadas/RN será realizada em 26 de dezembro de 2026, com largada geral às 17h, em percurso de 5 km. A concentração ocorrerá na Feira Livre Coberta.
 1.2 O endereço oficial da prova é https://corridadeemancipacao.lajespintadas.rn.gov.br.
-1.3 Organização e arrecadação: Prefeitura Municipal de Lajes Pintadas/RN. Execução e direção técnica: Sidcley Gomes da Silva.
+1.3 Organização e arrecadação: Prefeitura Municipal de Lajes Pintadas/RN. Execução e direção técnica: Sidcley Gomes da Silva (WhatsApp: (84) 98185-8194 | E-mail: esportes@lajespintadas.rn.gov.br).
 
 2. CATEGORIAS DE INSCRIÇÃO
 • Casa Lajespintadense (Masculino e Feminino): Naturais ou moradores atuais do município.
