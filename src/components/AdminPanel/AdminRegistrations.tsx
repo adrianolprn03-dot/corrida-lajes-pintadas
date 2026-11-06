@@ -305,7 +305,7 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
       city: reg.athlete?.city || 'Lajes Pintadas',
       state: reg.athlete?.state || 'RN',
       team: reg.athlete?.team || '',
-      category: reg.category,
+      category: reg.category === 'LOCAL_MASCULINO' ? 'CASA_MASCULINO' : reg.category === 'LOCAL_FEMININO' ? 'CASA_FEMININO' : reg.category,
       gender: reg.gender,
       shirtSize: reg.shirtSize,
       status: reg.status,
@@ -327,6 +327,14 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
       setIsSavingEdit(true);
       setEditModalError(null);
 
+      const rawCategory = editFormData.category;
+      const normalizedCategory = 
+        rawCategory === 'LOCAL_MASCULINO' ? 'CASA_MASCULINO' :
+        rawCategory === 'LOCAL_FEMININO' ? 'CASA_FEMININO' :
+        rawCategory;
+
+      const isLocalCategory = normalizedCategory.startsWith('LOCAL') || normalizedCategory.startsWith('CASA');
+
       const updates = {
         athlete: {
           fullName: editFormData.fullName.trim(),
@@ -339,13 +347,13 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
           team: editFormData.team.trim() || undefined,
         },
         registration: {
-          category: editFormData.category,
+          category: normalizedCategory,
           gender: editFormData.gender,
           shirtSize: editFormData.shirtSize,
           status: editFormData.status,
           financialStatus: editFormData.financialStatus,
-          originType: editFormData.category.startsWith('LOCAL') || editFormData.category.startsWith('CASA') ? 'CASA' : 'VISITANTE',
-          casaProofType: editFormData.casaProofType || undefined,
+          originType: isLocalCategory ? 'CASA' : 'VISITANTE',
+          casaProofType: isLocalCategory ? (editFormData.casaProofType || undefined) : undefined,
           kitDelivered: editFormData.kitDelivered,
           kitNotes: editFormData.kitNotes,
         },
@@ -1347,18 +1355,16 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
                     <div>
                       <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">Categoria da Prova</label>
                       <select
-                        value={editFormData.category}
+                        value={editFormData.category === 'LOCAL_MASCULINO' ? 'CASA_MASCULINO' : editFormData.category === 'LOCAL_FEMININO' ? 'CASA_FEMININO' : editFormData.category}
                         onChange={(e) => setEditFormData({ ...editFormData, category: e.target.value as Category })}
                         className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
                       >
-                        <option value="LOCAL_MASCULINO">Local Masculino (5 km)</option>
-                        <option value="LOCAL_FEMININO">Local Feminino (5 km)</option>
-                        <option value="CASA_MASCULINO">Local Masc. (Vínculo Casa)</option>
-                        <option value="CASA_FEMININO">Local Fem. (Vínculo Casa)</option>
-                        <option value="VISITANTE_MASCULINO">Visitante Masculino (5 km)</option>
-                        <option value="VISITANTE_FEMININO">Visitante Feminino (5 km)</option>
-                        <option value="PCD_MASCULINO">♿ PCD Masculino (5 km)</option>
-                        <option value="PCD_FEMININO">♿ PCD Feminino (5 km)</option>
+                        <option value="CASA_MASCULINO">Local (Lajespintadense) — Masculino (5 km)</option>
+                        <option value="CASA_FEMININO">Local (Lajespintadense) — Feminino (5 km)</option>
+                        <option value="VISITANTE_MASCULINO">Visitante — Masculino (5 km)</option>
+                        <option value="VISITANTE_FEMININO">Visitante — Feminino (5 km)</option>
+                        <option value="PCD_MASCULINO">♿ PCD — Masculino (5 km)</option>
+                        <option value="PCD_FEMININO">♿ PCD — Feminino (5 km)</option>
                       </select>
                     </div>
 

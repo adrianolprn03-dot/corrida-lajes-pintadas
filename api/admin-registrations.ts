@@ -230,8 +230,47 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const regUpdate: any = {
           updated_at: new Date().toISOString(),
         };
-        if (registration?.category) regUpdate.category = registration.category;
-        if (registration?.originType) regUpdate.origin_type = registration.originType;
+
+        const targetGender = registration?.gender || currentReg.gender || 'MASCULINO';
+        const targetOrigin = (registration?.originType || currentReg.origin_type || 'VISITANTE').toUpperCase();
+
+        if (registration?.category) {
+          const rawCat = String(registration.category).trim().toUpperCase();
+          let sanitizedCategory: 'CASA_MASCULINO' | 'CASA_FEMININO' | 'VISITANTE_MASCULINO' | 'VISITANTE_FEMININO';
+
+          if (rawCat === 'LOCAL_MASCULINO' || rawCat === 'CASA_MASCULINO') {
+            sanitizedCategory = 'CASA_MASCULINO';
+          } else if (rawCat === 'LOCAL_FEMININO' || rawCat === 'CASA_FEMININO') {
+            sanitizedCategory = 'CASA_FEMININO';
+          } else if (rawCat === 'VISITANTE_MASCULINO') {
+            sanitizedCategory = 'VISITANTE_MASCULINO';
+          } else if (rawCat === 'VISITANTE_FEMININO') {
+            sanitizedCategory = 'VISITANTE_FEMININO';
+          } else if (rawCat.includes('PCD')) {
+            const isLocal = targetOrigin === 'CASA' || targetOrigin === 'LOCAL';
+            sanitizedCategory = isLocal
+              ? (targetGender === 'FEMININO' ? 'CASA_FEMININO' : 'CASA_MASCULINO')
+              : (targetGender === 'FEMININO' ? 'VISITANTE_FEMININO' : 'VISITANTE_MASCULINO');
+          } else {
+            const isLocal = rawCat.includes('LOCAL') || rawCat.includes('CASA') || targetOrigin === 'CASA' || targetOrigin === 'LOCAL';
+            sanitizedCategory = isLocal
+              ? (targetGender === 'FEMININO' ? 'CASA_FEMININO' : 'CASA_MASCULINO')
+              : (targetGender === 'FEMININO' ? 'VISITANTE_FEMININO' : 'VISITANTE_MASCULINO');
+          }
+
+          regUpdate.category = sanitizedCategory;
+        }
+
+        if (registration?.originType || registration?.category) {
+          const cat = String(registration?.category || '').toUpperCase();
+          const ot = String(registration?.originType || '').toUpperCase();
+          if (ot === 'CASA' || ot === 'LOCAL' || cat.startsWith('CASA') || cat.startsWith('LOCAL')) {
+            regUpdate.origin_type = 'CASA';
+          } else {
+            regUpdate.origin_type = 'VISITANTE';
+          }
+        }
+
         if (registration?.gender) regUpdate.gender = registration.gender;
         if (registration?.shirtSize) regUpdate.shirt_size = registration.shirtSize;
         if (registration?.casaProofType !== undefined) regUpdate.casa_proof_type = registration.casaProofType || null;
