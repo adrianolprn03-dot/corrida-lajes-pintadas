@@ -231,49 +231,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           updated_at: new Date().toISOString(),
         };
 
-        const targetGender = registration?.gender || currentReg.gender || 'MASCULINO';
-        const targetOrigin = (registration?.originType || currentReg.origin_type || 'VISITANTE').toUpperCase();
+        // Gênero alvo normalizado (garante MASCULINO ou FEMININO)
+        const targetGender: 'MASCULINO' | 'FEMININO' = 
+          (registration?.gender || currentReg.gender || 'MASCULINO').toUpperCase() === 'FEMININO'
+            ? 'FEMININO'
+            : 'MASCULINO';
 
-        if (registration?.category) {
-          const rawCat = String(registration.category).trim().toUpperCase();
-          let sanitizedCategory: 'CASA_MASCULINO' | 'CASA_FEMININO' | 'VISITANTE_MASCULINO' | 'VISITANTE_FEMININO';
+        // Origem alvo normalizada (CASA ou VISITANTE)
+        let targetOrigin = (registration?.originType || currentReg.origin_type || 'VISITANTE').toUpperCase();
+        if (targetOrigin === 'LOCAL') targetOrigin = 'CASA';
 
-          if (rawCat === 'LOCAL_MASCULINO' || rawCat === 'CASA_MASCULINO') {
-            sanitizedCategory = 'CASA_MASCULINO';
-          } else if (rawCat === 'LOCAL_FEMININO' || rawCat === 'CASA_FEMININO') {
-            sanitizedCategory = 'CASA_FEMININO';
-          } else if (rawCat === 'VISITANTE_MASCULINO') {
-            sanitizedCategory = 'VISITANTE_MASCULINO';
-          } else if (rawCat === 'VISITANTE_FEMININO') {
-            sanitizedCategory = 'VISITANTE_FEMININO';
-          } else if (rawCat.includes('PCD')) {
-            const isLocal = targetOrigin === 'CASA' || targetOrigin === 'LOCAL';
-            sanitizedCategory = isLocal
-              ? (targetGender === 'FEMININO' ? 'CASA_FEMININO' : 'CASA_MASCULINO')
-              : (targetGender === 'FEMININO' ? 'VISITANTE_FEMININO' : 'VISITANTE_MASCULINO');
-          } else {
-            const isLocal = rawCat.includes('LOCAL') || rawCat.includes('CASA') || targetOrigin === 'CASA' || targetOrigin === 'LOCAL';
-            sanitizedCategory = isLocal
-              ? (targetGender === 'FEMININO' ? 'CASA_FEMININO' : 'CASA_MASCULINO')
-              : (targetGender === 'FEMININO' ? 'VISITANTE_FEMININO' : 'VISITANTE_MASCULINO');
-          }
+        const rawCat = String(registration?.category || currentReg.category || '').toUpperCase();
+        const isLocal = targetOrigin === 'CASA' || rawCat.includes('LOCAL') || rawCat.includes('CASA');
 
-          regUpdate.category = sanitizedCategory;
+        // Categoria rigorosamente alinhada com o Gênero e a Origem
+        let sanitizedCategory: 'CASA_MASCULINO' | 'CASA_FEMININO' | 'VISITANTE_MASCULINO' | 'VISITANTE_FEMININO';
+        if (isLocal) {
+          sanitizedCategory = targetGender === 'FEMININO' ? 'CASA_FEMININO' : 'CASA_MASCULINO';
+        } else {
+          sanitizedCategory = targetGender === 'FEMININO' ? 'VISITANTE_FEMININO' : 'VISITANTE_MASCULINO';
         }
 
-        if (registration?.originType || registration?.category) {
-          const cat = String(registration?.category || '').toUpperCase();
-          const ot = String(registration?.originType || '').toUpperCase();
-          if (ot === 'CASA' || ot === 'LOCAL' || cat.startsWith('CASA') || cat.startsWith('LOCAL')) {
-            regUpdate.origin_type = 'CASA';
-          } else {
-            regUpdate.origin_type = 'VISITANTE';
-          }
-        }
+        regUpdate.category = sanitizedCategory;
+        regUpdate.gender = targetGender;
+        regUpdate.origin_type = isLocal ? 'CASA' : 'VISITANTE';
 
-        if (registration?.gender) regUpdate.gender = registration.gender;
         if (registration?.shirtSize) regUpdate.shirt_size = registration.shirtSize;
-        if (registration?.casaProofType !== undefined) regUpdate.casa_proof_type = registration.casaProofType || null;
+        if (registration?.casaProofType !== undefined) {
+          regUpdate.casa_proof_type = isLocal ? (registration.casaProofType || null) : null;
+        }
         if (registration?.status) regUpdate.status = registration.status;
         if (registration?.financialStatus) regUpdate.financial_status = registration.financialStatus;
         if (registration?.kitDelivered !== undefined) {
@@ -283,7 +269,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             regUpdate.kit_delivered_by = operator || 'Administrador Geral';
           }
         }
-        if (registration?.kitNotes !== undefined) regUpdate.kit_notes = registration.kitNotes;
+
+        // Atualizar PCD_META em kit_notes se fornecido
+        let baseNotes = typeof registration?.kitNotes === 'string' 
+          ? registration.kitNotes 
+          : (typeof currentReg.kit_notes === 'string' ? currentReg.kit_notes : '');
+
+        if (registration?.isPcd !== undefined) {
+          baseNotes = baseNotes.replace(/\|?PCD_META:\{.*?\}/g, '').trim();
+          if (registration.isPcd) {
+            const pcdMeta = {
+              isPcd: true,
+              pcdType: registration.pcdType || 'OUTRA',
+              pcdCid: registration.pcdCid ? registration.pcdCid.trim() : '',
+              hasGuide: Boolean(registration.hasGuide),
+              guideName: registration.guideName ? registration.guideName.trim() : null,
+              guideCpf: registration.guideCpf ? registration.guideCpf.replace(/\D/g, '') : null,
+              guidePhone: registration.guidePhone ? registration.guidePhone.trim() : null,
+              guideShirtSize: registration.guideShirtSize || null,
+            };
+            baseNotes = baseNotes ? `${baseNotes}|PCD_META:${JSON.stringify(pcdMeta)}` : `PCD_META:${JSON.stringify(pcdMeta)}`;
+          }
+          regUpdate.kit_notes = baseNotes;
+        } else if (registration?.kitNotes !== undefined) {
+          regUpdate.kit_notes = registration.kitNotes;
+        }
+
         if (newStatus === 'CONFIRMED' && !currentReg.paid_at) {
           regUpdate.paid_at = new Date().toISOString();
           regUpdate.financial_status = 'CONFIRMED';
@@ -296,35 +307,44 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         if (regUpErr) throw regUpErr;
 
-        // 5. Envio opcional de e-mail informativo ao atleta
+        // 5. Envio opcional de e-mail informativo ao atleta com dados atualizados
         if (sendNotificationEmail && isEmailConfigured()) {
           const finalAthlete = athlete || currentReg.athlete;
           const targetEmail = (finalAthlete?.email || currentReg.athlete?.email || '').trim().toLowerCase();
           if (targetEmail) {
             let pcdMeta: any = null;
-            if (currentReg.kit_notes && typeof currentReg.kit_notes === 'string') {
-              const matchPcd = currentReg.kit_notes.match(/PCD_META:(\{.*?\})/);
+            const effectiveNotes = regUpdate.kit_notes || currentReg.kit_notes;
+            if (effectiveNotes && typeof effectiveNotes === 'string') {
+              const matchPcd = effectiveNotes.match(/PCD_META:(\{.*?\})/);
               if (matchPcd) {
                 try { pcdMeta = JSON.parse(matchPcd[1]); } catch {}
               }
             }
             const isPcd = Boolean(
-              registration?.isPcd ||
-              pcdMeta?.isPcd ||
-              currentReg.origin_type === 'PCD' ||
-              currentReg.category?.includes('PCD') ||
-              (currentReg.total_amount_cents && currentReg.total_amount_cents <= 3000)
+              registration?.isPcd ?? (
+                pcdMeta?.isPcd ||
+                currentReg.origin_type === 'PCD' ||
+                currentReg.category?.includes('PCD') ||
+                (currentReg.total_amount_cents && currentReg.total_amount_cents <= 3000)
+              )
             );
+
+            // Extrair accessCode de kit_notes se não tiver sido passado explicitamente
+            let effectiveAccessCode = accessCode;
+            if (!effectiveAccessCode && effectiveNotes) {
+              const matchCode = effectiveNotes.match(/ACCESS_CODE:([A-Za-z0-9]+)/i);
+              if (matchCode) effectiveAccessCode = matchCode[1].toUpperCase();
+            }
 
             await sendConfirmationEmail({
               athleteName: finalAthlete?.fullName || currentReg.athlete?.full_name || 'Atleta',
               athleteEmail: targetEmail,
               athleteCpf: finalAthlete?.cpf || currentReg.athlete?.cpf || '',
               protocol: currentReg.protocol,
-              accessCode: accessCode || 'CONSULTE NO PAINEL',
-              category: registration?.category || (isPcd ? (currentReg.gender === 'FEMININO' ? 'PCD_FEMININO' : 'PCD_MASCULINO') : currentReg.category),
-              originType: registration?.originType || currentReg.origin_type || (isPcd ? 'PCD' : undefined),
-              gender: registration?.gender || currentReg.gender,
+              accessCode: effectiveAccessCode || 'CONSULTE NO PAINEL',
+              category: isPcd ? (targetGender === 'FEMININO' ? 'PCD_FEMININO' : 'PCD_MASCULINO') : sanitizedCategory,
+              originType: isLocal ? 'CASA' : 'VISITANTE',
+              gender: targetGender,
               shirtSize: registration?.shirtSize || currentReg.shirt_size,
               status: newStatus === 'RESERVED' ? 'RESERVED' : 'CONFIRMED',
               totalAmountCents: currentReg.total_amount_cents,

@@ -22,11 +22,16 @@ import {
   Save,
   CheckCircle2,
   SlidersHorizontal,
-  Trash2
+  Trash2,
+  Shirt,
+  Accessibility,
+  HeartHandshake,
+  Sparkles,
+  User
 } from 'lucide-react';
-import { Registration, RegistrationStatus, Category, ShirtSize, PaymentMethod, CasaProofType, RegistrationChannel, DocumentVerificationStatus, ShirtInventoryItem } from '../../types';
+import { Registration, RegistrationStatus, Category, ShirtSize, PaymentMethod, CasaProofType, RegistrationChannel, DocumentVerificationStatus, ShirtInventoryItem, PcdType } from '../../types';
 import { exportRegistrationsToCSV, exportRegistrationsToExcel } from '../../lib/exportUtils';
-import { formatCPF, formatPhone, formatDateTimeBR } from '../../lib/masks';
+import { formatCPF, formatPhone, formatDateTimeBR, maskPhone } from '../../lib/masks';
 import { storageService } from '../../services/storage';
 import { extractBibNumber } from '../../lib/kitQr';
 
@@ -84,12 +89,21 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
     city: string;
     state: string;
     team: string;
+    originType: 'CASA' | 'VISITANTE';
     category: Category;
     gender: 'MASCULINO' | 'FEMININO';
     shirtSize: ShirtSize;
     status: RegistrationStatus;
     financialStatus: string;
     casaProofType: CasaProofType | '';
+    isPcd: boolean;
+    pcdType: PcdType;
+    pcdCid: string;
+    hasGuide: boolean;
+    guideName: string;
+    guideCpf: string;
+    guidePhone: string;
+    guideShirtSize: ShirtSize;
     kitDelivered: boolean;
     kitNotes: string;
     documentVerificationStatus: string;
@@ -104,12 +118,21 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
     city: '',
     state: 'RN',
     team: '',
-    category: 'LOCAL_MASCULINO',
+    originType: 'CASA',
+    category: 'CASA_MASCULINO',
     gender: 'MASCULINO',
     shirtSize: 'M',
     status: 'RESERVED',
     financialStatus: 'PENDING',
     casaProofType: '',
+    isPcd: false,
+    pcdType: 'VISUAL',
+    pcdCid: '',
+    hasGuide: false,
+    guideName: '',
+    guideCpf: '',
+    guidePhone: '',
+    guideShirtSize: 'M',
     kitDelivered: false,
     kitNotes: '',
     documentVerificationStatus: 'PENDENTE',
@@ -331,29 +354,81 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
     }
   };
 
+  const updateEditFormCategory = (
+    newGender: 'MASCULINO' | 'FEMININO',
+    newOrigin: 'CASA' | 'VISITANTE',
+    newIsPcd: boolean
+  ): Category => {
+    if (newIsPcd) {
+      return newGender === 'FEMININO' ? 'PCD_FEMININO' : 'PCD_MASCULINO';
+    }
+    if (newOrigin === 'CASA') {
+      return newGender === 'FEMININO' ? 'CASA_FEMININO' : 'CASA_MASCULINO';
+    }
+    return newGender === 'FEMININO' ? 'VISITANTE_FEMININO' : 'VISITANTE_MASCULINO';
+  };
+
   const handleStartEdit = (reg: Registration) => {
     setEditingReg(reg);
     setEditModalError(null);
+
+    let regPcdMeta: any = null;
+    if (reg.kitNotes && typeof reg.kitNotes === 'string') {
+      const matchPcd = reg.kitNotes.match(/PCD_META:(\{.*?\})/);
+      if (matchPcd) {
+        try { regPcdMeta = JSON.parse(matchPcd[1]); } catch {}
+      }
+    }
+    const isPcd = Boolean(
+      reg.isPcd || 
+      regPcdMeta?.isPcd || 
+      (typeof reg.category === 'string' && reg.category.includes('PCD')) ||
+      reg.originType === 'PCD'
+    );
+
+    const isLocal = reg.originType === 'CASA' || reg.category?.startsWith('LOCAL') || reg.category?.startsWith('CASA');
+    const gender: 'MASCULINO' | 'FEMININO' = 
+      (reg.gender || (reg.category?.includes('FEMININO') ? 'FEMININO' : 'MASCULINO')).toUpperCase() === 'FEMININO' 
+        ? 'FEMININO' 
+        : 'MASCULINO';
+
+    let cleanBirthDate = '';
+    if (reg.athlete?.birthDate) {
+      cleanBirthDate = reg.athlete.birthDate.split('T')[0];
+    }
+
+    const originType = isLocal ? 'CASA' : 'VISITANTE';
+    const calculatedCategory = updateEditFormCategory(gender, originType, isPcd);
+
     setEditFormData({
       fullName: reg.athlete?.fullName || '',
       cpf: reg.athlete?.cpf || '',
-      birthDate: reg.athlete?.birthDate || '',
+      birthDate: cleanBirthDate,
       email: reg.athlete?.email || '',
       phone: reg.athlete?.phone || '',
       city: reg.athlete?.city || 'Lajes Pintadas',
       state: reg.athlete?.state || 'RN',
       team: reg.athlete?.team || '',
-      category: reg.category === 'LOCAL_MASCULINO' ? 'CASA_MASCULINO' : reg.category === 'LOCAL_FEMININO' ? 'CASA_FEMININO' : reg.category,
-      gender: reg.gender,
-      shirtSize: reg.shirtSize,
+      originType,
+      category: calculatedCategory,
+      gender,
+      shirtSize: reg.shirtSize || 'M',
       status: reg.status,
       financialStatus: reg.financialStatus,
       casaProofType: reg.casaProofType || '',
+      isPcd,
+      pcdType: (reg.pcdType || regPcdMeta?.pcdType || 'VISUAL') as PcdType,
+      pcdCid: reg.pcdCid || regPcdMeta?.pcdCid || '',
+      hasGuide: Boolean(reg.hasGuide ?? regPcdMeta?.hasGuide),
+      guideName: reg.guideName || regPcdMeta?.guideName || '',
+      guideCpf: reg.guideCpf || regPcdMeta?.guideCpf || '',
+      guidePhone: reg.guidePhone || regPcdMeta?.guidePhone || '',
+      guideShirtSize: (reg.guideShirtSize || regPcdMeta?.guideShirtSize || 'M') as ShirtSize,
       kitDelivered: Boolean(reg.kitDelivered),
       kitNotes: reg.kitNotes || '',
       documentVerificationStatus: reg.documentVerificationStatus || 'PENDENTE',
       documentVerificationNotes: reg.documentVerificationNotes || '',
-      sendNotificationEmail: false,
+      sendNotificationEmail: true,
     });
   };
 
@@ -365,13 +440,9 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
       setIsSavingEdit(true);
       setEditModalError(null);
 
-      const rawCategory = editFormData.category;
-      const normalizedCategory = 
-        rawCategory === 'LOCAL_MASCULINO' ? 'CASA_MASCULINO' :
-        rawCategory === 'LOCAL_FEMININO' ? 'CASA_FEMININO' :
-        rawCategory;
-
-      const isLocalCategory = normalizedCategory.startsWith('LOCAL') || normalizedCategory.startsWith('CASA');
+      const isLocalCategory = editFormData.originType === 'CASA';
+      const targetGender = editFormData.gender;
+      const finalCategory = updateEditFormCategory(targetGender, editFormData.originType, editFormData.isPcd);
 
       const updates = {
         athlete: {
@@ -385,13 +456,21 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
           team: editFormData.team.trim() || undefined,
         },
         registration: {
-          category: normalizedCategory,
-          gender: editFormData.gender,
+          category: finalCategory,
+          gender: targetGender,
           shirtSize: editFormData.shirtSize,
           status: editFormData.status,
           financialStatus: editFormData.financialStatus,
           originType: isLocalCategory ? 'CASA' : 'VISITANTE',
           casaProofType: isLocalCategory ? (editFormData.casaProofType || undefined) : undefined,
+          isPcd: editFormData.isPcd,
+          pcdType: editFormData.isPcd ? editFormData.pcdType : undefined,
+          pcdCid: editFormData.isPcd ? editFormData.pcdCid.trim() : undefined,
+          hasGuide: editFormData.isPcd ? editFormData.hasGuide : false,
+          guideName: (editFormData.isPcd && editFormData.hasGuide) ? editFormData.guideName.trim() : undefined,
+          guideCpf: (editFormData.isPcd && editFormData.hasGuide) ? editFormData.guideCpf.replace(/\D/g, '') : undefined,
+          guidePhone: (editFormData.isPcd && editFormData.hasGuide) ? editFormData.guidePhone.trim() : undefined,
+          guideShirtSize: (editFormData.isPcd && editFormData.hasGuide) ? editFormData.guideShirtSize : undefined,
           kitDelivered: editFormData.kitDelivered,
           kitNotes: editFormData.kitNotes,
         },
@@ -691,6 +770,7 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
               <tr>
                 <th className="py-3 px-4">Protocolo</th>
                 <th className="py-3 px-4">Atleta</th>
+                <th className="py-3 px-4">Sexo</th>
                 <th className="py-3 px-4">Canal</th>
                 <th className="py-3 px-4">Categoria / Vínculo</th>
                 <th className="py-3 px-4">Camisa</th>
@@ -703,7 +783,7 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
             <tbody className="divide-y divide-slate-100">
               {filteredRegistrations.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="py-12 text-center text-slate-400">
+                  <td colSpan={10} className="py-12 text-center text-slate-400">
                     Nenhuma inscrição encontrada para os filtros selecionados.
                   </td>
                 </tr>
@@ -726,6 +806,19 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
                           <span>•</span>
                           <span>{reg.athlete?.city}/{reg.athlete?.state}</span>
                         </div>
+                      </td>
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        {reg.gender === 'FEMININO' || reg.category?.includes('FEMININO') ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-pink-50 text-pink-700 border border-pink-200 shadow-2xs">
+                            <span>♀</span>
+                            <span>Feminino</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200 shadow-2xs">
+                            <span>♂</span>
+                            <span>Masculino</span>
+                          </span>
+                        )}
                       </td>
                       <td className="py-3 px-4 whitespace-nowrap">
                         {isPresential ? (
@@ -833,11 +926,11 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
 
                           <button
                             onClick={() => handleStartEdit(reg)}
-                            className="px-2 py-1 bg-orange-50 hover:bg-orange-100 text-orange-700 rounded-lg border border-orange-200 font-bold transition flex items-center gap-1"
-                            title="Editar dados cadastrais, prova e camisa (Admin Geral)"
+                            className="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-bold shadow-2xs transition flex items-center gap-1"
+                            title="Editar dados cadastrais, sexo, prova e camisa do atleta"
                           >
                             <Edit3 className="w-3.5 h-3.5" />
-                            <span className="hidden sm:inline">Editar</span>
+                            <span>Editar</span>
                           </button>
 
                           {reg.status === 'RESERVED' && (
@@ -867,13 +960,27 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
           <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden my-8 animate-in fade-in zoom-in-95 duration-200">
             {/* Modal Header */}
             <div className="bg-slate-50 border-b border-slate-200 text-slate-800 px-6 py-4 flex items-center justify-between">
-              <div>
-                <span className="text-[11px] font-mono text-orange-600 font-bold">
-                  {selectedReg.protocol}
-                </span>
-                <h3 className="text-base font-bold text-slate-900">
-                  {selectedReg.athlete?.fullName}
-                </h3>
+              <div className="flex items-center gap-3">
+                <div>
+                  <span className="text-[11px] font-mono text-orange-600 font-bold block">
+                    {selectedReg.protocol}
+                  </span>
+                  <h3 className="text-base font-bold text-slate-900">
+                    {selectedReg.athlete?.fullName}
+                  </h3>
+                </div>
+                <button
+                  onClick={() => {
+                    const target = selectedReg;
+                    setSelectedReg(null);
+                    handleStartEdit(target);
+                  }}
+                  className="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-2xs ml-2"
+                  title="Editar cadastro, sexo, categoria e camisa deste atleta"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  <span>Editar Cadastro</span>
+                </button>
               </div>
               <button
                 onClick={() => setSelectedReg(null)}
@@ -1237,33 +1344,33 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
         </div>
       )}
 
-      {/* Complete Edit Registration Modal (Admin Geral) */}
+      {/* Complete Edit Registration Modal (Admin & Atendimento) */}
       {editingReg && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 overflow-y-auto">
           <div className="relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden my-8 animate-in fade-in zoom-in-95 duration-200">
             {/* Modal Header */}
-            <div className="bg-slate-50 border-b border-slate-200 text-slate-800 px-6 py-4 flex items-center justify-between">
+            <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white px-6 py-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-orange-50 border border-orange-200 text-orange-600 flex items-center justify-center font-black shadow-2xs">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center font-black shadow-md">
                   <Edit3 className="w-5 h-5" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono font-bold text-orange-700 bg-orange-100/70 px-2 py-0.5 rounded border border-orange-200">
+                    <span className="text-xs font-mono font-bold text-amber-300 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-500/40">
                       {editingReg.protocol}
                     </span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
-                      Controle Total • Administrador Geral
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-white/10 text-slate-200 border border-white/10">
+                      Edição e Correção Cadastral
                     </span>
                   </div>
-                  <h3 className="text-base font-bold text-slate-900 mt-0.5">
+                  <h3 className="text-base font-bold text-white mt-0.5">
                     Editar Inscrição: {editingReg.athlete?.fullName}
                   </h3>
                 </div>
               </div>
               <button
                 onClick={() => setEditingReg(null)}
-                className="w-8 h-8 rounded-xl bg-slate-200/60 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition"
+                className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 flex items-center justify-center transition"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1271,7 +1378,7 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
 
             {/* Modal Form */}
             <form onSubmit={handleSaveEdit}>
-              <div className="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
+              <div className="p-6 space-y-5 max-h-[75vh] overflow-y-auto">
                 {editModalError && (
                   <div className="p-3.5 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-xs font-semibold flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 shrink-0" />
@@ -1279,12 +1386,303 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
                   </div>
                 )}
 
-                {/* Section 1: Dados Pessoais do Atleta */}
+                {/* Section 1: Sexo e Origem/Modalidade da Prova (Destaque Principal de Correção) */}
+                <div className="bg-amber-50/60 rounded-2xl p-4 border border-amber-200 space-y-3.5">
+                  <div className="flex items-center justify-between pb-2 border-b border-amber-200/70">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-amber-600" />
+                      <h4 className="text-xs font-bold text-amber-950 uppercase tracking-wider">
+                        1. Sexo & Modalidade da Prova (Sincronização Oficial)
+                      </h4>
+                    </div>
+                    <span className="text-[10px] text-amber-800 font-semibold bg-amber-100 px-2 py-0.5 rounded-full border border-amber-300">
+                      Classificação Oficial 5 km
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Seletor de Sexo / Gênero */}
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1.5">
+                        Sexo do Atleta (Masculino / Feminino)
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newGender = 'MASCULINO';
+                            setEditFormData((prev) => ({
+                              ...prev,
+                              gender: newGender,
+                              category: updateEditFormCategory(newGender, prev.originType, prev.isPcd),
+                            }));
+                          }}
+                          className={`py-2.5 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition ${
+                            editFormData.gender === 'MASCULINO'
+                              ? 'bg-blue-600 border-blue-600 text-white shadow-sm ring-2 ring-blue-500/30'
+                              : 'bg-white border-slate-300 text-slate-700 hover:bg-blue-50/50'
+                          }`}
+                        >
+                          <span className="text-sm font-black">♂</span>
+                          <span>Masculino</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newGender = 'FEMININO';
+                            setEditFormData((prev) => ({
+                              ...prev,
+                              gender: newGender,
+                              category: updateEditFormCategory(newGender, prev.originType, prev.isPcd),
+                            }));
+                          }}
+                          className={`py-2.5 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition ${
+                            editFormData.gender === 'FEMININO'
+                              ? 'bg-pink-600 border-pink-600 text-white shadow-sm ring-2 ring-pink-500/30'
+                              : 'bg-white border-slate-300 text-slate-700 hover:bg-pink-50/50'
+                          }`}
+                        >
+                          <span className="text-sm font-black">♀</span>
+                          <span>Feminino</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Seletor de Origem Municipal */}
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1.5">
+                        Origem / Vínculo da Inscrição
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newOrigin = 'CASA';
+                            setEditFormData((prev) => ({
+                              ...prev,
+                              originType: newOrigin,
+                              category: updateEditFormCategory(prev.gender, newOrigin, prev.isPcd),
+                            }));
+                          }}
+                          className={`py-2.5 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition ${
+                            editFormData.originType === 'CASA'
+                              ? 'bg-orange-600 border-orange-600 text-white shadow-sm ring-2 ring-orange-500/30'
+                              : 'bg-white border-slate-300 text-slate-700 hover:bg-orange-50/50'
+                          }`}
+                        >
+                          <Building2 className="w-3.5 h-3.5" />
+                          <span>Local</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newOrigin = 'VISITANTE';
+                            setEditFormData((prev) => ({
+                              ...prev,
+                              originType: newOrigin,
+                              category: updateEditFormCategory(prev.gender, newOrigin, prev.isPcd),
+                            }));
+                          }}
+                          className={`py-2.5 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition ${
+                            editFormData.originType === 'VISITANTE'
+                              ? 'bg-sky-600 border-sky-600 text-white shadow-sm ring-2 ring-sky-500/30'
+                              : 'bg-white border-slate-300 text-slate-700 hover:bg-sky-50/50'
+                          }`}
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                          <span>Visitante</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Comprovação de Vínculo Local */}
+                    {editFormData.originType === 'CASA' && (
+                      <div className="sm:col-span-2 pt-1">
+                        <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">
+                          Tipo de Comprovação de Vínculo Local (Lajes Pintadas)
+                        </label>
+                        <select
+                          value={editFormData.casaProofType}
+                          onChange={(e) => setEditFormData({ ...editFormData, casaProofType: e.target.value as any })}
+                          className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        >
+                          <option value="">Não especificado</option>
+                          <option value="NATURAL">Natural de Lajes Pintadas/RN (Certidão de Nascimento / RG)</option>
+                          <option value="RESIDENTE">Residente / Morador Atual (Comprovante Residência / Título)</option>
+                          <option value="NATURAL_E_RESIDENTE">Natural e Residente Atual</option>
+                        </select>
+                      </div>
+                    )}
+
+                    {/* Banner de Categoria Resultante */}
+                    <div className="sm:col-span-2 p-3 bg-white border border-amber-300 rounded-xl flex items-center justify-between text-xs shadow-2xs">
+                      <div className="flex items-center gap-2 text-slate-800">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <span>
+                          Categoria Homologada: <strong className="text-orange-700 underline decoration-orange-400">{categoryLabels[editFormData.category] || editFormData.category}</strong> ({editFormData.gender === 'FEMININO' ? 'Feminino' : 'Masculino'} • 5 km)
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-emerald-800 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                        ✓ 100% Sincronizado
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section 2: Categoria Especial PCD (Pessoa com Deficiência) & Guia */}
+                <div className="p-4 bg-purple-50/70 border border-purple-200 rounded-2xl space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <Accessibility className="w-5 h-5 text-purple-700 shrink-0" />
+                      <div>
+                        <span className="text-xs font-bold text-purple-950 block">Atleta PCD (Pessoa com Deficiência)</span>
+                        <span className="text-[11px] text-purple-700">Enquadramento especial e suporte opcional a atleta-guia</span>
+                      </div>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={editFormData.isPcd}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setEditFormData((prev) => ({
+                          ...prev,
+                          isPcd: checked,
+                          category: updateEditFormCategory(prev.gender, prev.originType, checked),
+                        }));
+                      }}
+                      className="w-5 h-5 text-purple-600 rounded border-purple-300 focus:ring-purple-500 cursor-pointer"
+                    />
+                  </div>
+
+                  {editFormData.isPcd && (
+                    <div className="pt-2 border-t border-purple-200/80 space-y-3 animate-in fade-in duration-150">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[10px] font-bold text-purple-900 uppercase mb-1">Tipo de Deficiência</label>
+                          <select
+                            value={editFormData.pcdType}
+                            onChange={(e) => setEditFormData({ ...editFormData, pcdType: e.target.value as PcdType })}
+                            className="w-full px-3 py-2 bg-white border border-purple-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          >
+                            <option value="VISUAL">Visual (Baixa Visão / Cegueira)</option>
+                            <option value="FISICA">Física / Motora</option>
+                            <option value="AUDITIVA">Auditiva / Surdez</option>
+                            <option value="INTELECTUAL">Intelectual / Cognitiva</option>
+                            <option value="OUTRA">Outra / Múltipla</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-purple-900 uppercase mb-1">CID / Laudo Médico</label>
+                          <input
+                            type="text"
+                            value={editFormData.pcdCid}
+                            onChange={(e) => setEditFormData({ ...editFormData, pcdCid: e.target.value })}
+                            placeholder="Ex: CID H54 ou laudo apresentado"
+                            className="w-full px-3 py-2 bg-white border border-purple-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="pt-2 border-t border-purple-200/60">
+                        <div className="flex items-center gap-2 mb-2">
+                          <input
+                            type="checkbox"
+                            id="editHasGuide"
+                            checked={editFormData.hasGuide}
+                            onChange={(e) => setEditFormData({ ...editFormData, hasGuide: e.target.checked })}
+                            className="w-4 h-4 text-purple-600 rounded border-purple-300 focus:ring-purple-500 cursor-pointer"
+                          />
+                          <label htmlFor="editHasGuide" className="text-xs font-bold text-purple-950 cursor-pointer flex items-center gap-1.5">
+                            <HeartHandshake className="w-3.5 h-3.5 text-purple-600" />
+                            <span>Atleta necessita de Atleta-Guia Oficial</span>
+                          </label>
+                        </div>
+
+                        {editFormData.hasGuide && (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 p-3 bg-purple-100/60 rounded-xl border border-purple-200">
+                            <div className="sm:col-span-2">
+                              <label className="block text-[10px] font-bold text-purple-900 uppercase mb-1">Nome Completo do Guia</label>
+                              <input
+                                type="text"
+                                value={editFormData.guideName}
+                                onChange={(e) => setEditFormData({ ...editFormData, guideName: e.target.value })}
+                                placeholder="Nome do atleta-guia"
+                                className="w-full px-2.5 py-1.5 bg-white border border-purple-200 rounded-lg text-xs"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] font-bold text-purple-900 uppercase mb-1">CPF do Guia</label>
+                              <input
+                                type="text"
+                                value={formatCPF(editFormData.guideCpf)}
+                                onChange={(e) => setEditFormData({ ...editFormData, guideCpf: e.target.value.replace(/\D/g, '') })}
+                                placeholder="000.000.000-00"
+                                className="w-full px-2.5 py-1.5 bg-white border border-purple-200 rounded-lg text-xs"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] font-bold text-purple-900 uppercase mb-1">Camisa do Guia</label>
+                              <select
+                                value={editFormData.guideShirtSize}
+                                onChange={(e) => setEditFormData({ ...editFormData, guideShirtSize: e.target.value as ShirtSize })}
+                                className="w-full px-2.5 py-1.5 bg-white border border-purple-200 rounded-lg text-xs font-bold text-purple-900"
+                              >
+                                {(['PP', 'P', 'M', 'G', 'GG', 'XG'] as ShirtSize[]).map((sz) => (
+                                  <option key={sz} value={sz}>Tamanho {sz}</option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Section 3: Camisa Oficial do Atleta */}
+                <div className="bg-slate-50/80 rounded-2xl p-4 border border-slate-200 space-y-3">
+                  <div className="flex items-center gap-2 pb-2 border-b border-slate-200">
+                    <Shirt className="w-4 h-4 text-orange-600" />
+                    <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                      3. Tamanho da Camisa Oficial do Atleta
+                    </h4>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">
+                        Selecione o Tamanho Solicitado
+                      </label>
+                      <select
+                        value={editFormData.shirtSize}
+                        onChange={(e) => setEditFormData({ ...editFormData, shirtSize: e.target.value as ShirtSize })}
+                        className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-black text-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      >
+                        {(['PP', 'P', 'M', 'G', 'GG', 'XG'] as ShirtSize[]).map((sz) => {
+                          const stockItem = shirts.find((s) => s.size === sz);
+                          const avail = stockItem ? stockItem.availableStock : '-';
+                          return (
+                            <option key={sz} value={sz}>
+                              Tamanho {sz} (Estoque Disponível: {avail})
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
+                    <div className="text-[11px] text-slate-500 bg-white p-2.5 rounded-xl border border-slate-200">
+                      💡 <strong>Ajuste Automático:</strong> Caso o atleta solicite troca de tamanho, a demanda de camisas é recalculada atomicamente no banco de dados.
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section 4: Dados Cadastrais Pessoais */}
                 <div className="bg-slate-50/80 rounded-2xl p-4 border border-slate-200 space-y-3">
                   <div className="flex items-center gap-2 pb-2 border-b border-slate-200">
                     <UserCheck className="w-4 h-4 text-orange-600" />
                     <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                      1. Dados Cadastrais do Atleta (Tabela Athletes)
+                      4. Dados Cadastrais do Atleta (Tabela Athletes)
                     </h4>
                   </div>
 
@@ -1327,8 +1725,8 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
                       <input
                         type="text"
                         required
-                        value={editFormData.phone}
-                        onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+                        value={maskPhone(editFormData.phone)}
+                        onChange={(e) => setEditFormData({ ...editFormData, phone: maskPhone(e.target.value) })}
                         className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
                       />
                     </div>
@@ -1380,92 +1778,12 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
                   </div>
                 </div>
 
-                {/* Section 2: Prova, Categoria e Camisa */}
-                <div className="bg-orange-50/50 rounded-2xl p-4 border border-orange-200 space-y-3">
-                  <div className="flex items-center gap-2 pb-2 border-b border-orange-200/60">
-                    <Building2 className="w-4 h-4 text-orange-600" />
-                    <h4 className="text-xs font-bold text-orange-950 uppercase tracking-wider">
-                      2. Modalidade, Categoria & Troca de Camisa
-                    </h4>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">Categoria da Prova</label>
-                      <select
-                        value={editFormData.category === 'LOCAL_MASCULINO' ? 'CASA_MASCULINO' : editFormData.category === 'LOCAL_FEMININO' ? 'CASA_FEMININO' : editFormData.category}
-                        onChange={(e) => setEditFormData({ ...editFormData, category: e.target.value as Category })}
-                        className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                      >
-                        <option value="CASA_MASCULINO">Local (Lajespintadense) — Masculino (5 km)</option>
-                        <option value="CASA_FEMININO">Local (Lajespintadense) — Feminino (5 km)</option>
-                        <option value="VISITANTE_MASCULINO">Visitante — Masculino (5 km)</option>
-                        <option value="VISITANTE_FEMININO">Visitante — Feminino (5 km)</option>
-                        <option value="PCD_MASCULINO">♿ PCD — Masculino (5 km)</option>
-                        <option value="PCD_FEMININO">♿ PCD — Feminino (5 km)</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">Gênero</label>
-                      <select
-                        value={editFormData.gender}
-                        onChange={(e) => setEditFormData({ ...editFormData, gender: e.target.value as any })}
-                        className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                      >
-                        <option value="MASCULINO">Masculino</option>
-                        <option value="FEMININO">Feminino</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">
-                        Tamanho da Camisa Oficial
-                      </label>
-                      <select
-                        value={editFormData.shirtSize}
-                        onChange={(e) => setEditFormData({ ...editFormData, shirtSize: e.target.value as ShirtSize })}
-                        className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-black text-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                      >
-                        {(['PP', 'P', 'M', 'G', 'GG', 'XG'] as ShirtSize[]).map((sz) => {
-                          const stockItem = shirts.find((s) => s.size === sz);
-                          const avail = stockItem ? stockItem.availableStock : '-';
-                          return (
-                            <option key={sz} value={sz}>
-                              Tamanho {sz} (Disponível: {avail})
-                            </option>
-                          );
-                        })}
-                      </select>
-                      <span className="text-[10px] text-slate-500 mt-1 block">
-                        O estoque entre tamanhos é reajustado atomicamente no Supabase.
-                      </span>
-                    </div>
-
-                    {(editFormData.category.includes('LOCAL') || editFormData.category.includes('CASA')) && (
-                      <div className="sm:col-span-3">
-                        <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">Tipo de Comprovação Local</label>
-                        <select
-                          value={editFormData.casaProofType}
-                          onChange={(e) => setEditFormData({ ...editFormData, casaProofType: e.target.value as any })}
-                          className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                        >
-                          <option value="">Não especificado</option>
-                          <option value="NATURAL">Natural de Lajes Pintadas/RN (Certidão / RG)</option>
-                          <option value="RESIDENTE">Residente / Morador Atual (Comprovante Residência / Título)</option>
-                          <option value="NATURAL_E_RESIDENTE">Natural e Residente Atual</option>
-                        </select>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Section 3: Status da Inscrição & Financeiro */}
+                {/* Section 5: Situação da Inscrição, Pagamento & Kit */}
                 <div className="bg-slate-50/80 rounded-2xl p-4 border border-slate-200 space-y-3">
                   <div className="flex items-center gap-2 pb-2 border-b border-slate-200">
                     <CheckCircle className="w-4 h-4 text-emerald-600" />
                     <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                      3. Situação da Inscrição, Pagamento & Kit
+                      5. Situação da Inscrição, Pagamento & Kit
                     </h4>
                   </div>
 
@@ -1521,7 +1839,7 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
                         id="kitDeliveredCheck"
                         checked={editFormData.kitDelivered}
                         onChange={(e) => setEditFormData({ ...editFormData, kitDelivered: e.target.checked })}
-                        className="w-4 h-4 text-orange-600 rounded border-slate-300 focus:ring-orange-500"
+                        className="w-4 h-4 text-orange-600 rounded border-slate-300 focus:ring-orange-500 cursor-pointer"
                       />
                       <label htmlFor="kitDeliveredCheck" className="text-xs font-bold text-slate-800 cursor-pointer">
                         Kit Oficial do Atleta já foi entregue (Camisa + Número de Peito + Chip)
@@ -1534,23 +1852,23 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
                         type="text"
                         value={editFormData.kitNotes}
                         onChange={(e) => setEditFormData({ ...editFormData, kitNotes: e.target.value })}
-                        placeholder="Ex: Atleta solicitou alteração de tamanho; comprovante verificado por operador."
+                        placeholder="Ex: Atleta solicitou alteração de sexo/tamanho; solicitação atendida."
                         className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500"
                       />
                     </div>
                   </div>
                 </div>
 
-                {/* Section 4: Notificação por E-mail */}
+                {/* Section 6: Notificação por E-mail */}
                 <div className="p-4 bg-sky-50 border border-sky-200 rounded-2xl flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Mail className="w-5 h-5 text-sky-600 shrink-0" />
                     <div>
                       <div className="font-bold text-xs text-sky-950">
-                        Notificar atleta por e-mail automaticamente
+                        Enviar e-mail com os dados corrigidos ao atleta
                       </div>
                       <div className="text-[11px] text-sky-700">
-                        Dispara e-mail com protocolo, código de acesso e detalhes atualizados da inscrição para <strong>{editFormData.email || 'o atleta'}</strong>.
+                        Dispara e-mail de confirmação atualizado com protocolo, código de acesso, sexo, categoria e camisa para <strong>{editFormData.email || 'o atleta'}</strong>.
                       </div>
                     </div>
                   </div>
@@ -1558,7 +1876,7 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
                     type="checkbox"
                     checked={editFormData.sendNotificationEmail}
                     onChange={(e) => setEditFormData({ ...editFormData, sendNotificationEmail: e.target.checked })}
-                    className="w-5 h-5 text-sky-600 rounded border-sky-300 focus:ring-sky-500"
+                    className="w-5 h-5 text-sky-600 rounded border-sky-300 focus:ring-sky-500 cursor-pointer"
                   />
                 </div>
               </div>
@@ -1576,7 +1894,7 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
                 <button
                   type="submit"
                   disabled={isSavingEdit}
-                  className="px-6 py-2.5 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center gap-2 disabled:opacity-50"
+                  className="px-6 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center gap-2 disabled:opacity-50"
                 >
                   <Save className="w-4 h-4" />
                   <span>{isSavingEdit ? 'Salvando no Banco...' : 'Salvar Alterações'}</span>

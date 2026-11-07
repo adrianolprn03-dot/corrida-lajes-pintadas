@@ -19,6 +19,7 @@ import {
   AdminOperator,
   AdminRole,
   CasaProofType,
+  PcdType,
 } from '../types';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { isValidCPF } from '../lib/cpf';
@@ -1484,54 +1485,78 @@ class StorageService {
       if (apiRes.ok) {
         const json = await apiRes.json();
         if (json.items && Array.isArray(json.items)) {
-          const mapped: Registration[] = json.items.map((d: any) => ({
-            id: d.id,
-            athleteId: d.athlete_id,
-            protocol: d.protocol,
-            category: d.category,
-            originType: d.origin_type,
-            gender: d.gender,
-            casaProofType: d.casa_proof_type,
-            shirtSize: d.shirt_size,
-            status: d.status,
-            financialStatus: d.financial_status,
-            paymentMethod: d.payment_method,
-            baseAmountCents: d.base_amount_cents,
-            processingFeeCents: d.processing_fee_cents,
-            totalAmountCents: d.total_amount_cents,
-            asaasPaymentId: d.asaas_payment_id,
-            asaasInvoiceUrl: d.asaas_invoice_url,
-            asaasPixQrCode: d.asaas_pix_qr_code,
-            asaasPixCopyPaste: d.asaas_pix_copy_paste,
-            reservationExpiresAt: d.reservation_expires_at,
-            paidAt: d.paid_at,
-            kitDelivered: d.kit_delivered,
-            kitDeliveredAt: d.kit_delivered_at,
-            kitDeliveredBy: d.kit_delivered_by,
-            kitNotes: d.kit_notes,
-            createdAt: d.created_at,
-            updatedAt: d.updated_at,
-            channel: d.channel || 'ONLINE',
-            documentVerificationStatus: d.document_verification_status || (d.origin_type === 'CASA' ? 'APROVADO' : undefined),
-            documentTypePresented: d.document_type_presented || null,
-            documentVerificationNotes: d.document_verification_notes || null,
-            documentCheckedBy: d.document_checked_by || null,
-            documentCheckedAt: d.document_checked_at || null,
-            attendantName: d.attendant_name || null,
-            attendantId: d.attendant_id || null,
-            batchId: d.batch_id || (extractBatchId(d) !== LEGACY_BATCH_ID ? extractBatchId(d) : null),
-            batchName: d.batch_name || null,
-            athlete: d.athlete ? {
-              fullName: d.athlete.full_name,
-              cpf: d.athlete.cpf,
-              birthDate: d.athlete.birth_date,
-              email: d.athlete.email,
-              phone: d.athlete.phone,
-              city: d.athlete.city,
-              state: d.athlete.state,
-              team: d.athlete.team,
-            } : undefined,
-          }));
+          const mapped: Registration[] = json.items.map((d: any) => {
+            let pcdMeta: any = null;
+            if (d.kit_notes && typeof d.kit_notes === 'string') {
+              const matchPcd = d.kit_notes.match(/PCD_META:(\{.*?\})/);
+              if (matchPcd) {
+                try { pcdMeta = JSON.parse(matchPcd[1]); } catch {}
+              }
+            }
+            const isPcd = Boolean(
+              d.is_pcd ||
+              pcdMeta?.isPcd ||
+              d.origin_type === 'PCD' ||
+              (typeof d.category === 'string' && d.category.includes('PCD'))
+            );
+
+            return {
+              id: d.id,
+              athleteId: d.athlete_id,
+              protocol: d.protocol,
+              category: d.category,
+              originType: d.origin_type,
+              gender: d.gender,
+              casaProofType: d.casa_proof_type,
+              shirtSize: d.shirt_size,
+              status: d.status,
+              financialStatus: d.financial_status,
+              paymentMethod: d.payment_method,
+              baseAmountCents: d.base_amount_cents,
+              processingFeeCents: d.processing_fee_cents,
+              totalAmountCents: d.total_amount_cents,
+              asaasPaymentId: d.asaas_payment_id,
+              asaasInvoiceUrl: d.asaas_invoice_url,
+              asaasPixQrCode: d.asaas_pix_qr_code,
+              asaasPixCopyPaste: d.asaas_pix_copy_paste,
+              reservationExpiresAt: d.reservation_expires_at,
+              paidAt: d.paid_at,
+              kitDelivered: d.kit_delivered,
+              kitDeliveredAt: d.kit_delivered_at,
+              kitDeliveredBy: d.kit_delivered_by,
+              kitNotes: d.kit_notes,
+              createdAt: d.created_at,
+              updatedAt: d.updated_at,
+              channel: d.channel || 'ONLINE',
+              documentVerificationStatus: d.document_verification_status || (d.origin_type === 'CASA' ? 'APROVADO' : undefined),
+              documentTypePresented: d.document_type_presented || null,
+              documentVerificationNotes: d.document_verification_notes || null,
+              documentCheckedBy: d.document_checked_by || null,
+              documentCheckedAt: d.document_checked_at || null,
+              attendantName: d.attendant_name || null,
+              attendantId: d.attendant_id || null,
+              batchId: d.batch_id || (extractBatchId(d) !== LEGACY_BATCH_ID ? extractBatchId(d) : null),
+              batchName: d.batch_name || null,
+              isPcd,
+              pcdType: d.pcd_type || pcdMeta?.pcdType,
+              pcdCid: d.pcd_cid || pcdMeta?.pcdCid || null,
+              hasGuide: Boolean(d.has_guide ?? pcdMeta?.hasGuide),
+              guideName: d.guide_name || pcdMeta?.guideName || null,
+              guideCpf: d.guide_cpf || pcdMeta?.guideCpf || null,
+              guidePhone: d.guide_phone || pcdMeta?.guidePhone || null,
+              guideShirtSize: d.guide_shirt_size || pcdMeta?.guideShirtSize || null,
+              athlete: d.athlete ? {
+                fullName: d.athlete.full_name,
+                cpf: d.athlete.cpf,
+                birthDate: d.athlete.birth_date,
+                email: d.athlete.email,
+                phone: d.athlete.phone,
+                city: d.athlete.city,
+                state: d.athlete.state,
+                team: d.athlete.team,
+              } : undefined,
+            };
+          });
           this.setLocal(STORAGE_KEYS.REGISTRATIONS, mapped);
           return mapped;
         }
@@ -1628,6 +1653,14 @@ class StorageService {
         casaProofType?: CasaProofType;
         kitDelivered?: boolean;
         kitNotes?: string;
+        isPcd?: boolean;
+        pcdType?: PcdType;
+        pcdCid?: string;
+        hasGuide?: boolean;
+        guideName?: string;
+        guideCpf?: string;
+        guidePhone?: string;
+        guideShirtSize?: ShirtSize;
       };
       sendNotificationEmail?: boolean;
       accessCode?: string;
