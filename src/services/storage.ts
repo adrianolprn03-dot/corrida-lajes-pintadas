@@ -451,7 +451,13 @@ class StorageService {
   async getShirtInventory(): Promise<ShirtInventoryItem[]> {
     // 1. Tentar via API oficial Vercel Serverless (com Service Role para bypass seguro de RLS)
     try {
-      const apiRes = await fetch('/api/admin-inventory');
+      const apiRes = await fetch(`/api/admin-inventory?t=${Date.now()}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+        },
+      });
       if (apiRes.ok) {
         const json = await apiRes.json();
         if (json.items && json.items.length > 0) {
@@ -1468,7 +1474,13 @@ class StorageService {
   // Obter Lista Completa de Inscrições (Admin)
   async getAdminRegistrations(): Promise<Registration[]> {
     try {
-      const apiRes = await fetch('/api/admin-registrations?pageSize=500');
+      const apiRes = await fetch(`/api/admin-registrations?pageSize=500&t=${Date.now()}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+        },
+      });
       if (apiRes.ok) {
         const json = await apiRes.json();
         if (json.items && Array.isArray(json.items)) {

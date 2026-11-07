@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   BarChart3, 
   Users, 
@@ -18,7 +18,8 @@ import {
   ArrowLeft,
   CheckCircle2,
   Radio,
-  ExternalLink
+  ExternalLink,
+  Bell
 } from 'lucide-react';
 import { AdminOverview } from './AdminOverview';
 import { AdminRegistrations } from './AdminRegistrations';
@@ -76,6 +77,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
   const [shirts, setShirts] = useState<ShirtInventoryItem[]>([]);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRefreshingSilently, setIsRefreshingSilently] = useState(false);
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
+  const [lastRefreshedAt, setLastRefreshedAt] = useState<Date>(new Date());
+  const [newRegAlert, setNewRegAlert] = useState<string | null>(null);
+  const prevRegCountRef = useRef<number | null>(null);
   const [asaasDiagnostic, setAsaasDiagnostic] = useState<{
     ok: boolean;
     environment: string;
@@ -86,9 +92,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
   } | null>(null);
   const [isPingingAsaas, setIsPingingAsaas] = useState(false);
 
-  const loadData = async () => {
+  const loadData = async (isSilent = false) => {
     try {
-      setIsLoading(true);
+      if (!isSilent) {
+        setIsLoading(true);
+      } else {
+        setIsRefreshingSilently(true);
+      }
       const [s, m, r, sh, l] = await Promise.all([
         storageService.getSettings(),
         storageService.getAdminMetrics(),
@@ -96,18 +106,32 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
         storageService.getShirtInventory(),
         storageService.getAuditLogs(),
       ]);
+
+      // Alerta sutil quando novas inscrições entrarem no sistema
+      if (prevRegCountRef.current !== null && r.length > prevRegCountRef.current) {
+        const diff = r.length - prevRegCountRef.current;
+        setNewRegAlert(`+${diff} nova${diff > 1 ? 's' : ''} inscrição${diff > 1 ? 'ões' : ''} sincronizada${diff > 1 ? 's' : ''}!`);
+        setTimeout(() => setNewRegAlert(null), 5000);
+      }
+      prevRegCountRef.current = r.length;
+
       setSettings(s);
       setMetrics(m);
       setRegistrations(r);
       setShirts(sh);
       setAuditLogs(l);
+      setLastRefreshedAt(new Date());
 
       // Sincronizar lista de operadores com o servidor
       storageService.syncOperatorsWithServer().catch(() => {});
     } catch (err) {
       console.error('Failed to load admin data:', err);
     } finally {
-      setIsLoading(false);
+      if (!isSilent) {
+        setIsLoading(false);
+      } else {
+        setIsRefreshingSilently(false);
+      }
     }
   };
 
@@ -124,6 +148,32 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
       }
     }
   }, [isOpen, operator]);
+
+  // Sincronização Automática em Tempo Real (a cada 10s sem precisar de F5)
+  useEffect(() => {
+    if (!isOpen || !operator || !autoRefreshEnabled) return;
+
+    const intervalId = setInterval(() => {
+      // Apenas faz requisições quando a aba do navegador estiver visível
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        loadData(true);
+      }
+    }, 10000); // 10 segundos
+
+    // Atualiza imediatamente quando o operador foca ou volta para a aba
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        loadData(true);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isOpen, operator, autoRefreshEnabled]);
 
   const handleLogout = () => {
     localStorage.removeItem('lp_admin_session');
@@ -289,7 +339,61 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Realtime Live Update Indicator & Controller */}
+            <div className="flex items-center gap-1.5 sm:gap-2 bg-slate-50/90 px-2.5 py-1.5 rounded-xl border border-slate-200 shadow-2xs">
+              <button
+                type="button"
+                onClick={() => setAutoRefreshEnabled((prev) => !prev)}
+                className="flex items-center gap-2 group cursor-pointer focus:outline-none"
+                title={
+                  autoRefreshEnabled
+                    ? 'Sincronização em tempo real ATIVA (a cada 10s sem precisar de F5). Clique para pausar.'
+                    : 'Sincronização automática PAUSADA. Clique para reativar.'
+                }
+              >
+                <span className="relative flex h-2.5 w-2.5">
+                  {autoRefreshEnabled && (
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  )}
+                  <span
+                    className={`relative inline-flex rounded-full h-2.5 w-2.5 transition-colors ${
+                      autoRefreshEnabled ? 'bg-emerald-500' : 'bg-slate-400'
+                    }`}
+                  ></span>
+                </span>
+                <span className="text-[11px] font-bold text-slate-700 group-hover:text-slate-900 transition flex items-center gap-1">
+                  <span className="hidden sm:inline">{autoRefreshEnabled ? 'Ao Vivo (10s)' : 'Pausado'}</span>
+                  <span className="sm:hidden">{autoRefreshEnabled ? '10s' : 'Off'}</span>
+                </span>
+              </button>
+
+              <span className="h-3 w-px bg-slate-200"></span>
+
+              <button
+                type="button"
+                onClick={() => loadData(false)}
+                disabled={isLoading || isRefreshingSilently}
+                className="text-slate-400 hover:text-orange-600 transition flex items-center gap-1 text-[11px] font-medium"
+                title="Sincronizar dados agora"
+              >
+                <RefreshCw
+                  className={`w-3.5 h-3.5 transition-all ${
+                    isLoading || isRefreshingSilently ? 'animate-spin text-orange-600' : ''
+                  }`}
+                />
+                <span className="hidden md:inline text-[10px] text-slate-400 font-mono">
+                  {lastRefreshedAt
+                    ? lastRefreshedAt.toLocaleTimeString('pt-BR', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                      })
+                    : ''}
+                </span>
+              </button>
+            </div>
+
             {/* Operator Role Badge */}
             <div className="flex items-center gap-2 text-xs bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 shadow-2xs">
               <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -522,6 +626,31 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
           </>
         )}
       </main>
+
+      {/* Notificação Flutuante em Tempo Real para Novas Inscrições */}
+      {newRegAlert && (
+        <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-5 fade-in duration-300">
+          <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-4 py-3 rounded-2xl shadow-xl shadow-emerald-950/20 flex items-center gap-3 border border-emerald-400/40">
+            <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center font-bold text-base shrink-0">
+              ⚡
+            </div>
+            <div>
+              <p className="font-bold text-[11px] uppercase tracking-wide text-emerald-100 flex items-center gap-1">
+                <span>Painel Atualizado</span>
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-300 animate-ping" />
+              </p>
+              <p className="text-xs text-white font-semibold">{newRegAlert}</p>
+            </div>
+            <button
+              onClick={() => setNewRegAlert(null)}
+              className="text-white/80 hover:text-white p-1 ml-1 hover:bg-white/10 rounded-lg transition"
+              title="Fechar notificação"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
