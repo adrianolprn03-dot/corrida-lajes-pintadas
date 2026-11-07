@@ -97,6 +97,8 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
   const [copiedLink, setCopiedLink] = useState(false);
   const [isCheckingPayment, setIsCheckingPayment] = useState(false);
   const [paymentCheckMessage, setPaymentCheckMessage] = useState<string | null>(null);
+  const [isSendingReceiptEmail, setIsSendingReceiptEmail] = useState(false);
+  const [receiptEmailSuccess, setReceiptEmailSuccess] = useState<string | null>(null);
 
   // Pricing calculations conforme o lote vigente
   const baseCents = getActiveBasePriceCents(settings);
@@ -324,6 +326,34 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
       navigator.clipboard.writeText(url);
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2500);
+    }
+  };
+
+  const handleSendReceiptEmail = async () => {
+    const targetEmail = formData.email.trim();
+    if (!createdRegistration || !targetEmail) return;
+    setIsSendingReceiptEmail(true);
+    setReceiptEmailSuccess(null);
+    try {
+      const res = await fetch('/api/admin-registrations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'resend-email',
+          protocol: createdRegistration.protocol,
+          athleteEmail: targetEmail,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Falha ao enviar e-mail.');
+      }
+      setReceiptEmailSuccess(`✓ E-mail oficial enviado para ${targetEmail}`);
+      setTimeout(() => setReceiptEmailSuccess(null), 6000);
+    } catch (e: any) {
+      alert(e.message || 'Erro ao conectar ao servidor de e-mail.');
+    } finally {
+      setIsSendingReceiptEmail(false);
     }
   };
 
@@ -1618,23 +1648,40 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
         <div className="space-y-6">
           {/* Ações de Impressão e Reinício */}
           <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="text-xs text-slate-600">
-              Comprovante oficial pronto para impressão ou entrega ao atleta.
+            <div>
+              <div className="text-xs text-slate-600">
+                Comprovante oficial pronto para impressão ou entrega ao atleta.
+              </div>
+              {receiptEmailSuccess && (
+                <div className="text-xs font-bold text-emerald-700 mt-1">
+                  {receiptEmailSuccess}
+                </div>
+              )}
             </div>
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <button
+                type="button"
+                onClick={handleSendReceiptEmail}
+                disabled={isSendingReceiptEmail || !formData.email}
+                className="px-4 py-2.5 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-sm disabled:opacity-50 cursor-pointer"
+                title={`Enviar comprovante para ${formData.email}`}
+              >
+                <Mail size={16} className={isSendingReceiptEmail ? 'animate-bounce' : ''} />
+                <span>{isSendingReceiptEmail ? 'Enviando...' : 'Enviar por E-mail ao Atleta'}</span>
+              </button>
               <button
                 onClick={handlePrintReceipt}
                 className="px-4 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-sm"
               >
                 <Printer size={16} />
-                <span>Imprimir Comprovante de Atendimento</span>
+                <span>Imprimir Comprovante</span>
               </button>
               <button
                 onClick={handleResetWorkflow}
                 className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold border border-slate-200 transition flex items-center gap-2"
               >
                 <RotateCcw size={16} />
-                <span>Novo Atendimento Presencial</span>
+                <span>Novo Atendimento</span>
               </button>
             </div>
           </div>

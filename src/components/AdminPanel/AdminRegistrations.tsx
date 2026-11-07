@@ -151,6 +151,29 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
   const [emailSentSuccess, setEmailSentSuccess] = useState(false);
   const [isReconciling, setIsReconciling] = useState(false);
   const [actionMessage, setActionMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [isBatchSending, setIsBatchSending] = useState(false);
+  const [batchSendStatus, setBatchSendStatus] = useState<string | null>(null);
+  const [sendingSingleEmailId, setSendingSingleEmailId] = useState<string | null>(null);
+
+  // Estatísticas de disparos de e-mail para a Categoria Casa
+  const casaStats = useMemo(() => {
+    const casaConfirmed = registrations.filter(
+      (r) =>
+        r.status === 'CONFIRMED' &&
+        (r.originType === 'CASA' || r.category?.includes('CASA') || r.category?.includes('LOCAL'))
+    );
+    const pendingEmail = casaConfirmed.filter(
+      (r) => !r.kitNotes?.includes('CONFIRMATION_EMAIL_SENT:true')
+    );
+    const sentEmail = casaConfirmed.filter(
+      (r) => r.kitNotes?.includes('CONFIRMATION_EMAIL_SENT:true')
+    );
+    return {
+      total: casaConfirmed.length,
+      pending: pendingEmail.length,
+      sent: sentEmail.length,
+    };
+  }, [registrations]);
 
   // Distinct attendants list for filter
   const attendantOptions = useMemo(() => {
@@ -307,8 +330,104 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
     }
   };
 
+  const handleBatchResendCasa = async (forceAll: boolean = false) => {
+    const targetCount = forceAll ? casaStats.total : casaStats.pending;
+    if (targetCount === 0 && !forceAll) {
+      alert('Todos os atletas confirmados da Categoria Casa já tiveram seus comprovantes por e-mail disparados!');
+      return;
+    }
+
+    const confirmMsg = forceAll
+      ? `Deseja reenviar o e-mail oficial com comprovante para TODOS os ${casaStats.total} atletas confirmados da Categoria Casa (inclusive os que já receberam)?`
+      : `Deseja enviar o e-mail oficial com comprovante para os ${casaStats.pending} atletas confirmados da Categoria Casa que estão com envio pendente?`;
+
+    if (!window.confirm(confirmMsg)) return;
+
+    setIsBatchSending(true);
+    setBatchSendStatus('Disparando e-mails oficiais para a Categoria Casa...');
+    setActionMessage(null);
+
+    try {
+      const res = await fetch('/api/admin-registrations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'batch-resend-casa', forceAll }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Falha ao processar disparo em lote.');
+      }
+
+      setActionMessage({
+        type: 'success',
+        text: `✓ Disparo em lote finalizado: ${data.sentCount} e-mail(s) enviado(s) com sucesso! (${data.skippedCount || 0} já enviados/ignorados, ${data.failedCount || 0} falhas)`,
+      });
+      onRefresh();
+    } catch (e: any) {
+      setActionMessage({
+        type: 'error',
+        text: e.message || 'Erro ao disparar e-mails em lote.',
+      });
+    } finally {
+      setIsBatchSending(false);
+      setBatchSendStatus(null);
+    }
+  };
+
+  const handleQuickResendEmail = async (reg: Registration, customEmail?: string) => {
+    const targetEmail = (customEmail || reg.athlete?.email || '').trim();
+    if (!targetEmail || !targetEmail.includes('@')) {
+      alert('Este atleta não possui um endereço de e-mail válido cadastrado. Use o botão "Editar" para cadastrar o e-mail correto.');
+      return;
+    }
+
+    if (!window.confirm(`Deseja enviar o e-mail de confirmação oficial com protocolo e código de acesso para ${reg.athlete?.fullName} (${targetEmail})?`)) {
+      return;
+    }
+
+    setSendingSingleEmailId(reg.id);
+    setActionMessage(null);
+
+    try {
+      const res = await fetch('/api/admin-registrations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'resend-email',
+          id: reg.id,
+          protocol: reg.protocol,
+          athleteEmail: targetEmail,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Falha ao disparar e-mail de confirmação.');
+      }
+
+      setActionMessage({
+        type: 'success',
+        text: `✓ E-mail oficial de confirmação enviado com sucesso para ${targetEmail}!`,
+      });
+      setEmailSentSuccess(true);
+      setTimeout(() => setEmailSentSuccess(false), 4000);
+      onRefresh();
+    } catch (e: any) {
+      setActionMessage({
+        type: 'error',
+        text: e.message || 'Erro ao conectar ao servidor de e-mail.',
+      });
+    } finally {
+      setSendingSingleEmailId(null);
+    }
+  };
+
   const handleSendEmailCode = async () => {
-    if (!selectedReg || !reissuedCodeResult || !selectedReg.athlete?.email) return;
+    if (!selectedReg || !selectedReg.athlete?.email) return;
+    let code = reissuedCodeResult;
+    if (!code && selectedReg.kitNotes) {
+      const m = selectedReg.kitNotes.match(/ACCESS_CODE:([A-Za-z0-9]+)/);
+      if (m) code = m[1];
+    }
     setIsSendingEmail(true);
     try {
       const res = await fetch('/api/admin-registrations', {
@@ -316,34 +435,17 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'resend-email',
-          athleteName: selectedReg.athlete.fullName,
-          athleteEmail: selectedReg.athlete.email,
-          athleteCpf: selectedReg.athlete.cpf,
+          id: selectedReg.id,
           protocol: selectedReg.protocol,
-          accessCode: reissuedCodeResult,
-          category: selectedReg.category,
-          originType: selectedReg.originType,
-          gender: selectedReg.gender,
-          shirtSize: selectedReg.shirtSize,
-          status: selectedReg.status,
-          totalAmountCents: selectedReg.totalAmountCents,
-          baseAmountCents: selectedReg.baseAmountCents,
-          feeCents: selectedReg.processingFeeCents,
-          paymentMethod: selectedReg.paymentMethod,
-          isPcd: selectedReg.isPcd,
-          pcdType: selectedReg.pcdType,
-          pcdCid: selectedReg.pcdCid,
-          hasGuide: selectedReg.hasGuide,
-          guideName: selectedReg.guideName,
-          guideCpf: selectedReg.guideCpf,
-          guidePhone: selectedReg.guidePhone,
-          guideShirtSize: selectedReg.guideShirtSize,
+          accessCode: code,
+          athleteEmail: selectedReg.athlete.email,
         }),
       });
       const data = await res.json();
       if (res.ok && data.success) {
         setEmailSentSuccess(true);
         setTimeout(() => setEmailSentSuccess(false), 4000);
+        onRefresh();
       } else {
         alert(data.error || 'Falha ao enviar e-mail.');
       }
@@ -569,6 +671,66 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* Banner de Gestão e Disparo de E-mails da Categoria Casa */}
+      <div className="bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-transparent border border-amber-200/80 rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xs">
+        <div className="flex items-start sm:items-center gap-3.5">
+          <div className="w-11 h-11 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm shadow-amber-500/30">
+            <Mail className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="text-sm font-black text-slate-900 tracking-tight">
+                Disparo de E-mails Oficiais • Categoria Casa (Moradores de Lajes Pintadas)
+              </h3>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-200">
+                {casaStats.total} Confirmados
+              </span>
+            </div>
+            <p className="text-xs text-slate-600 mt-0.5">
+              {casaStats.pending > 0 ? (
+                <span>
+                  Existem <strong className="text-amber-800 font-bold">{casaStats.pending} atletas da Casa confirmados</strong> que ainda não receberam ou não registraram o e-mail oficial com comprovante e código de acesso.
+                </span>
+              ) : (
+                <span>
+                  ✓ Todos os <strong className="text-emerald-700 font-bold">{casaStats.total} atletas confirmados da Casa</strong> já possuem registro de comprovante oficial enviado por e-mail!
+                </span>
+              )}
+            </p>
+            {batchSendStatus && (
+              <p className="text-xs font-bold text-orange-600 animate-pulse mt-1">
+                {batchSendStatus}
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap shrink-0 w-full md:w-auto justify-end">
+          {casaStats.pending > 0 && (
+            <button
+              type="button"
+              onClick={() => handleBatchResendCasa(false)}
+              disabled={isBatchSending}
+              className="px-4 py-2 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm shadow-amber-500/20 disabled:opacity-50 cursor-pointer"
+            >
+              <Mail className={`w-3.5 h-3.5 ${isBatchSending ? 'animate-bounce' : ''}`} />
+              <span>{isBatchSending ? 'Enviando...' : `Disparar para os ${casaStats.pending} Pendentes`}</span>
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={() => handleBatchResendCasa(true)}
+            disabled={isBatchSending || casaStats.total === 0}
+            className="px-3.5 py-2 bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5 disabled:opacity-50 cursor-pointer shadow-2xs"
+            title="Reenvia o e-mail de confirmação para todos os atletas da Casa confirmados"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isBatchSending ? 'animate-spin' : ''}`} />
+            <span>Reenviar a Todos da Casa ({casaStats.total})</span>
+          </button>
+        </div>
+      </div>
+
       {/* Top Controls: Search, Filters & Exports */}
       <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
         <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
@@ -783,7 +945,7 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
                 <th className="py-3 px-3.5">Pagamento</th>
                 <th className="py-3 px-3 text-center">Situação</th>
                 <th className="py-3 px-3 text-center">Kit</th>
-                <th className="py-3 px-4 text-center sticky right-0 bg-slate-100/95 backdrop-blur-xs z-20 shadow-[-8px_0_12px_rgba(0,0,0,0.06)] border-l border-slate-200/90 min-w-[185px]">
+                <th className="py-3 px-4 text-center sticky right-0 bg-slate-100/95 backdrop-blur-xs z-20 shadow-[-8px_0_12px_rgba(0,0,0,0.06)] border-l border-slate-200/90 min-w-[220px]">
                   Ações
                 </th>
               </tr>
@@ -801,6 +963,7 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
                   const isReserved = reg.status === 'RESERVED';
                   const isCasa = reg.originType === 'CASA';
                   const isPresential = reg.channel === 'PRESENCIAL_PREFEITURA';
+                  const hasEmailSent = reg.kitNotes?.includes('CONFIRMATION_EMAIL_SENT:true');
 
                   return (
                     <tr key={reg.id} className="group hover:bg-slate-50/80 transition">
@@ -809,10 +972,22 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
                       </td>
                       <td className="py-3 px-4">
                         <div className="font-bold text-slate-900">{reg.athlete?.fullName}</div>
-                        <div className="text-[11px] text-slate-500 flex items-center gap-1.5">
+                        <div className="text-[11px] text-slate-500 flex items-center gap-1.5 flex-wrap">
                           <span>{formatCPF(reg.athlete?.cpf || '')}</span>
                           <span>•</span>
                           <span>{reg.athlete?.city}/{reg.athlete?.state}</span>
+                        </div>
+                        <div className="mt-1 flex items-center gap-1">
+                          {hasEmailSent ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200" title={`E-mail enviado para ${reg.athlete?.email}`}>
+                              <Check className="w-2.5 h-2.5" />
+                              <span>E-mail Enviado</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200" title="Envio de e-mail ainda não registrado">
+                              <span>⏳ E-mail Pendente</span>
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td className="py-3 px-4 whitespace-nowrap">
@@ -921,7 +1096,7 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
                           <span className="text-slate-400 font-medium">Pendente</span>
                         )}
                       </td>
-                      <td className="py-3 px-3 text-center whitespace-nowrap sticky right-0 bg-white/95 group-hover:bg-slate-50/95 backdrop-blur-xs z-10 shadow-[-8px_0_12px_rgba(0,0,0,0.06)] border-l border-slate-200/70 min-w-[185px]">
+                      <td className="py-3 px-3 text-center whitespace-nowrap sticky right-0 bg-white/95 group-hover:bg-slate-50/95 backdrop-blur-xs z-10 shadow-[-8px_0_12px_rgba(0,0,0,0.06)] border-l border-slate-200/70 min-w-[220px]">
                         <div className="flex items-center justify-center gap-1.5">
                           <button
                             onClick={() => handleStartEdit(reg)}
@@ -934,11 +1109,31 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
 
                           <button
                             onClick={() => handleOpenDetails(reg)}
-                            className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 rounded-lg border border-slate-200 font-bold transition flex items-center gap-1.5 text-xs shrink-0 cursor-pointer"
+                            className="px-2 py-1.5 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 rounded-lg border border-slate-200 font-bold transition flex items-center gap-1 text-xs shrink-0 cursor-pointer"
                             title="Ver detalhes da inscrição"
                           >
                             <Eye className="w-3.5 h-3.5" />
                             <span className="hidden sm:inline">Detalhes</span>
+                          </button>
+
+                          <button
+                            onClick={() => handleQuickResendEmail(reg)}
+                            disabled={sendingSingleEmailId === reg.id || !reg.athlete?.email}
+                            className={`px-2 py-1.5 rounded-lg border font-bold transition flex items-center gap-1 text-xs shrink-0 cursor-pointer disabled:opacity-50 ${
+                              hasEmailSent
+                                ? 'bg-sky-50 hover:bg-sky-100 text-sky-700 border-sky-200'
+                                : 'bg-amber-100 hover:bg-amber-200 text-amber-900 border-amber-300 shadow-2xs'
+                            }`}
+                            title={
+                              hasEmailSent
+                                ? `E-mail já enviado. Clique para reenviar para ${reg.athlete?.email}`
+                                : `E-mail PENDENTE! Clique para disparar agora para ${reg.athlete?.email}`
+                            }
+                          >
+                            <Mail className={`w-3.5 h-3.5 ${sendingSingleEmailId === reg.id ? 'animate-bounce' : ''}`} />
+                            <span className="hidden xl:inline">
+                              {sendingSingleEmailId === reg.id ? '...' : 'E-mail'}
+                            </span>
                           </button>
 
                           {reg.status === 'RESERVED' && (
@@ -1027,9 +1222,32 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
                     <span className="text-slate-400 block text-[11px]">Telefone/WhatsApp:</span>
                     <span className="font-semibold text-slate-800">{formatPhone(selectedReg.athlete?.phone || '')}</span>
                   </div>
-                  <div className="col-span-2">
-                    <span className="text-slate-400 block text-[11px]">E-mail:</span>
-                    <span className="font-semibold text-slate-800">{selectedReg.athlete?.email}</span>
+                  <div className="col-span-2 sm:col-span-3 bg-slate-100/90 rounded-xl p-3 border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div>
+                      <span className="text-slate-500 block text-[11px] font-bold">E-mail para Notificações & Comprovante:</span>
+                      <span className="font-bold text-slate-900 text-xs block">{selectedReg.athlete?.email || 'Nenhum e-mail cadastrado'}</span>
+                      <div className="mt-1">
+                        {selectedReg.kitNotes?.includes('CONFIRMATION_EMAIL_SENT:true') ? (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                            <Check className="w-3 h-3 text-emerald-600" />
+                            <span>E-mail de confirmação enviado</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                            <span>⏳ Envio de e-mail ainda não registrado</span>
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleQuickResendEmail(selectedReg)}
+                      disabled={sendingSingleEmailId === selectedReg.id || !selectedReg.athlete?.email}
+                      className="px-3.5 py-1.5 bg-sky-600 hover:bg-sky-700 active:bg-sky-800 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-xs disabled:opacity-50 cursor-pointer shrink-0"
+                    >
+                      <Mail className={`w-3.5 h-3.5 ${sendingSingleEmailId === selectedReg.id ? 'animate-bounce' : ''}`} />
+                      <span>{sendingSingleEmailId === selectedReg.id ? 'Enviando...' : 'Reenviar E-mail Agora'}</span>
+                    </button>
                   </div>
                   <div>
                     <span className="text-slate-400 block text-[11px]">Cidade / UF:</span>

@@ -46,13 +46,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const supabase = getSupabase();
 
   try {
-    // 1.0 Reenvio de e-mail com protocolo e código de acesso
+    // 1.0 Reenvio de e-mail institucional oficial (Individual)
     if (req.method === 'POST' && req.body?.action === 'resend-email') {
       if (!isEmailConfigured()) {
         return res.status(503).json({ error: 'Servidor de e-mail SMTP não está configurado.' });
       }
 
-      const { 
+      let { 
+        id,
         athleteName, 
         athleteEmail, 
         athleteCpf, 
@@ -76,8 +77,66 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         guideShirtSize,
         originType
       } = req.body;
-      if (!athleteEmail || !protocol || !accessCode) {
-        return res.status(400).json({ error: 'E-mail, protocolo e código de acesso são obrigatórios.' });
+
+      let regRow: any = null;
+
+      // Se id ou protocol foi fornecido, recuperar os dados completos do Supabase
+      if (supabase && (id || protocol)) {
+        let q = supabase.from('registrations').select('*, athlete:athletes(*)');
+        if (id) q = q.eq('id', id);
+        else if (protocol) q = q.eq('protocol', protocol);
+        const { data: dbReg } = await q.maybeSingle();
+        if (dbReg) {
+          regRow = dbReg;
+          athleteName = athleteName || dbReg.athlete?.full_name;
+          athleteEmail = (athleteEmail || dbReg.athlete?.email || '').trim().toLowerCase();
+          athleteCpf = athleteCpf || dbReg.athlete?.cpf || '';
+          protocol = protocol || dbReg.protocol;
+          category = category || dbReg.category;
+          originType = originType || dbReg.origin_type;
+          gender = gender || dbReg.gender;
+          shirtSize = shirtSize || dbReg.shirt_size;
+          status = status || dbReg.status;
+          totalAmountCents = totalAmountCents ?? dbReg.total_amount_cents;
+          baseAmountCents = baseAmountCents ?? dbReg.base_amount_cents;
+          feeCents = feeCents ?? dbReg.processing_fee_cents;
+          paymentMethod = paymentMethod || dbReg.payment_method;
+
+          const rawNotes = typeof dbReg.kit_notes === 'string' ? dbReg.kit_notes : '';
+          if (!accessCode && rawNotes) {
+            const m = rawNotes.match(/ACCESS_CODE:([A-Za-z0-9]+)/);
+            if (m) accessCode = m[1];
+          }
+
+          let pcdMeta: any = null;
+          if (rawNotes) {
+            const mPcd = rawNotes.match(/PCD_META:(\{.*?\})/);
+            if (mPcd) { try { pcdMeta = JSON.parse(mPcd[1]); } catch {} }
+          }
+          if (isPcd === undefined) {
+            isPcd = Boolean(
+              pcdMeta?.isPcd ||
+              dbReg.origin_type === 'PCD' ||
+              dbReg.category?.includes('PCD') ||
+              (dbReg.total_amount_cents && dbReg.total_amount_cents <= 3000)
+            );
+          }
+          pcdType = pcdType || pcdMeta?.pcdType;
+          pcdCid = pcdCid || pcdMeta?.pcdCid;
+          hasGuide = hasGuide ?? Boolean(pcdMeta?.hasGuide);
+          guideName = guideName || pcdMeta?.guideName;
+          guideCpf = guideCpf || pcdMeta?.guideCpf;
+          guidePhone = guidePhone || pcdMeta?.guidePhone;
+          guideShirtSize = guideShirtSize || pcdMeta?.guideShirtSize;
+        }
+      }
+
+      if (!accessCode) {
+        accessCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+      }
+
+      if (!athleteEmail || !protocol) {
+        return res.status(400).json({ error: 'E-mail e protocolo da inscrição são obrigatórios.' });
       }
 
       const success = await sendConfirmationEmail({
@@ -106,10 +165,161 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
 
       if (success) {
-        return res.status(200).json({ success: true, message: `E-mail enviado com sucesso para ${athleteEmail}!` });
+        // Gravar no banco a flag CONFIRMATION_EMAIL_SENT:true e o ACCESS_CODE
+        const targetId = id || regRow?.id;
+        const targetProtocol = protocol || regRow?.protocol;
+        if (supabase && (targetId || targetProtocol)) {
+          try {
+            const { data: upReg } = await (targetId 
+              ? supabase.from('registrations').select('id, kit_notes').eq('id', targetId).single()
+              : supabase.from('registrations').select('id, kit_notes').eq('protocol', targetProtocol).single()
+            );
+            if (upReg) {
+              const prevNotes = typeof upReg.kit_notes === 'string' ? upReg.kit_notes : '';
+              const cleanNotes = prevNotes.replace(/\|?CONFIRMATION_EMAIL_SENT:true/g, '').replace(/\|?EMAIL_SENDING:\d+/g, '');
+              const newNotes = `${cleanNotes ? cleanNotes + '|' : ''}ACCESS_CODE:${accessCode}|CONFIRMATION_EMAIL_SENT:true`;
+              await supabase
+                .from('registrations')
+                .update({ kit_notes: newNotes, updated_at: new Date().toISOString() })
+                .eq('id', upReg.id);
+            }
+          } catch (e) {
+            console.warn('[resend-email] Falha ao atualizar flag no Supabase:', e);
+          }
+        }
+        return res.status(200).json({ success: true, message: `E-mail de confirmação enviado com sucesso para ${athleteEmail}!` });
       } else {
         return res.status(500).json({ error: 'Falha ao disparar e-mail pelo servidor SMTP.' });
       }
+    }
+
+    // 1.0b Disparo em lote de e-mails para inscritos da Categoria Casa
+    if (req.method === 'POST' && req.body?.action === 'batch-resend-casa') {
+      if (!isEmailConfigured()) {
+        return res.status(503).json({ error: 'Servidor de e-mail SMTP não está configurado.' });
+      }
+
+      if (!supabase) {
+        return res.status(503).json({ error: 'Conexão com banco de dados indisponível.' });
+      }
+
+      const forceAll = Boolean(req.body?.forceAll);
+
+      // Buscar todas as inscrições confirmadas da Categoria Casa
+      const { data: casaRegs, error: fetchErr } = await supabase
+        .from('registrations')
+        .select('*, athlete:athletes(*)')
+        .or('category.ilike.%CASA%,origin_type.eq.CASA')
+        .eq('status', 'CONFIRMED');
+
+      if (fetchErr) {
+        return res.status(500).json({ error: fetchErr.message });
+      }
+
+      const results = [];
+      let sentCount = 0;
+      let failedCount = 0;
+      let skippedCount = 0;
+
+      for (const reg of (casaRegs || [])) {
+        const email = reg.athlete?.email?.trim();
+        const rawNotes = typeof reg.kit_notes === 'string' ? reg.kit_notes : '';
+        const alreadySent = rawNotes.includes('CONFIRMATION_EMAIL_SENT:true');
+
+        if (!email || !email.includes('@')) {
+          results.push({ protocol: reg.protocol, status: 'SKIPPED_NO_EMAIL', athlete: reg.athlete?.full_name });
+          skippedCount++;
+          continue;
+        }
+
+        if (alreadySent && !forceAll) {
+          results.push({ protocol: reg.protocol, status: 'ALREADY_SENT', athlete: reg.athlete?.full_name });
+          skippedCount++;
+          continue;
+        }
+
+        let accessCode = reg.access_code;
+        if (!accessCode && rawNotes) {
+          const match = rawNotes.match(/ACCESS_CODE:([A-Za-z0-9]+)/);
+          if (match) accessCode = match[1];
+        }
+        if (!accessCode) {
+          accessCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+        }
+
+        let pcdMeta: any = null;
+        if (rawNotes) {
+          const mPcd = rawNotes.match(/PCD_META:(\{.*?\})/);
+          if (mPcd) {
+            try { pcdMeta = JSON.parse(mPcd[1]); } catch {}
+          }
+        }
+        const isPcd = Boolean(
+          pcdMeta?.isPcd ||
+          reg.origin_type === 'PCD' ||
+          reg.category?.includes('PCD') ||
+          (reg.total_amount_cents && reg.total_amount_cents <= 3000)
+        );
+
+        try {
+          const sent = await sendConfirmationEmail({
+            athleteName: reg.athlete?.full_name || 'Atleta',
+            athleteEmail: email.toLowerCase(),
+            athleteCpf: reg.athlete?.cpf || '',
+            protocol: reg.protocol,
+            accessCode,
+            category: reg.category,
+            originType: reg.origin_type || 'CASA',
+            gender: reg.gender,
+            shirtSize: reg.shirt_size || 'M',
+            status: 'CONFIRMED',
+            totalAmountCents: reg.total_amount_cents,
+            baseAmountCents: reg.base_amount_cents,
+            feeCents: reg.processing_fee_cents,
+            paymentMethod: reg.payment_method,
+            isPcd,
+            pcdType: pcdMeta?.pcdType,
+            pcdCid: pcdMeta?.pcdCid,
+            hasGuide: Boolean(pcdMeta?.hasGuide),
+            guideName: pcdMeta?.guideName,
+            guideCpf: pcdMeta?.guideCpf,
+            guidePhone: pcdMeta?.guidePhone,
+            guideShirtSize: pcdMeta?.guideShirtSize,
+          });
+
+          if (sent) {
+            sentCount++;
+            const cleanNotes = rawNotes.replace(/\|?CONFIRMATION_EMAIL_SENT:true/g, '').replace(/\|?ACCESS_CODE:[A-Za-z0-9]+/g, '');
+            const updatedNotes = `${cleanNotes ? cleanNotes + '|' : ''}ACCESS_CODE:${accessCode}|CONFIRMATION_EMAIL_SENT:true`;
+            await supabase
+              .from('registrations')
+              .update({
+                kit_notes: updatedNotes,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', reg.id);
+            results.push({ protocol: reg.protocol, status: 'SENT', athlete: reg.athlete?.full_name, email });
+          } else {
+            failedCount++;
+            results.push({ protocol: reg.protocol, status: 'FAILED', athlete: reg.athlete?.full_name, email });
+          }
+        } catch (sendErr: any) {
+          failedCount++;
+          results.push({ protocol: reg.protocol, status: 'ERROR', error: sendErr.message, athlete: reg.athlete?.full_name });
+        }
+
+        // Delay defensivo de 400ms entre disparos
+        await new Promise((resolve) => setTimeout(resolve, 400));
+      }
+
+      return res.status(200).json({
+        success: true,
+        totalCasaConfirmed: (casaRegs || []).length,
+        sentCount,
+        failedCount,
+        skippedCount,
+        results,
+      });
     }
 
     // 1.1 Atualização / Edição Completa da Inscrição (Admin Geral)
@@ -449,12 +659,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             (currentReg.total_amount_cents && currentReg.total_amount_cents <= 3000)
           );
 
-          await sendConfirmationEmail({
+          let finalCode = accessCode;
+          if (!finalCode && currentReg.kit_notes) {
+            const mCode = currentReg.kit_notes.match(/ACCESS_CODE:([A-Za-z0-9]+)/);
+            if (mCode) finalCode = mCode[1];
+          }
+          if (!finalCode) {
+            finalCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+          }
+
+          const sentOk = await sendConfirmationEmail({
             athleteName: currentReg.athlete.full_name,
             athleteEmail: currentReg.athlete.email.trim().toLowerCase(),
             athleteCpf: currentReg.athlete.cpf || '',
             protocol: currentReg.protocol,
-            accessCode: accessCode || 'CONFIRMADO',
+            accessCode: finalCode,
             category: isPcd ? (currentReg.gender === 'FEMININO' ? 'PCD_FEMININO' : 'PCD_MASCULINO') : currentReg.category,
             originType: currentReg.origin_type || (isPcd ? 'PCD' : undefined),
             gender: currentReg.gender,
@@ -472,7 +691,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             guideCpf: pcdMeta?.guideCpf,
             guidePhone: pcdMeta?.guidePhone,
             guideShirtSize: pcdMeta?.guideShirtSize,
-          }).catch(console.error);
+          }).catch((err) => {
+            console.error('[manual-confirm] Falha ao enviar e-mail:', err);
+            return false;
+          });
+
+          if (sentOk) {
+            const rawKn = currentReg.kit_notes || '';
+            const cleanKn = rawKn.replace(/\|?CONFIRMATION_EMAIL_SENT:true/g, '').replace(/\|?ACCESS_CODE:[A-Za-z0-9]+/g, '');
+            const updatedKn = `${cleanKn ? cleanKn + '|' : ''}ACCESS_CODE:${finalCode}|CONFIRMATION_EMAIL_SENT:true`;
+            await supabase
+              .from('registrations')
+              .update({ kit_notes: updatedKn, updated_at: new Date().toISOString() })
+              .eq('id', regId);
+          }
         }
 
         return res.status(200).json({
