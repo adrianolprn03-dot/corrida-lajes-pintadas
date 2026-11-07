@@ -321,7 +321,7 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
   };
 
   const copyPaymentUrl = () => {
-    const url = createdRegistration?.asaasInvoiceUrl || createdRegistration?.asaasPixQrCode || createdRegistration?.pixQrCodeUrl;
+    const url = createdRegistration?.asaasInvoiceUrl;
     if (url) {
       navigator.clipboard.writeText(url);
       setCopiedLink(true);
@@ -1523,25 +1523,43 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
                     <span>Aponte a câmera do celular para pagar via Pix</span>
                   </div>
 
-                  {(createdRegistration.asaasPixQrCode || createdRegistration.pixQrCodeUrl) ? (
-                    <div className="flex justify-center my-3">
-                      <img
-                        src={(createdRegistration.asaasPixQrCode || createdRegistration.pixQrCodeUrl)!}
-                        alt="QR Code Pix Asaas"
-                        className="w-48 h-48 rounded-xl border border-slate-300 p-2 bg-white shadow-sm"
-                      />
-                    </div>
-                  ) : (createdRegistration.asaasPixCopyPaste || createdRegistration.pixPayload) ? (
-                    <div className="flex justify-center my-3">
-                      <img
-                        src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
-                          (createdRegistration.asaasPixCopyPaste || createdRegistration.pixPayload)!
-                        )}`}
-                        alt="QR Code Pix"
-                        className="w-48 h-48 rounded-xl border border-slate-300 p-2 bg-white shadow-sm"
-                      />
-                    </div>
-                  ) : null}
+                  {(() => {
+                    const rawQr = createdRegistration.asaasPixQrCode || createdRegistration.pixQrCodeUrl;
+                    const copyPaste = (createdRegistration.asaasPixCopyPaste || createdRegistration.pixPayload || '').trim();
+
+                    let qrImageSrc = '';
+                    if (rawQr && rawQr.trim()) {
+                      const trimmed = rawQr.trim();
+                      qrImageSrc = (trimmed.startsWith('data:image') || trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('/'))
+                        ? trimmed
+                        : `data:image/png;base64,${trimmed}`;
+                    } else if (copyPaste) {
+                      qrImageSrc = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(copyPaste)}`;
+                    }
+
+                    if (!qrImageSrc) return null;
+
+                    return (
+                      <div className="flex flex-col items-center justify-center my-3">
+                        <img
+                          src={qrImageSrc}
+                          alt="QR Code Pix Asaas"
+                          className="w-52 h-52 object-contain rounded-2xl border-2 border-emerald-300 p-3 bg-white shadow-md"
+                          onError={(e) => {
+                            if (copyPaste) {
+                              const fallbackUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(copyPaste)}`;
+                              if (e.currentTarget.src !== fallbackUrl) {
+                                e.currentTarget.src = fallbackUrl;
+                              }
+                            }
+                          }}
+                        />
+                        <span className="text-[11px] font-bold text-slate-500 mt-2">
+                          Abra o aplicativo do banco e escaneie o código acima
+                        </span>
+                      </div>
+                    );
+                  })()}
 
                   {(createdRegistration.asaasPixCopyPaste || createdRegistration.pixPayload) && (
                     <div className="max-w-md mx-auto space-y-2">

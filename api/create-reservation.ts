@@ -463,7 +463,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (paymentMethod === 'PIX' && payment.id) {
       try {
         const qr = await asaasClient.getPixQrCode(payment.id);
-        pixQr = qr.encodedImage;
+        if (qr.encodedImage) {
+          pixQr = qr.encodedImage.startsWith('data:image')
+            ? qr.encodedImage
+            : `data:image/png;base64,${qr.encodedImage.trim()}`;
+        }
         pixCopy = qr.payload;
       } catch (e) {
         console.warn('[Asaas] Falha ao obter QR Code Pix, invoiceUrl disponível:', e);
