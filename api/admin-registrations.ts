@@ -215,7 +215,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const { data: casaRegs, error: fetchErr } = await supabase
         .from('registrations')
         .select('*, athlete:athletes(*)')
-        .or('category.ilike.%CASA%,category.ilike.%LOCAL%,origin_type.eq.CASA,origin_type.eq.LOCAL')
+        .or('origin_type.eq.CASA,category.in.(CASA_MASCULINO,CASA_FEMININO)')
         .eq('status', 'CONFIRMED');
 
       if (fetchErr) {
