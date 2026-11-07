@@ -4,6 +4,7 @@
 // ==============================================================================
 
 import nodemailer from 'nodemailer';
+import QRCode from 'qrcode';
 
 export interface RegistrationEmailData {
   athleteName: string;
@@ -137,8 +138,22 @@ export async function sendConfirmationEmail(data: RegistrationEmailData): Promis
     : `Olá, ${data.athleteName}! Sua vaga na prova está 100% garantida.`;
 
   const subject = isReserved
-    ? `Pré-Reserva #${data.protocol} (Código de Acesso: ${data.accessCode || '---'}) - 5ª Corrida de Emancipação`
-    : `Inscrição Confirmada #${data.protocol} (Código de Acesso: ${data.accessCode || '---'}) - 5ª Corrida de Emancipação`;
+    ? `Pré-Reserva de Inscrição: ${data.athleteName} - 5ª Corrida de Emancipação (${data.protocol})`
+    : `Comprovante de Inscrição: ${data.athleteName} - 5ª Corrida de Emancipação (${data.protocol})`;
+
+  let qrBuffer: Buffer | null = null;
+  if (!isReserved) {
+    try {
+      qrBuffer = await QRCode.toBuffer(`LP5-KIT:${data.protocol}:${data.accessCode || ''}`, {
+        type: 'png',
+        width: 240,
+        margin: 1,
+        color: { dark: '#0f172a', light: '#ffffff' },
+      });
+    } catch (qrErr) {
+      console.warn('[Email] Falha ao gerar buffer do QR Code:', qrErr);
+    }
+  }
 
   const maskedCpf = data.athleteCpf 
     ? `${data.athleteCpf.replace(/\D/g, '').slice(0, 3)}.***.***-${data.athleteCpf.replace(/\D/g, '').slice(9)}`
@@ -152,8 +167,8 @@ export async function sendConfirmationEmail(data: RegistrationEmailData): Promis
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${subject}</title>
 </head>
-<body style="margin: 0; padding: 0; background-color: #0b1120; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #0b1120; padding: 24px 12px;">
+<body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f1f5f9; padding: 24px 12px;">
     <tr>
       <td align="center">
         <!-- Contêiner Central -->
@@ -232,11 +247,11 @@ export async function sendConfirmationEmail(data: RegistrationEmailData): Promis
                 </p>
                 <div style="display: inline-block; background-color: #ffffff; padding: 12px; border-radius: 14px; border: 1px solid #fed7aa; box-shadow: 0 4px 10px rgba(0,0,0,0.06);">
                   <img
-                    src="https://api.qrserver.com/v1/create-qr-code/?size=190x190&margin=8&data=${encodeURIComponent(`LP5-KIT:${data.protocol}:${data.accessCode || ''}`)}"
+                    src="${qrBuffer ? 'cid:voucher-qrcode' : `https://api.qrserver.com/v1/create-qr-code/?size=190x190&margin=8&data=${encodeURIComponent(`LP5-KIT:${data.protocol}:${data.accessCode || ''}`)}`}"
                     width="180"
                     height="180"
                     alt="QR Code de Retirada do Kit - ${data.protocol}"
-                    style="display: block; margin: 0 auto;"
+                    style="display: block; margin: 0 auto; border: 0;"
                   />
                   <span style="display: block; margin-top: 8px; font-family: monospace, Courier New, monospace; font-size: 12px; font-weight: 900; color: #0f172a; letter-spacing: 1px;">
                     ${data.protocol} • TAM. ${data.shirtSize}
@@ -492,14 +507,31 @@ export async function sendConfirmationEmail(data: RegistrationEmailData): Promis
       const activeTransporter = attempt === 1 ? transporter : getTransporter();
       if (!activeTransporter) return false;
 
-      const info = await activeTransporter.sendMail({
+      const mailOptions: any = {
         from: sender,
         replyTo: fromEmail,
         to: data.athleteEmail.trim().toLowerCase(),
         subject,
         text,
         html,
-      });
+        headers: {
+          'X-Priority': '1',
+          'X-MSMail-Priority': 'High',
+          'Importance': 'high',
+        },
+      };
+
+      if (qrBuffer) {
+        mailOptions.attachments = [
+          {
+            filename: `voucher-${data.protocol}.png`,
+            content: qrBuffer,
+            cid: 'voucher-qrcode',
+          },
+        ];
+      }
+
+      const info = await activeTransporter.sendMail(mailOptions);
 
       console.log(`[Email] Confirmação enviada com sucesso para ${data.athleteEmail} na tentativa ${attempt} (ID: ${info.messageId})`);
       return true;
