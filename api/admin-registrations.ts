@@ -20,7 +20,13 @@ function normalizeSupabaseUrl(rawUrl?: string): string {
 
 function normalizeKey(rawKey?: string): string {
   if (!rawKey) return '';
-  return rawKey.trim().replace(/^["']|["']$/g, '');
+  return rawKey
+    .replace(/\\n/g, '')
+    .replace(/\\r/g, '')
+    .replace(/[\r\n]+/g, '')
+    .trim()
+    .replace(/^["']|["']$/g, '')
+    .trim();
 }
 
 function getSupabase(): SupabaseClient | null {
@@ -205,11 +211,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       const forceAll = Boolean(req.body?.forceAll);
 
-      // Buscar todas as inscrições confirmadas da Categoria Casa
+      // Buscar todas as inscrições confirmadas da Categoria Casa / Local
       const { data: casaRegs, error: fetchErr } = await supabase
         .from('registrations')
         .select('*, athlete:athletes(*)')
-        .or('category.ilike.%CASA%,origin_type.eq.CASA')
+        .or('category.ilike.%CASA%,category.ilike.%LOCAL%,origin_type.eq.CASA,origin_type.eq.LOCAL')
         .eq('status', 'CONFIRMED');
 
       if (fetchErr) {

@@ -22,7 +22,13 @@ function normalizeSupabaseUrl(rawUrl?: string): string {
 
 function normalizeKey(rawKey?: string): string {
   if (!rawKey) return '';
-  return rawKey.trim().replace(/^["']|["']$/g, '');
+  return rawKey
+    .replace(/\\n/g, '')
+    .replace(/\\r/g, '')
+    .replace(/[\r\n]+/g, '')
+    .trim()
+    .replace(/^["']|["']$/g, '')
+    .trim();
 }
 
 function getSupabase(): SupabaseClient | null {

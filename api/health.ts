@@ -37,10 +37,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
   }
 
-  const asaasKey = (process.env.ASAAS_API_KEY || '').trim().replace(/^["']|["']$/g, '');
-  const asaasEnv = (process.env.ASAAS_ENVIRONMENT || '').trim().replace(/^["']|["']$/g, '').toLowerCase() || 'sandbox';
-  const smtpUser = (process.env.SMTP_USER || '').trim().replace(/^["']|["']$/g, '');
-  const smtpHost = (process.env.SMTP_HOST || '').trim().replace(/^["']|["']$/g, '');
+  const asaasKey = (process.env.ASAAS_API_KEY || '').replace(/\\n|\\r/g, '').replace(/[\r\n]+/g, '').trim().replace(/^["']|["']$/g, '').trim();
+  const asaasEnv = (process.env.ASAAS_ENVIRONMENT || '').replace(/\\n|\\r/g, '').replace(/[\r\n]+/g, '').trim().replace(/^["']|["']$/g, '').toLowerCase().trim() || 'sandbox';
+  const smtpUser = (process.env.SMTP_USER || '').replace(/\\n|\\r/g, '').replace(/[\r\n]+/g, '').trim().replace(/^["']|["']$/g, '').trim();
+  const smtpHost = (process.env.SMTP_HOST || '').replace(/\\n|\\r/g, '').replace(/[\r\n]+/g, '').trim().replace(/^["']|["']$/g, '').trim();
 
   return res.status(200).json({
     status: 'healthy',
