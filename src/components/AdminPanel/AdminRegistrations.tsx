@@ -755,29 +755,37 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
 
       {/* Registrations Table */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-5 py-3.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-          <div className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-            Mostrando {filteredRegistrations.length} de {registrations.length} inscrições
+        <div className="px-5 py-3.5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+              Mostrando {filteredRegistrations.length} de {registrations.length} inscrições
+            </span>
+            <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 shadow-2xs">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+              Ações Fixadas à Direita
+            </span>
           </div>
           <div className="text-[11px] text-slate-500 font-medium">
-            Clique em "Detalhes" para auditar categoria Casa, emitir código ou verificar pagamento
+            Role a tabela lateralmente se necessário • Clique em <strong className="text-amber-700">"Editar"</strong> para alterar dados ou <strong>"Detalhes"</strong> para histórico
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-100/75 text-slate-600 font-bold uppercase tracking-wider border-b border-slate-200">
+        <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-300 hover:scrollbar-thumb-slate-400">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead className="bg-slate-100/80 text-slate-600 font-bold uppercase tracking-wider border-b border-slate-200">
               <tr>
-                <th className="py-3 px-4">Protocolo</th>
-                <th className="py-3 px-4">Atleta</th>
-                <th className="py-3 px-4">Sexo</th>
-                <th className="py-3 px-4">Canal</th>
-                <th className="py-3 px-4">Categoria / Vínculo</th>
-                <th className="py-3 px-4">Camisa</th>
-                <th className="py-3 px-4">Pagamento</th>
-                <th className="py-3 px-4">Situação</th>
-                <th className="py-3 px-4">Kit</th>
-                <th className="py-3 px-4 text-center">Ações</th>
+                <th className="py-3 px-3.5">Protocolo</th>
+                <th className="py-3 px-3.5">Atleta</th>
+                <th className="py-3 px-3.5">Sexo</th>
+                <th className="py-3 px-3.5">Canal</th>
+                <th className="py-3 px-3.5">Categoria / Vínculo</th>
+                <th className="py-3 px-3 text-center">Camisa</th>
+                <th className="py-3 px-3.5">Pagamento</th>
+                <th className="py-3 px-3 text-center">Situação</th>
+                <th className="py-3 px-3 text-center">Kit</th>
+                <th className="py-3 px-4 text-center sticky right-0 bg-slate-100/95 backdrop-blur-xs z-20 shadow-[-8px_0_12px_rgba(0,0,0,0.06)] border-l border-slate-200/90 min-w-[185px]">
+                  Ações
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -795,7 +803,7 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
                   const isPresential = reg.channel === 'PRESENCIAL_PREFEITURA';
 
                   return (
-                    <tr key={reg.id} className="hover:bg-slate-50/80 transition">
+                    <tr key={reg.id} className="group hover:bg-slate-50/80 transition">
                       <td className="py-3 px-4 font-mono font-bold text-slate-900 whitespace-nowrap">
                         {reg.protocol}
                       </td>
@@ -913,30 +921,30 @@ export const AdminRegistrations: React.FC<AdminRegistrationsProps> = ({
                           <span className="text-slate-400 font-medium">Pendente</span>
                         )}
                       </td>
-                      <td className="py-3 px-4 text-center whitespace-nowrap">
+                      <td className="py-3 px-3 text-center whitespace-nowrap sticky right-0 bg-white/95 group-hover:bg-slate-50/95 backdrop-blur-xs z-10 shadow-[-8px_0_12px_rgba(0,0,0,0.06)] border-l border-slate-200/70 min-w-[185px]">
                         <div className="flex items-center justify-center gap-1.5">
                           <button
-                            onClick={() => handleOpenDetails(reg)}
-                            className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg border border-slate-200 font-bold transition flex items-center gap-1"
-                            title="Ver detalhes da inscrição"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                            <span className="hidden sm:inline">Detalhes</span>
-                          </button>
-
-                          <button
                             onClick={() => handleStartEdit(reg)}
-                            className="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-bold shadow-2xs transition flex items-center gap-1"
+                            className="px-2.5 py-1.5 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white rounded-lg font-bold shadow-xs hover:shadow transition flex items-center gap-1.5 text-xs shrink-0 cursor-pointer"
                             title="Editar dados cadastrais, sexo, prova e camisa do atleta"
                           >
                             <Edit3 className="w-3.5 h-3.5" />
                             <span>Editar</span>
                           </button>
 
+                          <button
+                            onClick={() => handleOpenDetails(reg)}
+                            className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 rounded-lg border border-slate-200 font-bold transition flex items-center gap-1.5 text-xs shrink-0 cursor-pointer"
+                            title="Ver detalhes da inscrição"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">Detalhes</span>
+                          </button>
+
                           {reg.status === 'RESERVED' && (
                             <button
                               onClick={() => handleQuickManualConfirm(reg)}
-                              className="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg border border-emerald-200 font-bold transition flex items-center gap-1"
+                              className="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 active:bg-emerald-200 text-emerald-700 rounded-lg border border-emerald-200 font-bold transition flex items-center gap-1 text-xs shrink-0 cursor-pointer"
                               title="Aprovar e confirmar pagamento manualmente"
                             >
                               <CheckCircle className="w-3.5 h-3.5" />

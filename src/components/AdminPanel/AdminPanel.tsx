@@ -316,7 +316,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
     <div className="fixed inset-0 z-50 overflow-y-auto bg-[#f8fafc] text-slate-800 flex flex-col font-sans selection:bg-orange-500 selection:text-white">
       {/* Top Admin Navigation Bar */}
       <header className="bg-white/95 backdrop-blur-md border-b border-slate-200/90 text-slate-800 shrink-0 sticky top-0 z-30 shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+        <div className="w-full max-w-[1700px] 2xl:max-w-[1850px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
           
           <div className="flex items-center gap-3">
             <img 
@@ -430,7 +430,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
         </div>
 
         {/* Tab Navigation */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex overflow-x-auto border-t border-slate-200/70 scrollbar-none">
+        <div className="w-full max-w-[1700px] 2xl:max-w-[1850px] mx-auto px-4 sm:px-6 lg:px-8 flex overflow-x-auto border-t border-slate-200/70 scrollbar-thin scrollbar-thumb-slate-200 hover:scrollbar-thumb-slate-300">
           <nav className="flex space-x-1.5 py-2">
             {visibleTabs.map((tab) => {
               const Icon = tab.icon;
@@ -455,7 +455,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
       </header>
 
       {/* Main Admin Content */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+      <main className="flex-1 w-full max-w-[1700px] 2xl:max-w-[1850px] mx-auto p-4 sm:p-6 lg:p-8">
         {isLoading && !metrics ? (
           <div className="py-24 text-center text-slate-500">
             <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-3 text-orange-500" />
