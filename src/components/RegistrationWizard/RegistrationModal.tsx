@@ -38,6 +38,45 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
 }) => {
   const [currentStep, setCurrentStep] = React.useState<1 | 2 | 3>(1);
   const [liveInventory, setLiveInventory] = React.useState<ShirtInventoryItem[]>(inventory);
+  const overlayRef = React.useRef<HTMLDivElement>(null);
+  const scrollBodyRef = React.useRef<HTMLDivElement>(null);
+
+  const scrollModalToTop = React.useCallback(() => {
+    if (scrollBodyRef.current) {
+      scrollBodyRef.current.scrollTop = 0;
+      scrollBodyRef.current.scrollTo?.({ top: 0, behavior: 'instant' as ScrollBehavior });
+    }
+    if (overlayRef.current) {
+      overlayRef.current.scrollTop = 0;
+      overlayRef.current.scrollTo?.({ top: 0, behavior: 'instant' as ScrollBehavior });
+    }
+  }, []);
+
+  const goToStep = React.useCallback(
+    (step: 1 | 2 | 3) => {
+      if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
+      setCurrentStep(step);
+      scrollModalToTop();
+    },
+    [scrollModalToTop]
+  );
+
+  React.useLayoutEffect(() => {
+    if (!isOpen) return;
+    scrollModalToTop();
+    const rafId = requestAnimationFrame(() => {
+      scrollModalToTop();
+    });
+    const timerId = setTimeout(() => {
+      scrollModalToTop();
+    }, 60);
+    return () => {
+      cancelAnimationFrame(rafId);
+      clearTimeout(timerId);
+    };
+  }, [currentStep, isOpen, scrollModalToTop]);
 
   React.useEffect(() => {
     if (inventory && inventory.some((i) => i.availableStock > 0)) {
@@ -109,7 +148,10 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 animate-fadeIn">
+    <div
+      ref={overlayRef}
+      className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 animate-fadeIn"
+    >
       <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden my-auto max-h-[92vh] flex flex-col">
         
         {/* Modal Header */}
@@ -201,12 +243,12 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
         </div>
 
         {/* Modal Scrollable Body */}
-        <div className="p-6 overflow-y-auto flex-1">
+        <div ref={scrollBodyRef} className="p-6 overflow-y-auto flex-1">
           {currentStep === 1 && (
             <Step1AthleteData
               data={step1Data}
               onChange={handleStep1Change}
-              onNext={() => setCurrentStep(2)}
+              onNext={() => goToStep(2)}
             />
           )}
 
@@ -219,8 +261,8 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
               inventory={liveInventory}
               settings={settings}
               onChange={handleStep2Change}
-              onBack={() => setCurrentStep(1)}
-              onNext={() => setCurrentStep(3)}
+              onBack={() => goToStep(1)}
+              onNext={() => goToStep(3)}
             />
           )}
 
@@ -229,7 +271,7 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
               step1={step1Data}
               step2={step2Data}
               settings={settings}
-              onBack={() => setCurrentStep(2)}
+              onBack={() => goToStep(2)}
               onSubmit={handleFinalSubmit}
               onOpenTerms={onOpenTerms}
               onOpenPrivacy={onOpenPrivacy}

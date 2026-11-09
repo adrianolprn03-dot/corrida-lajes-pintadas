@@ -55,6 +55,27 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
 }) => {
   // Current active step in the 5-stage workflow
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4 | 5>(1);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  const scrollToTop = React.useCallback(() => {
+    let el: HTMLElement | null = containerRef.current;
+    while (el) {
+      el.scrollTop = 0;
+      el.scrollTo?.({ top: 0, behavior: 'instant' as ScrollBehavior });
+      el = el.parentElement;
+    }
+    if (typeof window !== 'undefined') {
+      window.scrollTo?.({ top: 0, behavior: 'instant' as ScrollBehavior });
+    }
+  }, []);
+
+  React.useLayoutEffect(() => {
+    scrollToTop();
+    const rafId = requestAnimationFrame(() => {
+      scrollToTop();
+    });
+    return () => cancelAnimationFrame(rafId);
+  }, [currentStep, scrollToTop]);
 
   // Stage 1: CPF search
   const [cpfSearch, setCpfSearch] = useState('');
@@ -216,6 +237,8 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
 
     if (Object.keys(errors).length === 0) {
       setCurrentStep(3);
+    } else {
+      scrollToTop();
     }
   };
 
@@ -229,6 +252,7 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
     const docType = documentTypePresented === 'OUTRO' ? customDocType.trim() : documentTypePresented;
     if (!docType) {
       setStage3Error('Informe o tipo de documento apresentado para conferência.');
+      scrollToTop();
       return;
     }
 
@@ -236,6 +260,7 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
       setStage3Error(
         'Atenção: A geração de cobrança só pode ser liberada após a aprovação presencial do vínculo. Se o atleta possui pendência de complementação documental, a inscrição deve aguardar a apresentação dos comprovantes.'
       );
+      scrollToTop();
       return;
     }
 
@@ -280,6 +305,7 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
       const result = await storageService.submitRegistration(submissionPayload as any);
       setCreatedRegistration(result.registration);
       setAccessCode(result.accessCode);
+      scrollToTop();
       if (onRegistrationCreated) onRegistrationCreated();
     } catch (err: any) {
       setPaymentError(err.message || 'Falha ao registrar cobrança no Asaas. Tente novamente.');
@@ -676,7 +702,7 @@ export const AdminPresentialRegistration: React.FC<AdminPresentialRegistrationPr
   };
 
   return (
-    <div className="space-y-6 text-slate-900">
+    <div ref={containerRef} className="space-y-6 text-slate-900">
       {/* Header Banner */}
       <div className="bg-gradient-to-r from-orange-600 via-orange-700 to-amber-700 rounded-3xl p-6 text-white shadow-lg shadow-orange-600/20 relative overflow-hidden">
         <div className="absolute -right-8 -bottom-8 opacity-10 pointer-events-none">

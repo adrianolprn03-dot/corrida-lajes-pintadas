@@ -101,6 +101,30 @@ export const Step3ReviewAndPayment: React.FC<Step3ReviewAndPaymentProps> = ({
   const [isCheckingPix, setIsCheckingPix] = useState(false);
   const [pixCheckMessage, setPixCheckMessage] = useState<string | null>(null);
   const [kitQrDataUrl, setKitQrDataUrl] = useState<string | null>(null);
+  const stepRootRef = React.useRef<HTMLElement | null>(null);
+
+  const scrollStepToTop = useCallback(() => {
+    let el: HTMLElement | null = stepRootRef.current?.parentElement || null;
+    while (el) {
+      el.scrollTop = 0;
+      el.scrollTo?.({ top: 0, behavior: 'instant' as ScrollBehavior });
+      el = el.parentElement;
+    }
+  }, []);
+
+  React.useLayoutEffect(() => {
+    scrollStepToTop();
+    const rafId = requestAnimationFrame(() => {
+      scrollStepToTop();
+    });
+    return () => cancelAnimationFrame(rafId);
+  }, [ Boolean(successResult), successResult?.registration?.status, scrollStepToTop ]);
+
+  useEffect(() => {
+    if (error) {
+      scrollStepToTop();
+    }
+  }, [error, scrollStepToTop]);
 
   useEffect(() => {
     if (successResult && successResult.registration.status === 'CONFIRMED') {
@@ -347,7 +371,12 @@ export const Step3ReviewAndPayment: React.FC<Step3ReviewAndPaymentProps> = ({
       reg.creditCardLastDigits || (cardNumber ? cardNumber.replace(/\D/g, '').slice(-4) : '••••');
 
     return (
-      <div className="space-y-6 text-center py-2 animate-fadeIn">
+      <div
+        ref={(el) => {
+          stepRootRef.current = el;
+        }}
+        className="space-y-6 text-center py-2 animate-fadeIn"
+      >
         {/* Ícone e Header de Confirmação */}
         <div
           className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto shadow-md ring-8 ${
@@ -651,7 +680,13 @@ export const Step3ReviewAndPayment: React.FC<Step3ReviewAndPaymentProps> = ({
   // TELA DE REVISÃO E COBRANÇA AUTOMÁTICA NO CARTÃO
   // ============================================================================
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form
+      ref={(el) => {
+        stepRootRef.current = el;
+      }}
+      onSubmit={handleSubmit}
+      className="space-y-6"
+    >
       {error && (
         <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-start gap-2.5 animate-shake">
           <AlertCircle size={18} className="text-red-500 shrink-0 mt-0.5" />

@@ -79,6 +79,20 @@ export const Step1AthleteData: React.FC<Step1AthleteDataProps> = ({
   const [cepError, setCepError] = useState<string | null>(null);
 
   const numberInputRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  const scrollStepToTop = React.useCallback(() => {
+    let el: HTMLElement | null = formRef.current?.parentElement || null;
+    while (el) {
+      el.scrollTop = 0;
+      el.scrollTo?.({ top: 0, behavior: 'instant' as ScrollBehavior });
+      el = el.parentElement;
+    }
+  }, []);
+
+  React.useLayoutEffect(() => {
+    scrollStepToTop();
+  }, [scrollStepToTop]);
 
   // Busca inteligente de CEP (ViaCEP com fallback para BrasilAPI)
   const lookupCEP = async (rawCep: string) => {
@@ -242,13 +256,15 @@ export const Step1AthleteData: React.FC<Step1AthleteDataProps> = ({
     e.preventDefault();
     if (validate()) {
       onNext();
+    } else {
+      scrollStepToTop();
     }
   };
 
   const isNoNumber = data.number === 'S/N';
 
   return (
-    <form onSubmit={handleNext} className="space-y-5">
+    <form ref={formRef} onSubmit={handleNext} className="space-y-5">
       <div className="bg-orange-50/70 p-3.5 rounded-xl border border-orange-200/60 text-xs text-orange-800 flex items-start gap-2">
         <AlertCircle size={16} className="text-orange-600 shrink-0 mt-0.5" />
         <span>

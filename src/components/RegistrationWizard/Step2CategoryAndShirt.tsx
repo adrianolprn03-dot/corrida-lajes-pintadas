@@ -86,6 +86,26 @@ export const Step2CategoryAndShirt: React.FC<Step2CategoryAndShirtProps> = ({
 }) => {
   const [error, setError] = useState<string | null>(null);
   const [showMeasurements, setShowMeasurements] = useState(false);
+  const formRef = React.useRef<HTMLFormElement>(null);
+
+  const scrollStepToTop = React.useCallback(() => {
+    let el: HTMLElement | null = formRef.current?.parentElement || null;
+    while (el) {
+      el.scrollTop = 0;
+      el.scrollTo?.({ top: 0, behavior: 'instant' as ScrollBehavior });
+      el = el.parentElement;
+    }
+  }, []);
+
+  React.useLayoutEffect(() => {
+    scrollStepToTop();
+  }, [scrollStepToTop]);
+
+  React.useEffect(() => {
+    if (error) {
+      scrollStepToTop();
+    }
+  }, [error, scrollStepToTop]);
 
   const isPcd = data.originType === 'PCD' || Boolean(data.isPcd);
   const activeBaseCents = getActiveBasePriceCents(settings);
@@ -158,7 +178,7 @@ export const Step2CategoryAndShirt: React.FC<Step2CategoryAndShirtProps> = ({
   };
 
   return (
-    <form onSubmit={handleNext} className="space-y-6">
+    <form ref={formRef} onSubmit={handleNext} className="space-y-6">
       {error && (
         <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-start gap-2">
           <AlertTriangle size={16} className="text-red-500 shrink-0 mt-0.5" />
